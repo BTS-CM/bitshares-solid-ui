@@ -23,37 +23,37 @@ export default function Root() {
               <img src="/bts.png" alt="logo" height="40px" width="30px" />
             </a>
             <m-tabs>
-              <a href="/account" class="mar-l-sm mar-r-sm">
+              <a href="/account/nft.artist" class="mar-l-sm mar-r-sm">
                 {
                   location.pathname.includes('account')
-                    ? <m-tab selected>Portfolio</m-tab>
-                    : <m-tab>Portfolio</m-tab>
+                    ? <m-tab selected><m-icon name="wallet"></m-icon> Portfolio</m-tab>
+                    : <m-tab><m-icon name="wallet"></m-icon> Portfolio</m-tab>
                 }
               </a>
-              <a href="/exchange" class="mar-l-sm mar-r-sm">
+              <a href="/market/BTS_USD" class="mar-l-sm mar-r-sm">
                 {
-                  location.pathname.includes('exchange')
-                    ? <m-tab selected>Exchange</m-tab>
-                    : <m-tab>Exchange</m-tab>
+                  location.pathname.includes('market')
+                    ? <m-tab selected><m-icon name="chart"></m-icon> Exchange</m-tab>
+                    : <m-tab><m-icon name="chart"></m-icon> Exchange</m-tab>
                 }
               </a>
               <a href="/credit-offer" class="mar-l-sm mar-r-sm">
                 {
                   location.pathname.includes('credit-offer')
-                    ? <m-tab selected>Credit Offer</m-tab>
-                    : <m-tab>Credit Offer</m-tab>
+                    ? <m-tab selected><m-icon name="support"></m-icon> Credit Offer</m-tab>
+                    : <m-tab><m-icon name="support"></m-icon> Credit Offer</m-tab>
                 }
               </a>
               <a href="/explore" class="mar-l-sm mar-r-sm">
                 {
                   location.pathname.includes('explore')
-                    ? <m-tab selected>Explore</m-tab>
-                    : <m-tab>Explore</m-tab>
+                    ? <m-tab selected><m-icon name="magnifier"></m-icon> Explore</m-tab>
+                    : <m-tab><m-icon name="magnifier"></m-icon> Explore</m-tab>
                 }
               </a>
               <a href={location.pathname}>
                 {
-                  !['account', 'exchange', 'credit-offer', 'explore'].includes(location.pathname.split('/')[1]) && location.pathname !== '/'
+                  !['account', 'market', 'credit-offer', 'explore'].includes(location.pathname.split('/')[1]) && location.pathname !== '/'
                     ? <m-tab selected>{location.pathname.split('/')[1].split("-").join(" ")}</m-tab>
                     : null
                 }
@@ -63,8 +63,8 @@ export default function Root() {
                 <m-icon slot="trigger" name="menu" class="push"></m-icon>
                 <div slot="items" class="menuDropDown">
                   <a href><m-icon name="login"></m-icon> Login</a>
-                  <a href="/accounts"><m-icon name="wallet"></m-icon> Portfolio</a>
-                  <a href="/exchange"><m-icon name="chart"></m-icon> Exchange</a>
+                  <a href="/account/nft.artist"><m-icon name="wallet"></m-icon> Portfolio</a>
+                  <a href="/market/BTS_USD"><m-icon name="chart"></m-icon> Exchange</a>
                   <a href="/credit-offer"><m-icon name="support"></m-icon> Credit Offer</a>
                   <a href="/liquidity-pools"><m-icon name="diamond"></m-icon> Liquidity Pools</a>
                   <a href="/explore"><m-icon name="magnifier"></m-icon> Explore</a>
