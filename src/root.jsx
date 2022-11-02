@@ -2,8 +2,11 @@
 import { Routes } from "@solidjs/router";
 import { Suspense } from "solid-js";
 import { ErrorBoundary } from "solid-start/error-boundary";
-import { FileRoutes, Head, Meta, Scripts, Title } from "solid-start";
+import { FileRoutes, Head, Meta, Scripts, Title, useLocation } from "solid-start";
+
 export default function Root() {
+  const location = useLocation();
+
   return (
     <html lang="en">
       <Head>
@@ -14,21 +17,50 @@ export default function Root() {
         <Meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <body>
-        <header class="bg-offwhite">
-          <m-container class="flex">       
-            <nav class="mar-l-lg">
-              <a href="#" class="mar-l-sm mar-r-sm">
-                <img src="/bts.png" alt="logo" height="40px" width="30px" />
+        <header>
+          <div class="inline-flex align-items-center">
+            <a href="/" class="mar-l-sm mar-r-sm">
+              <img src="/bts.png" alt="logo" height="40px" width="30px" />
+            </a>
+            <m-tabs>
+              <a href="/account" class="mar-l-sm mar-r-sm">
+                {
+                  location.pathname.includes('account')
+                    ? <m-tab selected>Portfolio</m-tab>
+                    : <m-tab>Portfolio</m-tab>
+                }
               </a>
-              <a href="/account" class="mar-l-sm mar-r-sm vertAlign">Portfolio</a>
-              <a href="/exchange" class="mar-l-sm mar-r-sm vertAlign">Exchange</a>
-              <a href="/credit-offer" class="mar-l-sm mar-r-sm vertAlign">Credit Offer</a>
-              <a href="/explore" class="mar-l-sm mar-r-sm vertAlign">Explore</a>
-            </nav>
-            <m-menu class="push">
-                <button slot="trigger" ord="secondary">
-                  <m-icon name="menu"></m-icon>
-                </button>
+              <a href="/exchange" class="mar-l-sm mar-r-sm">
+                {
+                  location.pathname.includes('exchange')
+                    ? <m-tab selected>Exchange</m-tab>
+                    : <m-tab>Exchange</m-tab>
+                }
+              </a>
+              <a href="/credit-offer" class="mar-l-sm mar-r-sm">
+                {
+                  location.pathname.includes('credit-offer')
+                    ? <m-tab selected>Credit Offer</m-tab>
+                    : <m-tab>Credit Offer</m-tab>
+                }
+              </a>
+              <a href="/explore" class="mar-l-sm mar-r-sm">
+                {
+                  location.pathname.includes('explore')
+                    ? <m-tab selected>Explore</m-tab>
+                    : <m-tab>Explore</m-tab>
+                }
+              </a>
+              <a href={location.pathname}>
+                {
+                  !['account', 'exchange', 'credit-offer', 'explore'].includes(location.pathname.split('/')[1]) && location.pathname !== '/'
+                    ? <m-tab selected>{location.pathname.split('/')[1].split("-").join(" ")}</m-tab>
+                    : null
+                }
+              </a>
+            </m-tabs>
+            <m-menu>
+                <m-icon slot="trigger" name="menu" class="push"></m-icon>
                 <div slot="items" class="menuDropDown">
                   <a href><m-icon name="login"></m-icon> Login</a>
                   <a href="/accounts"><m-icon name="wallet"></m-icon> Portfolio</a>
@@ -41,24 +73,24 @@ export default function Root() {
                   <a href="/withdraw"><m-icon name="minus"></m-icon> Withdraw</a>
                   <a href="/voting"><m-icon name="like"></m-icon> Voting</a>
                   <a href="/spotlight"><m-icon name="diamond"></m-icon> Spotlight</a>
-                  <m-menu class="push">
-                    <m-icon slot="trigger" name="wrench"> Advanced</m-icon>
-                    <div slot="items" class="menuDropDown">
-                      <a href="/voting"><m-icon name="like"></m-icon> Voting</a>
-                      <a href="/assets"><m-icon name="like"></m-icon> Assets</a>
-                      <a href="/liquidity-pools"><m-icon name="like"></m-icon> Pools</a>
-                      <a href="/signed-messages"><m-icon name="like"></m-icon> Signed messages</a>
-                      <a href="/membership-stats"><m-icon name="like"></m-icon> Membership stats</a>
-                      <a href="/vesting-balances"><m-icon name="like"></m-icon> Vesting balances</a>
-                      <a href="/whitelist"><m-icon name="like"></m-icon> Whitelist</a>
-                      <a href="/permissions"><m-icon name="like"></m-icon> Permissions</a>
-                    </div>
-                  </m-menu>
                   <a href="/settings"><m-icon name="settings"></m-icon> Settings</a>
                   <a href="/accounts"><m-icon name="folder"></m-icon> Accounts</a>
+                  <m-menu>
+                    <a><m-icon slot="trigger" name="wrench"> Advanced</m-icon></a>
+                    <div slot="items" class="menuDropDown">
+                      <a href="/voting"><m-icon name="like"></m-icon> Voting</a>
+                      <a href="/assets"><m-icon name="list"></m-icon> Assets</a>
+                      <a href="/liquidity-pools"><m-icon name="pie-chart"></m-icon> Pools</a>
+                      <a href="/signed-messages"><m-icon name="book-open"></m-icon> Signed messages</a>
+                      <a href="/membership-stats"><m-icon name="briefcase"></m-icon> Membership stats</a>
+                      <a href="/vesting-balances"><m-icon name="clock"></m-icon> Vesting balances</a>
+                      <a href="/whitelist"><m-icon name="list"></m-icon> Whitelist</a>
+                      <a href="/permissions"><m-icon name="key"></m-icon> Permissions</a>
+                    </div>
+                  </m-menu>
                 </div>
-              </m-menu>
-          </m-container>
+            </m-menu>
+          </div>
         </header>
         <ErrorBoundary>
           <Suspense>
