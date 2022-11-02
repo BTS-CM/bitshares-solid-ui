@@ -1,10 +1,10 @@
 import "./index.css";
-export default function Home() {
+export default function Explore() {
   return (
     <main>
       <m-row>
           <m-col span="12">
-              <m-box>Index page</m-box>
+              <m-box>Explore</m-box>
           </m-col>
       </m-row>
     </main>

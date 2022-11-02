@@ -1,10 +1,10 @@
 import "./index.css";
-export default function Home() {
+export default function CreditOffer() {
   return (
     <main>
       <m-row>
           <m-col span="12">
-              <m-box>Index page</m-box>
+              <m-box>credit offer</m-box>
           </m-col>
       </m-row>
     </main>
