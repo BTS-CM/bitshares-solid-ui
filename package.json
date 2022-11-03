@@ -22,6 +22,8 @@
     "vitest": "^0.20.3"
   },
   "dependencies": {
+    "bitsharesjs": "^6.0.0",
+    "bitsharesjs-ws": "^6.0.0",
     "m-": "^1.4.0"
   }
 }
