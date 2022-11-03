@@ -1,9 +1,9 @@
-import React from "react";
 import Translate from "react-translate-component";
 import counterpart from "counterpart";
-import {getGatewayStatusByAsset} from "common/gatewayUtils";
 import {Link} from "react-router-dom";
 import {Select, Icon} from "bitshares-ui-style-guide";
+
+import {getGatewayStatusByAsset} from "common/gatewayUtils";
 import utils from "common/utils";
 
 function _getCoinToGatewayMapping(boolCheck = "depositAllowed") {

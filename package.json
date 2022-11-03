@@ -22,8 +22,14 @@
     "vitest": "^0.20.3"
   },
   "dependencies": {
+    "bignumber.js": "^9.1.0",
+    "bitshares-report": "https://github.com/bitshares/bitshares-report.git",
     "bitsharesjs": "^6.0.0",
     "bitsharesjs-ws": "^6.0.0",
-    "m-": "^1.4.0"
+    "file-saver": "^2.0.5",
+    "jspdf": "^2.5.1",
+    "m-": "^1.4.0",
+    "qrcode": "^1.5.1",
+    "xss": "^1.0.14"
   }
 }
