@@ -73,7 +73,7 @@ export default function Root() {
                   <a href="/withdraw"><m-icon name="minus"></m-icon> Withdraw</a>
                   <a href="/voting"><m-icon name="like"></m-icon> Voting</a>
                   <a href="/spotlight"><m-icon name="diamond"></m-icon> Spotlight</a>
-                  <a href="/settings"><m-icon name="settings"></m-icon> Settings</a>
+                  <a href="/settings/general"><m-icon name="settings"></m-icon> Settings</a>
                   <a href="/accounts"><m-icon name="folder"></m-icon> Accounts</a>
                   <m-menu>
                     <a><m-icon slot="trigger" name="wrench"> Advanced</m-icon></a>

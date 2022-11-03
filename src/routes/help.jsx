@@ -1,10 +1,10 @@
 import "./index.css";
-export default function Whitelist() {
+export default function Help() {
   return (
     <main>
       <m-row>
           <m-col span="12">
-              <m-box>Withdraw</m-box>
+              <m-box>Help overview</m-box>
           </m-col>
       </m-row>
     </main>

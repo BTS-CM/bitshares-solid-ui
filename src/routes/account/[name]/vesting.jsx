@@ -1,10 +1,11 @@
-import "./index.css";
-export default function Settings() {
+import "../../index.css";
+
+export default function Vesting() {
   return (
     <main>
       <m-row>
           <m-col span="12">
-              <m-box>Settings</m-box>
+              <m-box>Vesting balances</m-box>
           </m-col>
       </m-row>
     </main>
