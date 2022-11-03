@@ -44,7 +44,7 @@ export default function Root() {
                     : <m-tab><m-icon name="support"></m-icon> Credit Offer</m-tab>
                 }
               </a>
-              <a href="/explore" class="mar-l-sm mar-r-sm">
+              <a href="/explorer/blocks" class="mar-l-sm mar-r-sm">
                 {
                   location.pathname.includes('explore')
                     ? <m-tab selected><m-icon name="magnifier"></m-icon> Explore</m-tab>
@@ -53,7 +53,7 @@ export default function Root() {
               </a>
               <a href={location.pathname}>
                 {
-                  !['account', 'market', 'credit-offer', 'explore'].includes(location.pathname.split('/')[1]) && location.pathname !== '/'
+                  !['account', 'market', 'credit-offer', 'explorer'].includes(location.pathname.split('/')[1]) && location.pathname !== '/'
                     ? <m-tab selected>{location.pathname.split('/')[1].split("-").join(" ")}</m-tab>
                     : null
                 }
@@ -67,7 +67,7 @@ export default function Root() {
                   <a href="/market/BTS_USD"><m-icon name="chart"></m-icon> Exchange</a>
                   <a href="/credit-offer"><m-icon name="support"></m-icon> Credit Offer</a>
                   <a href="/liquidity-pools"><m-icon name="diamond"></m-icon> Liquidity Pools</a>
-                  <a href="/explore"><m-icon name="magnifier"></m-icon> Explore</a>
+                  <a href="/explorer/blocks"><m-icon name="magnifier"></m-icon> Explore</a>
                   <a href="/send"><m-icon name="paper-plane"></m-icon> Send</a>
                   <a href="/deposit"><m-icon name="plus"></m-icon> Deposit</a>
                   <a href="/withdraw"><m-icon name="minus"></m-icon> Withdraw</a>
