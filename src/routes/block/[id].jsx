@@ -1,7 +1,7 @@
 import { useParams } from "solid-start";
 
 import "../index.css";
-export default function block() {
+export default function Block() {
   const params = useParams();
 
   return (
