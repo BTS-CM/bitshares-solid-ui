@@ -1,4 +1,8 @@
-# Discussion: "[What would be your ideal reference Bitshares wallet implementation?](https://hive.blog/bitshares/@nftea.gallery/what-would-be-your-ideal-reference-bitshares-wallet-implementation)"
+# See also: 
+
+* "[What would be your ideal reference Bitshares wallet implementation?](https://hive.blog/bitshares/@nftea.gallery/what-would-be-your-ideal-reference-bitshares-wallet-implementation)"
+* "[Roadmap for the SolidJS implementation of the Bitshares reference UI wallet](https://hive.blog/bitshares/@nftea.gallery/roadmap-for-the-solidjs-implementation-of-the-bitshares-reference-ui-wallet-plans-estimates-coordination)"
+* https://www.youtube.com/watch?v=DVWu2b7mvFg
 
 # SolidStart
 
