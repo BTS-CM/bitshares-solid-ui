@@ -1,81 +1,61 @@
-import alt from "alt-instance";
 import iDB from "idb-instance";
 import Immutable from "immutable";
-import BaseStore from "./BaseStore";
 import {ChainStore} from "bitsharesjs";
 import {Apis} from "bitsharesjs-ws";
+
+import { createStore } from 'solid-js/store'
+
+// TODO: Uplift privatekeystore to use solid stores
 import PrivateKeyStore from "stores/PrivateKeyStore";
-import PrivateKeyActions from "actions/PrivateKeyActions";
+
 import chainIds from "chain/chainIds";
 
-// port the following alt.js store to solidjs store
-
-
-class AccountRefsStore extends BaseStore {
-    constructor() {
-        super();
-        this._export("loadDbData", "getAccountRefs");
-        this.state = this._getInitialState();
-        this.bindListeners({onAddPrivateKey: PrivateKeyActions.addKey});
-        this.no_account_refs = Immutable.Set(); // Set of account ids
-        ChainStore.subscribe(this.chainStoreUpdate.bind(this));
-    }
-
-    _getInitialState() {
-        this.chainstore_account_ids_by_key = null;
-        this.chainstore_account_ids_by_account = null;
-        let account_refs = new Immutable.Map();
-        account_refs = account_refs.set(this._getChainId(), Immutable.Set());
-        return {
-            account_refs
-        };
-    }
-
-    getAccountRefs(chainId = this._getChainId()) {
-        return this.state.account_refs.get(chainId, Immutable.Set());
-    }
-
-    _getChainId() {
-        return Apis.instance().chain_id || chainIds.MAIN_NET;
-    }
-
+const [accountRefsStore, setAccountRefsStore] = createStore({
+    chainstore_account_ids_by_key: null,
+    chainstore_account_ids_by_account: null,
+    no_account_refs: Immutable.Set(),
+    account_refs: Immutable.Map().set(_getChainId(), Immutable.Set()),
+    getAccountRefs(chainId = _getChainId()) {
+        return accountRefsStore.account_refs.get(chainId, Immutable.Set());
+    },
     onAddPrivateKey({private_key_object}) {
         if (
             ChainStore.getAccountRefsOfKey(private_key_object.pubkey) !==
             undefined
-        )
-            this.chainStoreUpdate();
-    }
-
+        ) {
+            accountRefsStore.chainStoreUpdate();
+        }
+    },
     loadDbData() {
-        this.chainstore_account_ids_by_key = null;
-        this.chainstore_account_ids_by_account = null;
-        this.no_account_refs = Immutable.Set();
-
+        setAccountRefsStore('chainstore_account_ids_by_key', null)
+        setAccountRefsStore('chainstore_account_ids_by_account', null)
+        setAccountRefsStore('no_account_refs', Immutable.Set())
+    
         let account_refs = new Immutable.Map();
-        account_refs = account_refs.set(this._getChainId(), Immutable.Set());
-        this.state = {account_refs};
-        return loadNoAccountRefs()
-            .then(no_account_refs => (this.no_account_refs = no_account_refs))
-            .then(() => this.chainStoreUpdate());
-    }
+        account_refs = account_refs.set(_getChainId(), Immutable.Set());
+        setAccountRefsStore('account_refs', account_refs)
+        
 
+        return _loadNoAccountRefs()
+            .then(no_account_refs => {
+                setAccountRefsStore('no_account_refs', no_account_refs)
+            })
+            .then(() => accountRefsStore.chainStoreUpdate());
+    },
     chainStoreUpdate() {
         if (
-            this.chainstore_account_ids_by_key ===
-                ChainStore.account_ids_by_key &&
-            this.chainstore_account_ids_by_account ===
-                ChainStore.account_ids_by_account
-        )
+            accountRefsStore.chainstore_account_ids_by_key === ChainStore.account_ids_by_key &&
+            accountRefsStore.chainstore_account_ids_by_account === ChainStore.account_ids_by_account
+        ) {
             return;
-        this.chainstore_account_ids_by_key = ChainStore.account_ids_by_key;
-        this.chainstore_account_ids_by_account =
-            ChainStore.account_ids_by_account;
-        this.checkPrivateKeyStore();
-    }
+        }
 
+        setAccountRefsStore('chainstore_account_ids_by_key', ChainStore.account_ids_by_key);
+        setAccountRefsStore('chainstore_account_ids_by_account', ChainStore.account_ids_by_account);
+        accountRefsStore.checkPrivateKeyStore();
+    },
     checkPrivateKeyStore() {
-        let no_account_refs = this.no_account_refs;
+        let no_account_refs = accountRefsStore.no_account_refs;
         let temp_account_refs = Immutable.Set();
         PrivateKeyStore.getState()
             .keys.keySeq()
@@ -107,7 +87,7 @@ class AccountRefsStore extends BaseStore {
                 temp_account_refs = temp_account_refs.add(refs.valueSeq());
             });
         temp_account_refs = temp_account_refs.flatten();
-
+    
         /* Discover accounts referenced by account name in permissions */
         temp_account_refs.forEach(account => {
             let refs = ChainStore.getAccountRefsOfAccount(account);
@@ -116,28 +96,33 @@ class AccountRefsStore extends BaseStore {
             temp_account_refs = temp_account_refs.add(refs.valueSeq());
         });
         temp_account_refs = temp_account_refs.flatten();
-        if (!this.getAccountRefs().equals(temp_account_refs)) {
-            this.state.account_refs = this.state.account_refs.set(
-                this._getChainId(),
-                temp_account_refs
-            );
-            // console.log("AccountRefsStore account_refs",account_refs.size);
+        if (!accountRefsStore.getAccountRefs().equals(temp_account_refs)) {
+            setAccountRefsStore('account_refs', accountRefsStore.account_refs.set(_getChainId(), temp_account_refs));
+            // console.log("AccountRefsStore account_refs", accountRefsStore.account_refs.size);
         }
-        if (!this.no_account_refs.equals(no_account_refs)) {
-            this.no_account_refs = no_account_refs;
-            saveNoAccountRefs(no_account_refs);
+        if (!accountRefsStore.no_account_refs.equals(no_account_refs)) {
+            setAccountRefsStore('no_account_refs', no_account_refs);
+            _saveNoAccountRefs(no_account_refs);
         }
     }
-}
+});
+  
+export const useAccountRefsStore = () => [accountRefsStore, setAccountRefsStore];
 
-export default alt.createStore(AccountRefsStore, "AccountRefsStore");
+// TODO: Replace the following 3 lines
+//this.bindListeners({onAddPrivateKey: PrivateKeyActions.addKey});
+//ChainStore.subscribe(this.chainStoreUpdate.bind(this));
+
+function _getChainId() {
+    return Apis.instance().chain_id || chainIds.MAIN_NET;
+}
 
 /*
 *  Performance optimization for large wallets, no_account_refs tracks pubkeys
 *  that do not have a corresponding account and excludes them from future api calls
 *  to get_account_refs. The arrays are stored in the indexed db, one per chain id
 */
-function loadNoAccountRefs() {
+function _loadNoAccountRefs() {
     let chain_id = Apis.instance().chain_id;
     let refKey = `no_account_refs${
         !!chain_id ? "_" + chain_id.substr(0, 8) : ""
@@ -145,7 +130,7 @@ function loadNoAccountRefs() {
     return iDB.root.getProperty(refKey, []).then(array => Immutable.Set(array));
 }
 
-function saveNoAccountRefs(no_account_refs) {
+function _saveNoAccountRefs(no_account_refs) {
     let array = [];
     let chain_id = Apis.instance().chain_id;
     let refKey = `no_account_refs${
