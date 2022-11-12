@@ -1,100 +1,121 @@
-import alt from "alt-instance";
-
-class SettingsActions {
-    changeSetting(value) {
-        return value;
-    }
-
-    changeViewSetting(value) {
-        return value;
-    }
-
-    changeMarketDirection(value) {
-        return value;
-    }
-
-    addStarMarket(quote, base) {
-        return {quote, base};
-    }
-
-    removeStarMarket(quote, base) {
-        return {quote, base};
-    }
-
-    clearStarredMarkets() {
-        return true;
-    }
-
-    setUserMarket(quote, base, value) {
-        return {quote, base, value};
-    }
-
-    addWS(ws) {
-        return ws;
-    }
-
-    removeWS(index) {
-        return index;
-    }
-
-    hideWS(url) {
-        return url;
-    }
-
-    showWS(url) {
-        return url;
-    }
-
-    hideAsset(id, status) {
-        return {id, status};
-    }
-
-    hideMarket(id, status) {
-        return {id, status};
-    }
-
-    clearSettings() {
-        return dispatch => {
-            return new Promise(resolve => {
-                dispatch(resolve);
-            });
-        };
-    }
-
-    updateLatencies(latencies) {
-        return latencies;
-    }
-
-    setExchangeLastExpiration(value) {
-        return value;
-    }
-
-    setExchangeTutorialShown(value) {
-        return value;
-    }
-
-    modifyPreferedBases(payload) {
-        return payload;
-    }
-
-    updateUnits() {
-        return true;
-    }
-
-    setPriceAlert(value) {
-        return value;
-    }
-    hideNewsHeadline(value) {
-        return value;
-    }
-
-    addChartLayout(value) {
-        return value;
-    }
-
-    deleteChartLayout(value) {
-        return value;
-    }
+function changeSetting(value) {
+    return value;
 }
 
-export default alt.createActions(SettingsActions);
+function changeViewSetting(value) {
+    return value;
+}
+
+function changeMarketDirection(value) {
+    return value;
+}
+
+function addStarMarket(quote, base) {
+    return {quote, base};
+}
+
+function removeStarMarket(quote, base) {
+    return {quote, base};
+}
+
+function clearStarredMarkets() {
+    return true;
+}
+
+function setUserMarket(quote, base, value) {
+    return {quote, base, value};
+}
+
+function addWS(ws) {
+    return ws;
+}
+
+function removeWS(index) {
+    return index;
+}
+
+function hideWS(url) {
+    return url;
+}
+
+function showWS(url) {
+    return url;
+}
+
+function hideAsset(id, status) {
+    return {id, status};
+}
+
+function hideMarket(id, status) {
+    return {id, status};
+}
+
+function clearSettings() {
+    return dispatch => {
+        return new Promise(resolve => {
+            dispatch(resolve);
+        });
+    };
+}
+
+function updateLatencies(latencies) {
+    return latencies;
+}
+
+function setExchangeLastExpiration(value) {
+    return value;
+}
+
+function setExchangeTutorialShown(value) {
+    return value;
+}
+
+function modifyPreferedBases(payload) {
+    return payload;
+}
+
+function updateUnits() {
+    return true;
+}
+
+function setPriceAlert(value) {
+    return value;
+}
+
+function hideNewsHeadline(value) {
+    return value;
+}
+
+function addChartLayout(value) {
+    return value;
+}
+
+function deleteChartLayout(value) {
+    return value;
+}
+
+export {
+    changeSetting,
+    changeViewSetting,
+    changeMarketDirection,
+    addStarMarket,
+    removeStarMarket,
+    clearStarredMarkets,
+    setUserMarket,
+    addWS,
+    removeWS,
+    hideWS,
+    showWS,
+    hideAsset,
+    hideMarket,
+    clearSettings,
+    updateLatencies,
+    setExchangeLastExpiration,
+    setExchangeTutorialShown,
+    modifyPreferedBases,
+    updateUnits,
+    setPriceAlert,
+    hideNewsHeadline,
+    addChartLayout,
+    deleteChartLayout
+};

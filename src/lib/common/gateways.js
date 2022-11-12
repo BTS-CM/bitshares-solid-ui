@@ -5,10 +5,6 @@
 
 import {
     ioxbankAPIs,
-    rudexAPIs,
-    bitsparkAPIs,
-    openledgerAPIs,
-    cryptoBridgeAPIs,
     gdex2APIs,
     pirateCashAPIs,
     xbtsxAPIs,
@@ -108,70 +104,6 @@ export const availableGateways = {
         },
         landing: "https://ioxbank.com",
         wallet: "https://dex.iobanker.com/"
-    },
-    OPEN: {
-        id: "OPEN",
-        name: "OpenLedger",
-        baseAPI: openledgerAPIs,
-        isEnabled: () => false,
-        selected: false,
-        options: {
-            enabled: false,
-            selected: false
-        },
-        landing: "Shutdown",
-        wallet: "Shutdown"
-    },
-    RUDEX: {
-        id: "RUDEX",
-        name: "RuDEX",
-        baseAPI: rudexAPIs,
-        isEnabled: () => false,
-        isSimple: true,
-        selected: false,
-        simpleAssetGateway: true,
-        fixedMemo: {
-            prepend_default: "dex:",
-            prepend_btsid: "btsid-",
-            append: ""
-        },
-        addressValidatorMethod: "POST",
-        options: {
-            enabled: false,
-            selected: false
-        },
-        landing: "Shutdown",
-        wallet: "Shutdown"
-    },
-    SPARKDEX: {
-        id: "SPARKDEX",
-        name: "BitSpark",
-        baseAPI: bitsparkAPIs,
-        isEnabled: () => false,
-        selected: false,
-        options: {
-            enabled: false,
-            selected: false
-        },
-        landing: "https://www.bitspark.io/",
-        wallet: "Shutdown"
-    },
-    BRIDGE: {
-        id: "BRIDGE",
-        name: "CryptoBridge",
-        baseAPI: cryptoBridgeAPIs,
-        isEnabled: () => false,
-        selected: false,
-        singleWallet: true, // Has no coresponging coinType == backingCoinType specific wallet
-        addressValidatorAsset: true, // Address validator requires output_asset parameter
-        useFullAssetName: true, // Adds <gateway>.<asset> to memo and address object
-        intermediateAccount: "cryptobridge", // Fixed intermediateAccount
-        options: {
-            enabled: false,
-            selected: false
-        },
-        landing: "Shutdown",
-        wallet: "Shutdown"
     },
     GDEX: {
         id: "GDEX",

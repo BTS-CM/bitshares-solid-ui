@@ -1,38 +1,32 @@
-import alt from "alt-instance";
 import iDB from "idb-instance";
 import {compress, decompress} from "lzma";
 import {PrivateKey, PublicKey, Aes, key} from "bitsharesjs";
 import WalletActions from "actions/WalletActions";
 
-class BackupActions {
-    incommingWebFile(file) {
-        return dispatch => {
-            let reader = new FileReader();
-            reader.onload = evt => {
-                let contents = new Buffer(evt.target.result, "binary");
-                let name = file.name;
+function incommingWebFile(file) {
+    return dispatch => {
+        let reader = new FileReader();
+        reader.onload = evt => {
+            let contents = new Buffer(evt.target.result, "binary");
+            let name = file.name;
 
-                let last_modified = new Date(file.lastModified).toString();
+            let last_modified = new Date(file.lastModified).toString();
 
-                dispatch({name, contents, last_modified});
-            };
-            reader.readAsBinaryString(file);
+            dispatch({name, contents, last_modified});
         };
-    }
-
-    incommingBuffer(params) {
-        return params;
-    }
-
-    reset() {
-        return true;
-    }
+        reader.readAsBinaryString(file);
+    };
 }
 
-let BackupActionsWrapped = alt.createActions(BackupActions);
-export default BackupActionsWrapped;
+function incommingBuffer(params) {
+    return params;
+}
 
-export function backup(backup_pubkey) {
+function reset() {
+    return true;
+}
+
+function backup(backup_pubkey) {
     return new Promise(resolve => {
         resolve(
             createWalletObject().then(wallet_object => {
@@ -65,7 +59,7 @@ export function backup(backup_pubkey) {
 //     })
 // }
 
-export function restore(backup_wif, backup, wallet_name) {
+function restore(backup_wif, backup, wallet_name) {
     return new Promise(resolve => {
         resolve(
             decryptWalletBackup(backup_wif, backup).then(wallet_object => {
@@ -75,14 +69,14 @@ export function restore(backup_wif, backup, wallet_name) {
     });
 }
 
-export function createWalletObject() {
+function createWalletObject() {
     return iDB.backup();
 }
 
 /**
  compression_mode can be 1-9 (1 is fast and pretty good; 9 is slower and probably much better)
 */
-export function createWalletBackup(
+function createWalletBackup(
     backup_pubkey,
     wallet_object,
     compression_mode,
@@ -110,7 +104,7 @@ export function createWalletBackup(
     });
 }
 
-export function decryptWalletBackup(backup_wif, backup_buffer) {
+function decryptWalletBackup(backup_wif, backup_buffer) {
     return new Promise((resolve, reject) => {
         if (!Buffer.isBuffer(backup_buffer))
             backup_buffer = new Buffer(backup_buffer, "binary");
@@ -159,3 +153,14 @@ export function decryptWalletBackup(backup_wif, backup_buffer) {
         }
     });
 }
+
+export {
+    incommingWebFile,
+    incommingBuffer,
+    reset,
+    backup,
+    restore,
+    createWalletObject,
+    createWalletBackup,
+    decryptWalletBackup,
+};

@@ -18,41 +18,6 @@ export const blockTradesAPIs = {
     ESTIMATE_INPUT: "/estimate-input-amount"
 };
 
-export const openledgerAPIs = {
-    BASE: "https://ol-api1.openledger.info/api/v0/ol/support",
-    COINS_LIST: "/coins",
-    ACTIVE_WALLETS: "/active-wallets",
-    TRADING_PAIRS: "/trading-pairs",
-    DEPOSIT_LIMIT: "/deposit-limits",
-    ESTIMATE_OUTPUT: "/estimate-output-amount",
-    ESTIMATE_INPUT: "/estimate-input-amount",
-    RPC_URL: "https://openledger.info/api/"
-};
-
-export const rudexAPIs = {
-    BASE: "https://gateway.rudex.org/api/rudex",
-    COINS_LIST: "/coins",
-    NEW_DEPOSIT_ADDRESS: "/simple-api/initiate-trade"
-};
-
-export const bitsparkAPIs = {
-    BASE: "https://dex-api.bitspark.io/api/v1",
-    COINS_LIST: "/coins",
-    ACTIVE_WALLETS: "/active-wallets",
-    TRADING_PAIRS: "/trading-pairs",
-    DEPOSIT_LIMIT: "/deposit-limits",
-    ESTIMATE_OUTPUT: "/estimate-output-amount",
-    ESTIMATE_INPUT: "/estimate-input-amount"
-};
-
-export const cryptoBridgeAPIs = {
-    BASE: "https://api.crypto-bridge.org/api/v1",
-    COINS_LIST: "/coins",
-    ACTIVE_WALLETS: "/wallets",
-    MARKETS: "/markets",
-    TRADING_PAIRS: "/trading-pairs"
-};
-
 export const citadelAPIs = {
     BASE: "https://citadel.li/trade",
     COINS_LIST: "/coins",

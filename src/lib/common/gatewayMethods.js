@@ -1,5 +1,5 @@
 import ls from "./localStorage";
-import {blockTradesAPIs, openledgerAPIs} from "api/apiConfig";
+import {blockTradesAPIs} from "api/apiConfig";
 import {availableGateways} from "common/gateways";
 const blockTradesStorage = ls("");
 let oidcStorage = ls(
@@ -17,9 +17,9 @@ function setCacheClearTimer(key) {
     }, fetchCacheTTL);
 }
 
-export function fetchCoins(
-    url = openledgerAPIs.BASE + openledgerAPIs.COINS_LIST
-) {
+export function fetchCoins(url) {
+    if (!url) throw new Error("url is required");
+
     const key = "fetchCoins_" + url;
     let currentPromise = fetchInProgess[key];
     if (fetchCache[key]) {
@@ -49,9 +49,9 @@ export function fetchCoins(
     });
 }
 
-export function fetchCoinsSimple(
-    url = openledgerAPIs.BASE + openledgerAPIs.COINS_LIST
-) {
+export function fetchCoinsSimple(url) {
+    if (!url) throw new Error("fetchCoinsSimple requires a url");
+    
     return fetch(url)
         .then(reply =>
             reply.json().then(result => {
@@ -191,9 +191,9 @@ export function estimateInput(
         });
 }
 
-export function getActiveWallets(
-    url = openledgerAPIs.BASE + openledgerAPIs.ACTIVE_WALLETS
-) {
+export function getActiveWallets(url) {
+    if (!url) throw new Error("url required");
+
     const key = "getActiveWallets_" + url;
     let currentPromise = fetchInProgess[key];
 
@@ -225,61 +225,17 @@ export function getActiveWallets(
     });
 }
 
-export function getDepositAddress({coin, account, stateCallback}) {
-    let body = {
-        coin,
-        account
-    };
-
-    let body_string = JSON.stringify(body);
-
-    fetch(openledgerAPIs.BASE + "/simple-api/get-last-address", {
-        method: "POST",
-        headers: new Headers({
-            Accept: "application/json",
-            "Content-Type": "application/json"
-        }),
-        body: body_string
-    })
-        .then(
-            data => {
-                data.json().then(
-                    json => {
-                        let address = {
-                            address: json.address,
-                            memo: json.memo || null,
-                            error: json.error || null,
-                            loading: false
-                        };
-                        if (stateCallback) stateCallback(address);
-                    },
-                    error => {
-                        console.log("error: ", error);
-                        if (stateCallback)
-                            stateCallback({address: error.message, memo: null});
-                    }
-                );
-            },
-            error => {
-                console.log("error: ", error);
-                if (stateCallback)
-                    stateCallback({address: error.message, memo: null});
-            }
-        )
-        .catch(err => {
-            console.log("fetch error:", err);
-        });
-}
-
 let depositRequests = {};
 export function requestDepositAddress({
     inputCoinType,
     outputCoinType,
     outputAddress,
-    url = openledgerAPIs.BASE,
+    url,
     stateCallback,
     selectedGateway
 }) {
+    if (!url) throw new Error("url required");
+
     let gatewayStatus = availableGateways[selectedGateway];
     inputCoinType =
         !!gatewayStatus && !!gatewayStatus.assetWithdrawlAlias

@@ -1,83 +1,111 @@
-import alt from "alt-instance";
 import {Apis} from "bitsharesjs-ws";
 
 let latestBlocks = {};
-
 let headerQueue = {};
-class BlockchainActions {
-    getHeader(height) {
-        if (headerQueue[height]) return {};
+
+/**
+ * Get the latest block header
+ * @param {String} height 
+ * @returns {Object}
+ */
+function getHeader(height) {
+    return new Promise ((resolve, reject) => {
+
+        if (headerQueue[height]) {
+            return {}
+        };
+
         headerQueue[height] = true;
-        return dispatch => {
-            return Apis.instance()
-                .db_api()
-                .exec("get_block_header", [height])
-                .then(header => {
-                    dispatch({
-                        header: {
-                            timestamp: header.timestamp,
-                            witness: header.witness
-                        },
-                        height
-                    });
+
+        return Apis.instance()
+            .db_api()
+            .exec("get_block_header", [height])
+            .then(header => {
+                return resolve({
+                    header: {
+                        timestamp: header.timestamp,
+                        witness: header.witness
+                    },
+                    height
                 });
-        };
-    }
-
-    getLatest(height, maxBlock) {
-        // let start = new Date();
-        return dispatch => {
-            if (!latestBlocks[height] && maxBlock) {
-                latestBlocks[height] = true;
-                Apis.instance()
-                    .db_api()
-                    .exec("get_block", [height])
-                    .then(result => {
-                        if (!result) {
-                            return;
-                        }
-                        result.id = height; // The returned object for some reason does not include the block height..
-                        // console.log("time to fetch block #" + height,":", new Date() - start, "ms");
-
-                        dispatch({block: result, maxBlock: maxBlock});
-                    })
-                    .catch(error => {
-                        console.log(
-                            "Error in BlockchainActions.getLatest: ",
-                            error
-                        );
-                    });
+            })
+            .catch(error => {
+                console.log(error);
+                reject(error);
             }
-        };
-    }
+                    
+    });
+}
 
-    getBlock(height) {
-        return dispatch => {
+/**
+ * Get the latest block
+ * @param {Number} height 
+ * @param {Number} maxBlock 
+ * @returns 
+ */
+function getLatest(height, maxBlock) {
+    return new Promise ((resolve, reject) => {
+
+        if (!latestBlocks[height] && maxBlock) {
+            latestBlocks[height] = true;
             Apis.instance()
                 .db_api()
                 .exec("get_block", [height])
                 .then(result => {
                     if (!result) {
-                        return false;
+                        return reject();
                     }
                     result.id = height; // The returned object for some reason does not include the block height..
-
-                    dispatch(result);
+                    return resolve({block: result, maxBlock: maxBlock})
                 })
                 .catch(error => {
-                    console.log("Error in BlockchainActions.getBlock: ", error);
+                    console.log(
+                        "Error in BlockchainActions.getLatest: ",
+                        error
+                    );
+                    return reject();
                 });
-        };
-    }
-
-    updateRpcConnectionStatus(status) {
-        return status;
-    }
+        }
+    });
 }
 
-const BlockchainActionsInstance = alt.createActions(BlockchainActions);
-Apis.setRpcConnectionStatusCallback(
-    BlockchainActionsInstance.updateRpcConnectionStatus
-);
+/**
+ * Get the block given a number
+ * @param {Number} height 
+ * @returns {Object}
+ */
+function getBlock(height) {
+    return new Promise((resolve, reject) => {
+        Apis.instance()
+            .db_api()
+            .exec("get_block", [height])
+            .then(result => {
+                if (!result) {
+                    return;
+                }
+                result.id = height; // The returned object for some reason does not include the block height..
+                resolve(result);
+            })
+            .catch(error => {
+                console.log(
+                    "Error in BlockchainActions.getBlock: ",
+                    error
+                );
+                reject(error);
+            });
+    });
+}
 
-export default BlockchainActionsInstance;
+function updateRpcConnectionStatus(status) {
+    return status;
+}
+
+
+Apis.setRpcConnectionStatusCallback(updateRpcConnectionStatus);
+
+export {
+    getHeader,
+    getLatest,
+    getBlock,
+    updateRpcConnectionStatus
+};

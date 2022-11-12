@@ -1,3 +1,5 @@
+// todo: include committee configured account block list
+
 export const scamAccountsPolo = [
     "polonie-wallet",
     "1.2.27842",
