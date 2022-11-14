@@ -1,8 +1,13 @@
-import BaseStore from "./BaseStore";
 import Immutable from "immutable";
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store';
 import {ChainStore} from "bitsharesjs";
 import PoolmartActions from "actions/PoolmartActions";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 class PoolmartStore extends BaseStore {
     constructor() {
@@ -90,5 +95,3 @@ class PoolmartStore extends BaseStore {
         this.liquidityPools = Immutable.Map();
     }
 }
-
-export default alt.createStore(PoolmartStore, "PoolmartStore");

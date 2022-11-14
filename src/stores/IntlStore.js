@@ -1,10 +1,16 @@
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store'
 import IntlActions from "actions/IntlActions";
 import SettingsActions from "actions/SettingsActions";
 import counterpart from "counterpart";
 var locale_en = require("assets/locales/locale-en.json");
 import ls from "common/localStorage";
 let ss = ls("__graphene__");
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 counterpart.registerTranslations("en", locale_en);
 counterpart.setFallbackLocale("en");
@@ -67,5 +73,3 @@ class IntlStore {
         this.onSwitchLocale({locale: "en"});
     }
 }
-
-export default alt.createStore(IntlStore, "IntlStore");

@@ -1,8 +1,14 @@
 import Immutable from "immutable";
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store'
 import BlockchainActions from "actions/BlockchainActions";
 import {ChainStore} from "bitsharesjs";
 // import {Block} from "./tcomb_structs";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 class BlockchainStore {
     constructor() {
@@ -88,5 +94,3 @@ class BlockchainStore {
         if (status === "closed") this.no_ws_connection = true;
     }
 }
-
-export default alt.createStore(BlockchainStore, "BlockchainStore");

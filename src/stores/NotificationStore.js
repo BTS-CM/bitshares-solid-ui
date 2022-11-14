@@ -1,5 +1,11 @@
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store';
 import NotificationActions from "actions/NotificationActions";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 class NotificationStore {
     constructor() {
@@ -22,5 +28,3 @@ class NotificationStore {
         this.setState({notification: notification});
     }
 }
-
-export default alt.createStore(NotificationStore, "NotificationStore");

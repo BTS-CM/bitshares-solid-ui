@@ -4,9 +4,11 @@ import { createStore } from 'solid-js/store'
 import {ChainStore, ChainValidation, FetchChain} from "bitsharesjs";
 import {Apis} from "bitsharesjs-ws";
 
+/*
 import AccountActions from "actions/AccountActions";
 import SettingsActions from "actions/SettingsActions";
 import WalletActions from "actions/WalletActions";
+*/
 
 import iDB from "idb-instance";
 import PrivateKeyStore from "./PrivateKeyStore";
@@ -388,14 +390,14 @@ const [accountStore, setAccountStore] = createStore({
         let owner_authority = account.get("owner");
         let active_authority = account.get("active");
 
-        let owner_pubkey_threshold = pubkeyThreshold(owner_authority);
+        let owner_pubkey_threshold = _pubkeyThreshold(owner_authority);
         if (owner_pubkey_threshold == "full") return "full";
-        let active_pubkey_threshold = pubkeyThreshold(active_authority);
+        let active_pubkey_threshold = _pubkeyThreshold(active_authority);
         if (active_pubkey_threshold == "full") return "full";
 
-        let owner_address_threshold = addressThreshold(owner_authority);
+        let owner_address_threshold = _addressThreshold(owner_authority);
         if (owner_address_threshold == "full") return "full";
-        let active_address_threshold = addressThreshold(active_authority);
+        let active_address_threshold = _addressThreshold(active_authority);
         if (active_address_threshold == "full") return "full";
 
         let owner_account_threshold, active_account_threshold;
@@ -403,20 +405,31 @@ const [accountStore, setAccountStore] = createStore({
         // if (account.get("name") === "secured-x") {
         //     debugger;
         // }
+
         if (recursion_count < 3) {
             owner_account_threshold = _accountThreshold(
                 owner_authority,
                 recursion_count
             );
-            if (owner_account_threshold === undefined) return undefined;
-            if (owner_account_threshold == "full") return "full";
+            
+            if (owner_account_threshold === undefined) {
+                return undefined
+            };
+
+            if (owner_account_threshold == "full") {
+                return "full"
+            };
 
             active_account_threshold = _accountThreshold(
                 active_authority,
                 recursion_count
             );
-            if (active_account_threshold === undefined) return undefined;
-            if (active_account_threshold == "full") return "full";
+            if (active_account_threshold === undefined) {
+                return undefined
+            };
+            if (active_account_threshold == "full") {
+                return "full"
+            };
         }
 
         if (
@@ -426,13 +439,17 @@ const [accountStore, setAccountStore] = createStore({
             active_address_threshold === "partial" ||
             owner_account_threshold === "partial" ||
             active_account_threshold === "partial"
-        )
+        ) {
             return "partial";
+        }
+
         return "none";
     },
     isMyAccount(account) {
         let authority = accountStore.getMyAuthorityForAccount(account);
-        if (authority === undefined) return undefined;
+        if (authority === undefined) {
+            return undefined
+        };
         return authority === "partial" || authority === "full";
     },
     onAccountSearch(payload) {
@@ -638,13 +655,17 @@ function _checkReferrer() {
         referralAccount = prevRef;
     }
 
-    if (referralAccount) console.log("referralAccount", referralAccount);
+    if (referralAccount) {
+        console.log("referralAccount", referralAccount)
+    };
     return referralAccount;
 }
 
 function _accountThreshold(authority, recursion_count) {
     let account_auths = authority.get("account_auths");
-    if (!account_auths.size) return "none";
+    if (!account_auths.size) {
+        return "none"
+    };
 
     let auths = account_auths.map(auth => {
         let account = ChainStore.getAccount(auth.get(0), false);
@@ -723,7 +744,7 @@ function _unlinkAccount(name) {
 } 
 
 // @return 3 full, 2 partial, 0 none
-function pubkeyThreshold(authority) {
+function _pubkeyThreshold(authority) {
     let available = 0;
     let required = authority.get("weight_threshold");
     let key_auths = authority.get("key_auths");
@@ -737,7 +758,7 @@ function pubkeyThreshold(authority) {
 }
 
 // @return 3 full, 2 partial, 0 none
-function addressThreshold(authority) {
+function _addressThreshold(authority) {
     let available = 0;
     let required = authority.get("weight_threshold");
     let address_auths = authority.get("address_auths");

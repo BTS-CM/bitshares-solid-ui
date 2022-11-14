@@ -1,11 +1,16 @@
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store'
 import Immutable from "immutable";
-import BaseStore from "stores/BaseStore";
 import {key} from "bitsharesjs";
 import {Apis} from "bitsharesjs-ws";
 import iDB from "idb-instance";
 import BalanceClaimActiveActions from "actions/BalanceClaimActiveActions";
 import TransactionConfirmActions from "actions/TransactionConfirmActions";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 class BalanceClaimActiveStore extends BaseStore {
     constructor() {
@@ -190,9 +195,3 @@ class BalanceClaimActiveStore extends BaseStore {
         return iDB.root.setProperty("no_balance_address", array);
     }
 }
-
-export var BalanceClaimActiveStoreWrapped = alt.createStore(
-    BalanceClaimActiveStore,
-    "BalanceClaimActiveStore"
-);
-export default BalanceClaimActiveStoreWrapped;

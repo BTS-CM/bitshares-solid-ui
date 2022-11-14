@@ -1,5 +1,11 @@
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store';
 import TransactionConfirmActions from "actions/TransactionConfirmActions";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 class TransactionConfirmStore {
     constructor() {
@@ -89,8 +95,3 @@ class TransactionConfirmStore {
         this.state = this.getInitialState();
     }
 }
-
-export default alt.createStore(
-    TransactionConfirmStore,
-    "TransactionConfirmStore"
-);

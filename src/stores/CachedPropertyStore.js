@@ -1,8 +1,13 @@
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store'
 import Immutable from "immutable";
 import iDB from "idb-instance";
-import BaseStore from "stores/BaseStore";
 import CachedPropertyActions from "actions/CachedPropertyActions";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 class CachedPropertyStore extends BaseStore {
     constructor() {
@@ -51,9 +56,3 @@ class CachedPropertyStore extends BaseStore {
         this.setState(this.state);
     }
 }
-
-export var CachedPropertyStoreWrapped = alt.createStore(
-    CachedPropertyStore,
-    "CachedPropertyStore"
-);
-export default CachedPropertyStoreWrapped;

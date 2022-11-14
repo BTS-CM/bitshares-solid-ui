@@ -1,5 +1,11 @@
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store'
 import CreditOfferActions from "../actions/CreditOfferActions";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 class CreditOfferStore {
     constructor() {
@@ -245,5 +251,3 @@ class CreditOfferStore {
         }
     }
 }
-
-export default alt.createStore(CreditOfferStore, "CreditOfferStore");

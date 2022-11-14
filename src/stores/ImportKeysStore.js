@@ -1,5 +1,10 @@
-import alt from "alt-instance";
-import BaseStore from "stores/BaseStore";
+import { createStore } from 'solid-js/store'
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 class ImportKeysStore extends BaseStore {
     constructor() {
@@ -16,9 +21,3 @@ class ImportKeysStore extends BaseStore {
         this.setState({importing});
     }
 }
-
-export var ImportKeysStoreWrapped = alt.createStore(
-    ImportKeysStore,
-    "ImportKeysStore"
-);
-export default ImportKeysStoreWrapped;

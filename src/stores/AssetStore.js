@@ -1,7 +1,12 @@
-import BaseStore from "./BaseStore";
+import { createStore } from 'solid-js/store'
 import Immutable from "immutable";
-import alt from "alt-instance";
 import AssetActions from "actions/AssetActions";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 class AssetStore extends BaseStore {
     constructor() {
@@ -85,5 +90,3 @@ class AssetStore extends BaseStore {
         this.lookupResults = payload.assets;
     }
 }
-
-export default alt.createStore(AssetStore, "AssetStore");

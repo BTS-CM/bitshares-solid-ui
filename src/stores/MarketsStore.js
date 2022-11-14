@@ -1,9 +1,10 @@
 import Immutable from "immutable";
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store';
+import {ChainStore} from "bitsharesjs";
+
 import MarketsActions from "actions/MarketsActions";
 import market_utils from "common/market_utils";
 import ls from "common/localStorage";
-import {ChainStore} from "bitsharesjs";
 import utils from "common/utils";
 import {
     LimitOrder,
@@ -17,6 +18,12 @@ import {
     FillOrder
 } from "common/MarketClasses";
 import asset_utils from "../lib/common/asset_utils";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 // import {
 //     SettleOrder
@@ -1562,5 +1569,3 @@ class MarketsStore {
         this.currentGroupLimit = groupLimit;
     }
 }
-
-export default alt.createStore(MarketsStore, "MarketsStore");

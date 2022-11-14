@@ -1,4 +1,4 @@
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store'
 import iDB from "idb-instance";
 import {key} from "bitsharesjs";
 import {ChainConfig} from "bitsharesjs-ws";
@@ -10,6 +10,13 @@ if (__ELECTRON__) {
     AddressIndexWorker = require("worker-loader?inline=no-fallback!workers/AddressIndexWorker")
         .default;
 }
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
+
 class AddressIndex extends BaseStore {
     constructor() {
         super();
@@ -143,6 +150,3 @@ class AddressIndex extends BaseStore {
         }, 100);
     }
 }
-// console.log("post msg a");
-// worker.postMessage("a")
-export default alt.createStore(AddressIndex, "AddressIndex");

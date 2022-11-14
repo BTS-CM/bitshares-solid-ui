@@ -1,5 +1,4 @@
-import alt from "alt-instance";
-import BaseStore from "stores/BaseStore";
+import { createStore } from 'solid-js/store';
 
 import iDB from "idb-instance";
 import idb_helper from "idb-helper";
@@ -18,6 +17,12 @@ import AddressIndex from "stores/AddressIndex";
 import SettingsActions from "actions/SettingsActions";
 import {Notification} from "bitshares-ui-style-guide";
 import counterpart from "counterpart";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 let aes_private = null;
 let _passwordKey = null;
@@ -844,9 +849,6 @@ class WalletDb extends BaseStore {
         });
     }
 }
-
-const WalletDbWrapped = alt.createStore(WalletDb, "WalletDb");
-export default WalletDbWrapped;
 
 function reject(error) {
     console.error("----- WalletDb reject error -----", error);

@@ -1,4 +1,4 @@
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store';
 import WalletUnlockActions from "actions/WalletUnlockActions";
 import SettingsActions from "actions/SettingsActions";
 import WalletDb from "stores/WalletDb";
@@ -10,6 +10,12 @@ import {
 
 const STORAGE_KEY = "__graphene__";
 let ss = ls(STORAGE_KEY);
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 class WalletUnlockStore {
     constructor() {
@@ -134,5 +140,3 @@ class WalletUnlockStore {
         this.setState({locked: WalletDb.isLocked()});
     }
 }
-
-export default alt.createStore(WalletUnlockStore, "WalletUnlockStore");

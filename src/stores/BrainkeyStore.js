@@ -1,8 +1,13 @@
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store'
 import Immutable from "immutable";
 import {ChainStore, key} from "bitsharesjs";
-import BaseStore from "stores/BaseStore";
 import BrainkeyActions from "actions/BrainkeyActions";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 /** Each instance supports a single brainkey. */
 export default class BrainkeyStoreFactory {
@@ -13,6 +18,7 @@ export default class BrainkeyStoreFactory {
     static getInstance(name) {
         var instance = BrainkeyStoreFactory.instances.get(name);
         if (!instance) {
+            // How to replace?
             instance = alt.createStore(BrainkeyStoreImpl, "BrainkeyStore");
             BrainkeyStoreFactory.instances.set(name, instance);
         }

@@ -1,4 +1,4 @@
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store';
 import SettingsActions from "actions/SettingsActions";
 import IntlActions from "actions/IntlActions";
 import Immutable, {fromJS} from "immutable";
@@ -12,6 +12,12 @@ import {
     getMyMarketsQuotes,
     getUnits
 } from "branding";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 const CORE_ASSET = "BTS"; // Setting this to BTS to prevent loading issues when used with BTS chain which is the most usual case currently
 
@@ -824,5 +830,3 @@ class SettingsStore {
         }
     }
 }
-
-export default alt.createStore(SettingsStore, "SettingsStore");

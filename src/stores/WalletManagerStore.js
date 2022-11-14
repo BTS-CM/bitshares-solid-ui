@@ -1,4 +1,4 @@
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store';
 import WalletDb from "stores/WalletDb";
 import AccountRefsStore from "stores/AccountRefsStore";
 import AccountStore from "stores/AccountStore";
@@ -7,9 +7,14 @@ import CachedPropertyStore from "stores/CachedPropertyStore";
 import PrivateKeyActions from "actions/PrivateKeyActions";
 import WalletActions from "actions/WalletActions";
 import {ChainStore} from "bitsharesjs";
-import BaseStore from "stores/BaseStore";
 import iDB from "idb-instance";
 import Immutable from "immutable";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 /**  High-level container for managing multiple wallets.
  */
@@ -182,9 +187,3 @@ class WalletManagerStore extends BaseStore {
         WalletDb.setBrainkeyBackupDate();
     }
 }
-
-export var WalletManagerStoreWrapped = alt.createStore(
-    WalletManagerStore,
-    "WalletManagerStore"
-);
-export default WalletManagerStoreWrapped;

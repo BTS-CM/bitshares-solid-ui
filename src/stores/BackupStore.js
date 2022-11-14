@@ -1,7 +1,12 @@
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store'
 import BackupActions from "actions/BackupActions";
-import BaseStore from "stores/BaseStore";
 import {hash, PublicKey} from "bitsharesjs";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 class BackupStore extends BaseStore {
     constructor() {
@@ -50,9 +55,6 @@ class BackupStore extends BaseStore {
         this.setState({name, contents, sha1, size, public_key});
     }
 }
-
-export var BackupStoreWrapped = alt.createStore(BackupStore, "BackupStore");
-export default BackupStoreWrapped;
 
 function getBackupPublicKey(contents) {
     try {

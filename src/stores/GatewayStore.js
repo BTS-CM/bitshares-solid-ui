@@ -1,8 +1,14 @@
 import Immutable from "immutable";
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store'
 import GatewayActions from "actions/GatewayActions";
 import ls from "common/localStorage";
 import {allowedGateway} from "../branding";
+
+/*
+const [accountStore, setAccountStore] = createStore({
+
+});
+*/
 
 const STORAGE_KEY = "__graphene__";
 let ss = ls(STORAGE_KEY);
@@ -185,5 +191,3 @@ class GatewayStore {
         this.onChainGatewayConfig = config || {};
     }
 }
-
-export default alt.createStore(GatewayStore, "GatewayStore");
