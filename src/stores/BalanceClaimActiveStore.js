@@ -3,163 +3,151 @@ import Immutable from "immutable";
 import {key} from "bitsharesjs";
 import {Apis} from "bitsharesjs-ws";
 import iDB from "idb-instance";
+import { set } from '~/actions/CachedPropertyActions';
+
+/*
 import BalanceClaimActiveActions from "actions/BalanceClaimActiveActions";
 import TransactionConfirmActions from "actions/TransactionConfirmActions";
 
-/*
-const [accountStore, setAccountStore] = createStore({
-
+this.bindListeners({
+    onSetPubkeys: BalanceClaimActiveActions.setPubkeys,
+    onSetSelectedBalanceClaims:
+        BalanceClaimActiveActions.setSelectedBalanceClaims,
+    onClaimAccountChange: BalanceClaimActiveActions.claimAccountChange,
+    onTransactionBroadcasted: TransactionConfirmActions.wasBroadcast
 });
 */
 
-class BalanceClaimActiveStore extends BaseStore {
-    constructor() {
-        super();
-        this.state = this._getInitialState();
-        this.no_balance_address = new Set(); // per chain
-        this._export("reset");
-        // ChainStore.subscribe(this.chainStoreUpdate.bind(this))
-        this.bindListeners({
-            onSetPubkeys: BalanceClaimActiveActions.setPubkeys,
-            onSetSelectedBalanceClaims:
-                BalanceClaimActiveActions.setSelectedBalanceClaims,
-            onClaimAccountChange: BalanceClaimActiveActions.claimAccountChange,
-            onTransactionBroadcasted: TransactionConfirmActions.wasBroadcast
-        });
-    }
-
-    _getInitialState() {
-        // reset for each wallet
-        this.pubkeys = null;
-        this.addresses = new Set();
-        var state = this.getInitialViewState();
-        state.address_to_pubkey = new Map();
-        return state;
-    }
-
-    getInitialViewState() {
-        // reset in-between balance claims
-        return {
-            balances: undefined,
-            checked: Immutable.Map(),
-            selected_balances: Immutable.Seq(),
-            claim_account_name: undefined,
-            loading: true
-        };
-    }
-
+const [balanceClaimActiveStore, setBalanceClaimActiveStore] = createStore({
+    no_balance_address: new Set(), // per chain
+    addresses: new Set(),
+    pubkeys: null,
+    address_to_pubkey: new Map(),
+    balances: undefined,
+    checked: Immutable.Map(),
+    selected_balances: Immutable.Seq(),
+    claim_account_name: undefined,
+    loading: true,
     /** Reset for each wallet load or change */
     reset() {
-        this.setState(this._getInitialState());
-    }
-
-    // onImportBalance() {
-    //     // Imorted balance just ran, not included in the blockchain yet
-    //     this.setState(this.getInitialViewState())
-    // }
-
+        setBalanceClaimActiveStore('no_balance_address', new Set());
+        setBalanceClaimActiveStore('pubkeys', null);
+        setBalanceClaimActiveStore('addresses', new Set());
+        setBalanceClaimActiveStore('address_to_pubkey', new Map());
+        setBalanceClaimActiveStore('balances', undefined);
+        setBalanceClaimActiveStore('checked', Immutable.Map());
+        setBalanceClaimActiveStore('selected_balances', Immutable.Seq());
+        setBalanceClaimActiveStore('claim_account_name', undefined);
+        setBalanceClaimActiveStore('loading', true);
+    },
     onTransactionBroadcasted() {
         // Balance claims are included in a block...
         // chainStoreUpdate did not include removal of balance claim objects
         // This is a hack to refresh balance claims after a transaction.
-        this.refreshBalances();
-    }
-
-    // chainStoreUpdate did not include removal of balance claim objects
-    // chainStoreUpdate() {
-    //     if(this.balance_objects_by_address !== ChainStore.balance_objects_by_address) {
-    //         console.log("ChainStore.balance_objects_by_address")
-    //         this.balance_objects_by_address = ChainStore.balance_objects_by_address
-    //     }
-    // }
-
+        balanceClaimActiveStore.refreshBalances();
+    },
     // param: Immutable Seq or array
     onSetPubkeys(pubkeys) {
-        if (Array.isArray(pubkeys)) pubkeys = Immutable.Seq(pubkeys);
-        if (this.pubkeys && this.pubkeys.equals(pubkeys)) return;
-        this.reset();
-        this.pubkeys = pubkeys;
+        if (Array.isArray(pubkeys)) {
+            pubkeys = Immutable.Seq(pubkeys)
+        };
+        if (balanceClaimActiveStore.pubkeys && balanceClaimActiveStore.pubkeys.equals(pubkeys)) {
+            return;
+        };
+        balanceClaimActiveStore.reset();
+        setBalanceClaimActiveStore('pubkeys', pubkeys);
         if (pubkeys.size === 0) {
-            this.setState({loading: false});
+            setBalanceClaimActiveStore('loading', false);
             return true;
         }
-        this.setState({loading: true});
-        this.loadNoBalanceAddresses()
+        setBalanceClaimActiveStore('loading', true);
+        balanceClaimActiveStore.loadNoBalanceAddresses()
             .then(() => {
                 // for(let pubkey of pubkeys) {
-                this.indexPubkeys(pubkeys);
+                balanceClaimActiveStore.indexPubkeys(pubkeys);
                 // }
 
-                this.refreshBalances();
+                balanceClaimActiveStore.refreshBalances();
                 return false;
             })
             .catch(error => console.error(error));
-    }
-
+    },
     onSetSelectedBalanceClaims(checked) {
         var selected_balances = checked
             .valueSeq()
             .flatten()
             .toSet();
-        this.setState({checked, selected_balances});
-    }
-
+        setBalanceClaimActiveStore('selected_balances', selected_balances);
+        setBalanceClaimActiveStore('checked', checked);
+    },
     onClaimAccountChange(claim_account_name) {
-        this.setState({claim_account_name});
-    }
-
+        setBalanceClaimActiveStore('claim_account_name', claim_account_name);
+    },
     loadNoBalanceAddresses() {
-        if (this.no_balance_address.size) return Promise.resolve();
+        if (balanceClaimActiveStore.no_balance_address.size) return Promise.resolve();
         return iDB.root.getProperty("no_balance_address", []).then(array => {
             // console.log("loadNoBalanceAddresses", array.length)
-            this.no_balance_address = new Set(array);
+            setBalanceClaimActiveStore('no_balance_address', new Set(array));
         });
-    }
-
+    },
     indexPubkeys(pubkeys) {
-        let {address_to_pubkey} = this.state;
+        let {address_to_pubkey} = balanceClaimActiveStore;
 
         for (let pubkey of pubkeys) {
             for (let address_string of key.addresses(pubkey)) {
-                if (!this.no_balance_address.has(address_string)) {
+                if (!balanceClaimActiveStore.no_balance_address.has(address_string)) {
                     // AddressIndex indexes all addresses .. Here only 1 address is involved
-                    address_to_pubkey.set(address_string, pubkey);
-                    this.addresses.add(address_string);
+                    setBalanceClaimActiveStore(
+                        'address_to_pubkey',
+                        address_to_pubkey.set(address_string, pubkey)
+                    );
+                    setBalanceClaimActiveStore(
+                        'addresses',
+                        balanceClaimActiveStore.addresses.add(address_string)
+                    );
                 }
             }
         }
-        this.setState({address_to_pubkey: address_to_pubkey});
-    }
-
+        setBalanceClaimActiveStore('address_to_pubkey', address_to_pubkey);
+    },
     indexPubkey(pubkey) {
         for (let address_string of key.addresses(pubkey)) {
-            if (!this.no_balance_address.has(address_string)) {
+            if (!balanceClaimActiveStore.no_balance_address.has(address_string)) {
                 // AddressIndex indexes all addresses .. Here only 1 address is involved
-                this.state.address_to_pubkey.set(address_string, pubkey);
-                this.addresses.add(address_string);
+                setBalanceClaimActiveStore(
+                    'address_to_pubkey',
+                    balanceClaimActiveStore.address_to_pubkey.set(address_string, pubkey)
+                );
+                setBalanceClaimActiveStore(
+                    'addresses',
+                    balanceClaimActiveStore.addresses.add(address_string)
+                );
             }
         }
-        this.setState({address_to_pubkey: this.state.address_to_pubkey});
-    }
-
+        setBalanceClaimActiveStore(
+            'address_to_pubkey',
+            balanceClaimActiveStore.address_to_pubkey
+        );
+    },
     refreshBalances() {
-        this.lookupBalanceObjects().then(balances => {
-            var state = this.getInitialViewState();
-            state.balances = balances;
-            state.loading = false;
-            this.setState(state);
+        balanceClaimActiveStore.lookupBalanceObjects().then(balances => {
+            setBalanceClaimActiveStore('loading', true);
+            setBalanceClaimActiveStore('balances', balances);
+            setBalanceClaimActiveStore('checked', Immutable.Map());
+            setBalanceClaimActiveStore('selected_balances', Immutable.Seq());
+            setBalanceClaimActiveStore('claim_account_name', undefined);
+            setBalanceClaimActiveStore('loading', false);
         });
-    }
-
+    },
     /** @return Promise.resolve(balances) */
     lookupBalanceObjects() {
         var db = Apis.instance().db_api();
-        var no_balance_address = new Set(this.no_balance_address);
+        var no_balance_address = new Set(balanceClaimActiveStore.no_balance_address);
         var no_bal_size = no_balance_address.size;
-        for (let addy of this.addresses) no_balance_address.add(addy);
-        // for(let addy of this.addresses) ChainStore.getBalanceObjects(addy) // Test with ChainStore
+        for (let addy of balanceClaimActiveStore.addresses) no_balance_address.add(addy);
+        // for(let addy of balanceClaimActiveStore.addresses) ChainStore.getBalanceObjects(addy) // Test with ChainStore
         return db
-            .exec("get_balance_objects", [Array.from(this.addresses)])
+            .exec("get_balance_objects", [Array.from(balanceClaimActiveStore.addresses)])
             .then(result => {
                 var balance_ids = [];
                 for (let balance of result) balance_ids.push(balance.id);
@@ -177,7 +165,7 @@ class BalanceClaimActiveStore extends BaseStore {
                                     balance_list.push(balance);
                                 }
                                 if (no_bal_size !== no_balance_address.size)
-                                    this.saveNoBalanceAddresses(
+                                    balanceClaimActiveStore.saveNoBalanceAddresses(
                                         no_balance_address
                                     ).catch(error => console.error(error));
                             }
@@ -185,13 +173,16 @@ class BalanceClaimActiveStore extends BaseStore {
                         return balances;
                     });
             });
-    }
-
+    },
     saveNoBalanceAddresses(no_balance_address) {
-        this.no_balance_address = no_balance_address;
+        setBalanceClaimActiveStore('no_balance_address', no_balance_address);
         var array = [];
-        for (let addy of this.no_balance_address) array.push(addy);
+        for (let addy of balanceClaimActiveStore.no_balance_address) {
+            array.push(addy)
+        };
         // console.log("saveNoBalanceAddresses", array.length)
         return iDB.root.setProperty("no_balance_address", array);
     }
-}
+});
+
+export const useBalanceClaimActiveStore = () => [balanceClaimActiveStore, setBalanceClaimActiveStore];

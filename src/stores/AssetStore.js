@@ -1,34 +1,27 @@
 import { createStore } from 'solid-js/store'
 import Immutable from "immutable";
-import AssetActions from "actions/AssetActions";
+//import AssetActions from "actions/AssetActions";
 
 /*
-const [accountStore, setAccountStore] = createStore({
-
+this.bindListeners({
+    onGetAssetList: AssetActions.getAssetList,
+    onLookupAsset: AssetActions.lookupAsset,
+    onGetAssetsByIssuer: AssetActions.getAssetsByIssuer
 });
 */
 
-class AssetStore extends BaseStore {
-    constructor() {
-        super();
-        this.assets = Immutable.Map();
-        this.asset_symbol_to_id = {};
-        this.searchTerms = {};
-        this.lookupResults = [];
-        this.assetsLoading = false;
-
-        this.bindListeners({
-            onGetAssetList: AssetActions.getAssetList,
-            onLookupAsset: AssetActions.lookupAsset,
-            onGetAssetsByIssuer: AssetActions.getAssetsByIssuer
-        });
-    }
-
+const [assetStore, setAssetStore] = createStore({
+    // contents of assetstore constructor
+    assets: Immutable.Map(),
+    asset_symbol_to_id: {},
+    searchTerms: {},
+    lookupResults: [],
+    assetsLoading: false,
     onGetAssetList(payload) {
         if (!payload) {
             return false;
         }
-        this.assetsLoading = payload.loading;
+        setAssetStore('assetsLoading', payload.loading);
 
         if (payload.assets) {
             payload.assets.forEach(asset => {
@@ -55,18 +48,19 @@ class AssetStore extends BaseStore {
                     asset.market_asset = false;
                 }
 
-                this.assets = this.assets.set(asset.id, asset);
-
-                this.asset_symbol_to_id[asset.symbol] = asset.id;
+                setAssetStore('assets', assetStore.assets.set(asset.id, asset));
+                setAssetStore(
+                    'asset_symbol_to_id', 
+                    {...assetStore.asset_symbol_to_id, [asset.symbol]: asset.id}
+                );
             });
         }
-    }
-
+    },
     onGetAssetsByIssuer(payload) {
         if (!payload) {
             return false;
         }
-        this.assetsLoading = payload.loading;
+        setAssetStore('assetsLoading', payload.loading);
 
         if (payload.assets) {
             payload.assets.forEach(asset => {
@@ -77,16 +71,24 @@ class AssetStore extends BaseStore {
                     }
                 }
 
-                this.assets = this.assets.set(asset.id, asset);
-
-                this.asset_symbol_to_id[asset.symbol] = asset.id;
+                setAssetStore(
+                    'assets', 
+                    assetStore.assets.set(asset.id, asset)
+                );
+                setAssetStore(
+                    'asset_symbol_to_id',
+                    {...assetStore.asset_symbol_to_id, [asset.symbol]: asset.id}
+                );
             });
         }
-    }
-
-
+    },
     onLookupAsset(payload) {
-        this.searchTerms[payload.searchID] = payload.symbol;
-        this.lookupResults = payload.assets;
+        setAssetStore(
+            'searchTerms',
+            {...assetStore.searchTerms, [payload.searchID]: payload.symbol}
+        )
+        setAssetStore('lookupResults', payload.assets)
     }
-}
+});
+
+export const useAssetStore = () => [assetStore, setAssetStore];

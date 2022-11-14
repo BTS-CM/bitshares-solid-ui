@@ -1,9 +1,8 @@
 import { createStore } from 'solid-js/store'
-import iDB from "idb-instance";
 import {key} from "bitsharesjs";
 import {ChainConfig} from "bitsharesjs-ws";
 import Immutable from "immutable";
-import BaseStore from "stores/BaseStore";
+import iDB from "idb-instance";
 
 let AddressIndexWorker;
 if (__ELECTRON__) {
@@ -11,66 +10,56 @@ if (__ELECTRON__) {
         .default;
 }
 
-/*
-const [accountStore, setAccountStore] = createStore({
-
-});
-*/
-
-class AddressIndex extends BaseStore {
-    constructor() {
-        super();
-        this.state = {
-            addresses: Immutable.Map(),
-            saving: false
-        };
-        this.pubkeys = new Set();
-        // loadAddyMap is for debugging, this.add will load this on startup
-        this._export("add", "addAll", "loadAddyMap");
-    }
-
+const [addressIndex, setAddressIndex] = createStore({
+    addresses: Immutable.Map(),
+    saving: false,
+    pubkeys: new Set(),
     saving() {
-        if (this.state.saving) return;
-        this.state.saving = true;
-        this.setState({saving: true});
-    }
-
+        if (addressIndex.saving) {
+            return;
+        };
+        setAddressIndex('saving', true);
+    },
     /** Add public key string (if not already added).  Reasonably efficient
         for less than 10K keys.
     */
     add(pubkey) {
-        this.loadAddyMap()
+        addressIndex.loadAddyMap()
             .then(() => {
                 var dirty = false;
-                if (this.pubkeys.has(pubkey)) return;
-                this.pubkeys.add(pubkey);
-                this.saving();
+                if (addressIndex.pubkeys.has(pubkey)) {
+                    return;
+                }
+                setAddressIndex('pubkeys', addressIndex.pubkeys.add(pubkey));
+                addressIndex.saving();
                 // Gather all 5 legacy address formats (see key.addresses)
                 var address_strings = key.addresses(pubkey);
                 for (let address of address_strings) {
-                    this.state.addresses = this.state.addresses.set(
-                        address,
-                        pubkey
+                    setAddressIndex(
+                        'addresses',
+                        addressIndex.addresses.set(
+                            address,
+                            pubkey
+                        )
                     );
                     dirty = true;
                 }
                 if (dirty) {
-                    this.setState({addresses: this.state.addresses});
-                    this.saveAddyMap();
+                    setAddressIndex('addresses', addressIndex.addresses);
+                    addressIndex.saveAddyMap();
                 } else {
-                    this.setState({saving: false});
+                    setAddressIndex('saving', false);
                 }
             })
             .catch(e => {
                 throw e;
             });
-    }
-
+    },
     /** Worker thread implementation (for more than 10K keys) */
     addAll(pubkeys) {
         return new Promise((resolve, reject) => {
-            this.saving();
-            this.loadAddyMap()
+            addressIndex.saving();
+            addressIndex.loadAddyMap()
                 .then(() => {
                     if (!__ELECTRON__) {
                         AddressIndexWorker = require("worker-loader!workers/AddressIndexWorker")
@@ -81,17 +70,17 @@ class AddressIndex extends BaseStore {
                         pubkeys,
                         address_prefix: ChainConfig.address_prefix
                     });
-                    // let _this = this
+
                     worker.onmessage = event => {
                         try {
                             let key_addresses = event.data;
                             let dirty = false;
-                            let addresses = this.state.addresses.withMutations(
+                            let addresses = addressIndex.addresses.withMutations(
                                 addresses => {
                                     for (let i = 0; i < pubkeys.length; i++) {
                                         let pubkey = pubkeys[i];
-                                        if (this.pubkeys.has(pubkey)) continue;
-                                        this.pubkeys.add(pubkey);
+                                        if (addressIndex.pubkeys.has(pubkey)) continue;
+                                        addressIndex.pubkeys.add(pubkey);
                                         // Gather all 5 legacy address formats (see key.addresses)
                                         let address_strings = key_addresses[i];
                                         for (let address of address_strings) {
@@ -102,10 +91,10 @@ class AddressIndex extends BaseStore {
                                 }
                             );
                             if (dirty) {
-                                this.setState({addresses});
-                                this.saveAddyMap();
+                                setAddressIndex('addresses', addresses);
+                                addressIndex.saveAddyMap();
                             } else {
-                                this.setState({saving: false});
+                                setAddressIndex('saving', false);
                             }
                             resolve();
                         } catch (e) {
@@ -118,35 +107,46 @@ class AddressIndex extends BaseStore {
                     throw e;
                 });
         });
-    }
-
+    },
     loadAddyMap() {
-        if (this.loadAddyMapPromise) return this.loadAddyMapPromise;
-        this.loadAddyMapPromise = iDB.root
+        if (addressIndex.loadAddyMapPromise) {
+            return addressIndex.loadAddyMapPromise
+        };
+        setAddressIndex(
+            'loadAddyMapPromise',
+            iDB.root
             .getProperty("AddressIndex")
             .then(map => {
-                this.state.addresses = map
+                addressIndex.addresses = map
                     ? Immutable.Map(map)
                     : Immutable.Map();
-                // console.log("AddressIndex load", this.state.addresses.size);
-                this.state.addresses
+                // console.log("AddressIndex load", addressIndex.addresses.size);
+                addressIndex.addresses
                     .valueSeq()
-                    .forEach(pubkey => this.pubkeys.add(pubkey));
-                this.setState({addresses: this.state.addresses});
-            });
-        return this.loadAddyMapPromise;
-    }
+                    .forEach(pubkey => addressIndex.pubkeys.add(pubkey));
+                
+                setAddressIndex('addresses', addressIndex.addresses);
+            })
+        );
 
+        return addressIndex.loadAddyMapPromise;
+    },
     saveAddyMap() {
-        clearTimeout(this.saveAddyMapTimeout);
-        this.saveAddyMapTimeout = setTimeout(() => {
-            // console.log("AddressIndex save", this.state.addresses.size);
-            this.setState({saving: false});
-            // If indexedDB fails to save, it will re-try via PrivateKeyStore calling this.add
-            return iDB.root.setProperty(
-                "AddressIndex",
-                this.state.addresses.toObject()
-            );
-        }, 100);
+        clearTimeout(addressIndex.saveAddyMapTimeout);
+        setAddressIndex(
+            'saveAddyMapTimeout',
+            setTimeout(() => {
+                // console.log("AddressIndex save", addressIndex.addresses.size);
+                setAddressIndex('saving', false);
+
+                // If indexedDB fails to save, it will re-try via PrivateKeyStore calling this.add
+                return iDB.root.setProperty(
+                    "AddressIndex",
+                    addressIndex.addresses.toObject()
+                );
+            }, 100)
+        );
     }
-}
+});
+
+export const useAddressIndex = () => [addressIndex, setAddressIndex];
