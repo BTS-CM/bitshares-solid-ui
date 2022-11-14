@@ -106,12 +106,12 @@ const [accountRefsStore, setAccountRefsStore] = createStore({
         }
     }
 });
-  
+
+ChainStore.subscribe(accountRefsStore.chainStoreUpdate);
 export const useAccountRefsStore = () => [accountRefsStore, setAccountRefsStore];
 
-// TODO: Replace the following 3 lines
+// TODO: Replace the following line:
 //this.bindListeners({onAddPrivateKey: PrivateKeyActions.addKey});
-//ChainStore.subscribe(this.chainStoreUpdate.bind(this));
 
 function _getChainId() {
     return Apis.instance().chain_id || chainIds.MAIN_NET;

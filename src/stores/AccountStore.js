@@ -1,13 +1,16 @@
-import BaseStore from "./BaseStore";
+
 import Immutable from "immutable";
-import alt from "alt-instance";
+import { createStore } from 'solid-js/store'
+import {ChainStore, ChainValidation, FetchChain} from "bitsharesjs";
+import {Apis} from "bitsharesjs-ws";
+
 import AccountActions from "actions/AccountActions";
 import SettingsActions from "actions/SettingsActions";
 import WalletActions from "actions/WalletActions";
+
 import iDB from "idb-instance";
 import PrivateKeyStore from "./PrivateKeyStore";
-import {ChainStore, ChainValidation, FetchChain} from "bitsharesjs";
-import {Apis} from "bitsharesjs-ws";
+
 import AccountRefsStore from "stores/AccountRefsStore";
 import AddressIndex from "stores/AddressIndex";
 import ls from "common/localStorage";
@@ -16,237 +19,166 @@ let ss = ls("__graphene__");
 
 /**
  *  This Store holds information about accounts in this wallet
- *
  */
-
-class AccountStore extends BaseStore {
-    constructor() {
-        super();
-
-        this.bindListeners({
-            onSetCurrentAccount: AccountActions.setCurrentAccount,
-            onCreateAccount: AccountActions.createAccount,
-            onAccountSearch: AccountActions.accountSearch,
-            tryToSetCurrentAccount: AccountActions.tryToSetCurrentAccount,
-            onSetPasswordAccount: AccountActions.setPasswordAccount,
-            onChangeSetting: SettingsActions.changeSetting,
-            onSetWallet: WalletActions.setWallet,
-            onAddStarAccount: AccountActions.addStarAccount,
-            onRemoveStarAccount: AccountActions.removeStarAccount,
-            onAddAccountContact: AccountActions.addAccountContact,
-            onRemoveAccountContact: AccountActions.removeAccountContact,
-            onToggleHideAccount: AccountActions.toggleHideAccount
-            // onNewPrivateKeys: [ PrivateKeyActions.loadDbData, PrivateKeyActions.addKey ]
-        });
-
-        this._export(
-            "loadDbData",
-            "tryToSetCurrentAccount",
-            "onCreateAccount",
-            "getMyAccounts",
-            "isMyAccount",
-            "getMyAuthorityForAccount",
-            "isMyKey",
-            "reset",
-            "setWallet"
-        );
+const [accountStore, setAccountStore] = createStore({
+    subbed: false,
+    myActiveAccounts: Immutable.Set(), // accounts for which the user controls the keys and are visible
+    myHiddenAccounts: Immutable.Set(), // accounts for which the user controls the keys that have been 'hidden' in the settings
+    currentAccount: null, // the currently selected account, subset of starredAccounts
+    passwordAccount: null, // passwordAccount is the account used when logging in with cloud mode
+    starredAccounts: Immutable.Map(), // starred accounts are 'active' accounts that can be selected using the right menu dropdown for trading/transfers etc
+    searchAccounts: Immutable.Map(),
+    accountContacts: Immutable.Set(),
+    linkedAccounts: Immutable.Set(), // linkedAccounts are accounts for which the user controls the private keys, which are stored in a db with the wallet and automatically loaded every time the app starts
+    referralAccount: _checkReferrer(),
+    passwordLogin() {
         // can't use settings store due to possible initialization race conditions
         const storedSettings = ss.get("settings_v4", {});
         if (storedSettings.passwordLogin === undefined) {
             storedSettings.passwordLogin = true;
         }
-        const referralAccount = this._checkReferrer();
-        this.state = {
-            subbed: false,
-            myActiveAccounts: Immutable.Set(), // accounts for which the user controls the keys and are visible
-            myHiddenAccounts: Immutable.Set(), // accounts for which the user controls the keys that have been 'hidden' in the settings
-            currentAccount: null, // the currently selected account, subset of starredAccounts
-            passwordAccount: null, // passwordAccount is the account used when logging in with cloud mode
-            starredAccounts: Immutable.Map(), // starred accounts are 'active' accounts that can be selected using the right menu dropdown for trading/transfers etc
-            searchAccounts: Immutable.Map(),
-            accountContacts: Immutable.Set(),
-            linkedAccounts: Immutable.Set(), // linkedAccounts are accounts for which the user controls the private keys, which are stored in a db with the wallet and automatically loaded every time the app starts
-            referralAccount,
-            passwordLogin: storedSettings.passwordLogin
-        };
+        return storedSettings.passwordLogin;
+    },
+    getMyAccounts() {
+        if (!accountStore.subbed) {
+            return [];
+        }
 
-        this.getMyAccounts = this.getMyAccounts.bind(this);
-        this.chainStoreUpdate = this.chainStoreUpdate.bind(this);
-        this._getStorageKey = this._getStorageKey.bind(this);
-        this.setWallet = this.setWallet.bind(this);
-    }
-
-    _migrateUnfollowedAccounts(state) {
-        try {
-            let unfollowed_accounts = ss.get("unfollowed_accounts", []);
-            let hiddenAccounts = ss.get(
-                this._getStorageKey("hiddenAccounts", state),
-                []
-            );
-            if (unfollowed_accounts.length && !hiddenAccounts.length) {
-                ss.set(
-                    this._getStorageKey("hiddenAccounts", state),
-                    unfollowed_accounts
+        let accounts = [];
+        for (let account_name of accountStore.myActiveAccounts) {
+            let account = ChainStore.getAccount(account_name);
+            if (account === undefined) {
+                // console.log(account_name, "account undefined");
+                continue;
+            }
+            if (account == null) {
+                console.log(
+                    "WARN: non-chain account name in myActiveAccounts",
+                    account_name
                 );
-                ss.remove("unfollowed_accounts");
-                this.setState({
-                    myHiddenAccounts: Immutable.Set(unfollowed_accounts)
-                });
+                continue;
             }
-        } catch (err) {
-            console.error(err);
-        }
-    }
+            let auth = accountStore.getMyAuthorityForAccount(account);
 
-    _checkReferrer() {
-        let referralAccount = "";
-        if (window) {
-            function getQueryParam(param) {
-                var result = window.location.search.match(
-                    new RegExp("(\\?|&)" + param + "(\\[\\])?=([^&]*)")
-                );
-
-                return result ? decodeURIComponent(result[3]) : false;
+            if (auth === undefined) {
+                // console.log(account_name, "auth undefined");
+                continue;
             }
-            let validQueries = ["r", "ref", "referrer", "referral"];
-            for (let i = 0; i < validQueries.length; i++) {
-                referralAccount = getQueryParam(validQueries[i]);
-                if (referralAccount) break;
+
+            if (auth === "full" || auth === "partial") {
+                accounts.push(account_name);
             }
         }
 
-        let prevRef = ss.get("referralAccount", null);
+        /*
+         * If we're in cloud wallet mode, simply return the current
+         * cloud wallet account
+         */
+        if (accountStore.passwordLogin)
+            return !!accountStore.passwordAccount
+                ? [accountStore.passwordAccount]
+                : [];
 
-        // Store referreral only if there is no previous referral
-        if (referralAccount && !prevRef) {
-            ss.set("referralAccount", referralAccount);
-        }
-
-        if (!referralAccount && !!prevRef) {
-            referralAccount = prevRef;
-        }
-
-        if (referralAccount) console.log("referralAccount", referralAccount);
-        return referralAccount;
-    }
-
-    reset() {
-        if (this.state.subbed) ChainStore.unsubscribe(this.chainStoreUpdate);
-        this.setState(this._getInitialState());
-    }
-
-    onSetWallet({wallet_name}) {
-        this.setWallet(wallet_name);
-    }
-
+        /* In wallet mode, return a sorted list of all the active accounts */
+        return accounts.sort();
+    },
     setWallet(wallet_name) {
-        if (wallet_name !== this.state.wallet_name) {
-            this.setState({
-                wallet_name: wallet_name,
-                passwordAccount: ss.get(
-                    this._getStorageKey("passwordAccount", {wallet_name}),
-                    null
-                ),
-                starredAccounts: Immutable.Map(
-                    ss.get(
-                        this._getStorageKey("starredAccounts", {wallet_name})
-                    )
-                ),
-                myActiveAccounts: Immutable.Set(),
-                accountContacts: Immutable.Set(
-                    ss.get(
-                        this._getStorageKey("accountContacts", {wallet_name}),
-                        []
-                    )
-                ),
-                myHiddenAccounts: Immutable.Set(
-                    ss.get(
-                        this._getStorageKey("hiddenAccounts", {wallet_name}),
-                        []
-                    )
-                )
-            });
-            this.tryToSetCurrentAccount();
+        if (wallet_name !== accountStore.wallet_name) {
+            setAccountStore('wallet_name', wallet_name);
+            setAccountStore('passwordAccount', ss.get(
+                _getStorageKey("passwordAccount", {wallet_name}),
+                null
+            ));
+            setAccountStore('starredAccounts', Immutable.Map(
+                ss.get(_getStorageKey("starredAccounts", {wallet_name}))
+            ));
+            setAccountStore('myActiveAccounts', Immutable.Set());
+            setAccountStore('accountContacts', Immutable.Set(
+                ss.get(_getStorageKey("accountContacts", {wallet_name}), [])
+            ));
+            setAccountStore('myHiddenAccounts', Immutable.Set(
+                ss.get(_getStorageKey("hiddenAccounts", {wallet_name}), [])
+            ));
 
-            this._migrateUnfollowedAccounts({wallet_name});
+            accountStore.tryToSetCurrentAccount();
+
+            _migrateUnfollowedAccounts({wallet_name});
         }
-    }
+    },
+    reset() {
+        if (accountStore.subbed) {
+            ChainStore.unsubscribe(accountStore.chainStoreUpdate);
+        }
 
-    _getInitialState() {
-        this.account_refs = null;
-        this.initial_account_refs_load = true; // true until all undefined accounts are found
-
-        const wallet_name = this.state.wallet_name || "";
+        setAccountStore('account_refs', null);
+        setAccountStore('initial_account_refs_load', true); // true until all undefined accounts are found
+    
+        const wallet_name = accountStore.wallet_name || "";
         let starredAccounts = Immutable.Map(
-            ss.get(this._getStorageKey("starredAccounts", {wallet_name}))
+            ss.get(_getStorageKey("starredAccounts", {wallet_name}))
         );
-
+    
         let accountContacts = Immutable.Set(
-            ss.get(this._getStorageKey("accountContacts", {wallet_name}), [])
+            ss.get(_getStorageKey("accountContacts", {wallet_name}), [])
         );
 
-        return {
-            neverShowBrowsingModeNotice: false,
-            update: false,
-            subbed: false,
-            accountsLoaded: false,
-            refsLoaded: false,
-            currentAccount: null,
-            referralAccount: ss.get("referralAccount", ""),
-            passwordAccount: ss.get(
-                this._getStorageKey("passwordAccount", {wallet_name}),
-                ""
-            ),
-            myActiveAccounts: Immutable.Set(),
-            myHiddenAccounts: Immutable.Set(
-                ss.get(this._getStorageKey("hiddenAccounts", {wallet_name}), [])
-            ),
-            searchAccounts: Immutable.Map(),
-            searchTerm: "",
-            wallet_name,
-            starredAccounts,
-            accountContacts
-        };
-    }
-
+        setAccountStore('neverShowBrowsingModeNotice', false);
+        setAccountStore('update', false);
+        setAccountStore('subbed', false);
+        setAccountStore('accountsLoaded', false);
+        setAccountStore('refsLoaded', false);
+        setAccountStore('currentAccount', null);
+        setAccountStore('referralAccount', ss.get("referralAccount", ""));
+        setAccountStore(
+            'passwordAccount',
+            ss.get(_getStorageKey("passwordAccount", {wallet_name}), "")
+        );
+        setAccountStore('myActiveAccounts', Immutable.Set());
+        setAccountStore('myHiddenAccounts', Immutable.Set(
+            ss.get(_getStorageKey("hiddenAccounts", {wallet_name}), [])
+        ));
+        setAccountStore('searchAccounts', Immutable.Map());
+        setAccountStore('searchTerm', "");
+        setAccountStore('wallet_name', wallet_name);
+        setAccountStore('starredAccounts', starredAccounts);
+        setAccountStore('accountContacts', accountContacts);
+    },
+    onSetWallet({wallet_name}) {
+        setWallet(wallet_name);
+    },
     onAddStarAccount(account) {
-        if (!this.state.starredAccounts.has(account)) {
-            let starredAccounts = this.state.starredAccounts.set(account, {
+        if (!accountStore.starredAccounts.has(account)) {
+            let starredAccounts = accountStore.starredAccounts.set(account, {
                 name: account
             });
-            this.setState({starredAccounts});
+            setAccountStore('starredAccounts', starredAccounts);
 
             ss.set(
-                this._getStorageKey("starredAccounts"),
+                _getStorageKey("starredAccounts"),
                 starredAccounts.toJS()
             );
         } else {
             return false;
         }
-    }
-
+    },
     onRemoveStarAccount(account) {
-        let starredAccounts = this.state.starredAccounts.delete(account);
-        this.setState({starredAccounts});
-        ss.set(this._getStorageKey("starredAccounts"), starredAccounts.toJS());
-    }
-
+        let starredAccounts = accountStore.starredAccounts.delete(account);
+        setAccountStore('starredAccounts', starredAccounts);
+        ss.set(_getStorageKey("starredAccounts"), starredAccounts.toJS());
+    },
     onSetPasswordAccount(account) {
-        let key = this._getStorageKey("passwordAccount");
+        let key = _getStorageKey("passwordAccount");
         if (!account) {
             ss.remove(key);
         } else {
             ss.set(key, account);
         }
-        if (this.state.passwordAccount !== account) {
-            this.setState({
-                passwordAccount: account
-            });
+        if (accountStore.passwordAccount !== account) {
+            setAccountStore('passwordAccount', account);
         }
-    }
-
+    },
     onToggleHideAccount({account, hide}) {
-        let {myHiddenAccounts, myActiveAccounts} = this.state;
+        let {myHiddenAccounts, myActiveAccounts} = accountStore;
         if (hide && !myHiddenAccounts.has(account)) {
             myHiddenAccounts = myHiddenAccounts.add(account);
             myActiveAccounts = myActiveAccounts.delete(account);
@@ -254,16 +186,16 @@ class AccountStore extends BaseStore {
             myHiddenAccounts = myHiddenAccounts.delete(account);
             myActiveAccounts = myActiveAccounts.add(account);
         }
-        this.setState({myHiddenAccounts, myActiveAccounts});
-    }
-
+        setAccountStore('myHiddenAccounts', myHiddenAccounts);
+        setAccountStore('myActiveAccounts', myActiveAccounts);
+    },
     loadDbData() {
         let myActiveAccounts = Immutable.Set().asMutable();
         let chainId = Apis.instance().chain_id;
         return new Promise((resolve, reject) => {
             iDB.load_data("linked_accounts")
                 .then(data => {
-                    this.state.linkedAccounts = Immutable.fromJS(
+                    accountStore.linkedAccounts = Immutable.fromJS(
                         data || []
                     ).toSet();
 
@@ -274,15 +206,15 @@ class AccountStore extends BaseStore {
                      */
 
                     let accountPromises =
-                        !!this.state.passwordLogin &&
-                        !!this.state.passwordAccount
+                        !!accountStore.passwordLogin &&
+                        !!accountStore.passwordAccount
                             ? [
                                   FetchChain(
                                       "getAccount",
-                                      this.state.passwordAccount
+                                      accountStore.passwordAccount
                                   )
                               ]
-                            : !!this.state.passwordLogin
+                            : !!accountStore.passwordLogin
                             ? []
                             : data
                                   .filter(a => {
@@ -301,44 +233,44 @@ class AccountStore extends BaseStore {
                             accounts.forEach(a => {
                                 if (
                                     !!a &&
-                                    this.isMyAccount(a) &&
-                                    !this.state.myHiddenAccounts.has(
+                                    accountStore.isMyAccount(a) &&
+                                    !accountStore.myHiddenAccounts.has(
                                         a.get("name")
                                     )
                                 ) {
                                     myActiveAccounts.add(a.get("name"));
-                                } else if (!!a && !this.isMyAccount(a)) {
+                                } else if (!!a && !accountStore.isMyAccount(a)) {
                                     // Remove accounts not owned by the user from the linked_accounts db
-                                    this._unlinkAccount(a.get("name"));
+                                    _unlinkAccount(a.get("name"));
                                 }
                             });
                             let immutableAccounts = myActiveAccounts.asImmutable();
                             if (
-                                this.state.myActiveAccounts !==
+                                accountStore.myActiveAccounts !==
                                 immutableAccounts
                             ) {
-                                this.setState({
-                                    myActiveAccounts: myActiveAccounts.asImmutable()
-                                });
+                                setAccountStore('myActiveAccounts', myActiveAccounts.asImmutable());
                             }
 
-                            if (this.state.accountsLoaded === false) {
-                                this.setState({accountsLoaded: true});
+                            if (accountStore.accountsLoaded === false) {
+                                setAccountStore('accountsLoaded', true);
                             }
 
-                            if (!this.state.subbed)
-                                ChainStore.subscribe(this.chainStoreUpdate);
-                            this.state.subbed = true;
-                            this.emitChange();
-                            this.chainStoreUpdate();
+                            if (!accountStore.subbed) {
+                                ChainStore.subscribe(accountStore.chainStoreUpdate);
+                            }
+                            accountStore.subbed = true;
+                            accountStore.emitChange();
+                            accountStore.chainStoreUpdate();
                             resolve();
                         })
                         .catch(err => {
-                            if (!this.state.subbed)
-                                ChainStore.subscribe(this.chainStoreUpdate);
-                            this.state.subbed = true;
-                            this.emitChange();
-                            this.chainStoreUpdate();
+                            if (!accountStore.subbed) {
+                                ChainStore.subscribe(accountStore.chainStoreUpdate);
+                            }
+                            accountStore.subbed = true;
+                            accountStore.emitChange();
+                            accountStore.chainStoreUpdate();
                             reject(err);
                         });
                 })
@@ -346,30 +278,31 @@ class AccountStore extends BaseStore {
                     reject(err);
                 });
         });
-    }
-
+    },
     chainStoreUpdate() {
-        this.addAccountRefs();
-    }
-
+        accountStore.addAccountRefs();
+    },
     addAccountRefs() {
         //  Simply add them to the myActiveAccounts list (no need to persist them)
         let account_refs = AccountRefsStore.getAccountRefs();
         if (
-            !this.initial_account_refs_load &&
-            this.account_refs === account_refs
+            !accountStore.initial_account_refs_load &&
+            accountStore.account_refs === account_refs
         ) {
-            if (this.state.refsLoaded === false) {
-                this.setState({refsLoaded: true});
+            if (accountStore.refsLoaded === false) {
+                setAccountStore('refsLoaded', true);
             }
             return;
         }
-        this.account_refs = account_refs;
+        accountStore.account_refs = account_refs;
         let pending = false;
 
-        if (this.addAccountRefsInProgress) return;
-        this.addAccountRefsInProgress = true;
-        let myActiveAccounts = this.state.myActiveAccounts.withMutations(
+        if (accountStore.addAccountRefsInProgress) {
+            return;
+        }
+        accountStore.addAccountRefsInProgress = true;
+
+        let myActiveAccounts = accountStore.myActiveAccounts.withMutations(
             accounts => {
                 account_refs.forEach(id => {
                     let account = ChainStore.getAccount(id);
@@ -382,7 +315,7 @@ class AccountStore extends BaseStore {
                         name: account.get("name"),
                         chainId: Apis.instance().chain_id
                     };
-                    let isAlreadyLinked = this.state.linkedAccounts.find(a => {
+                    let isAlreadyLinked = accountStore.linkedAccounts.find(a => {
                         return (
                             a.get("name") === linkedEntry.name &&
                             a.get("chainId") === linkedEntry.chainId
@@ -393,7 +326,7 @@ class AccountStore extends BaseStore {
                      * Some wallets contain deprecated entries with no chain
                      * ids, remove these then write new entries with chain ids
                      */
-                    const nameOnlyEntry = this.state.linkedAccounts.findKey(
+                    const nameOnlyEntry = accountStore.linkedAccounts.findKey(
                         a => {
                             return (
                                 a.get("name") === linkedEntry.name &&
@@ -402,23 +335,23 @@ class AccountStore extends BaseStore {
                         }
                     );
                     if (!!nameOnlyEntry) {
-                        this.state.linkedAccounts = this.state.linkedAccounts.delete(
+                        accountStore.linkedAccounts = accountStore.linkedAccounts.delete(
                             nameOnlyEntry
                         );
-                        this._unlinkAccount(account.get("name"));
+                        _unlinkAccount(account.get("name"));
                         isAlreadyLinked = false;
                     }
                     if (
                         account &&
-                        this.isMyAccount(account) &&
+                        accountStore.isMyAccount(account) &&
                         !isAlreadyLinked
                     ) {
-                        this._linkAccount(account.get("name"));
+                        _linkAccount(account.get("name"));
                     }
                     if (
                         account &&
                         !accounts.includes(account.get("name")) &&
-                        !this.state.myHiddenAccounts.has(account.get("name"))
+                        !accountStore.myHiddenAccounts.has(account.get("name"))
                     ) {
                         accounts.add(account.get("name"));
                     }
@@ -430,69 +363,27 @@ class AccountStore extends BaseStore {
          * If we're in cloud wallet mode, simply set myActiveAccounts to the current
          * cloud wallet account
          */
-        if (!!this.state.passwordLogin) {
+        if (!!accountStore.passwordLogin) {
             myActiveAccounts = Immutable.Set(
-                !!this.state.passwordAccount ? [this.state.passwordAccount] : []
+                !!accountStore.passwordAccount ? [accountStore.passwordAccount] : []
             );
         }
-        if (myActiveAccounts !== this.state.myActiveAccounts) {
-            this.setState({myActiveAccounts});
+        if (myActiveAccounts !== accountStore.myActiveAccounts) {
+            setAccountStore('myActiveAccounts', myActiveAccounts);
         }
-        this.initial_account_refs_load = pending;
-        this.tryToSetCurrentAccount();
-        this.addAccountRefsInProgress = false;
-    }
-
-    getMyAccounts() {
-        if (!this.state.subbed) {
-            return [];
-        }
-
-        let accounts = [];
-        for (let account_name of this.state.myActiveAccounts) {
-            let account = ChainStore.getAccount(account_name);
-            if (account === undefined) {
-                // console.log(account_name, "account undefined");
-                continue;
-            }
-            if (account == null) {
-                console.log(
-                    "WARN: non-chain account name in myActiveAccounts",
-                    account_name
-                );
-                continue;
-            }
-            let auth = this.getMyAuthorityForAccount(account);
-
-            if (auth === undefined) {
-                // console.log(account_name, "auth undefined");
-                continue;
-            }
-
-            if (auth === "full" || auth === "partial") {
-                accounts.push(account_name);
-            }
-        }
-
-        /*
-         * If we're in cloud wallet mode, simply return the current
-         * cloud wallet account
-         */
-        if (this.state.passwordLogin)
-            return !!this.state.passwordAccount
-                ? [this.state.passwordAccount]
-                : [];
-
-        /* In wallet mode, return a sorted list of all the active accounts */
-        return accounts.sort();
-    }
+        setAccountStore('initial_account_refs_load', pending);
+        setAccountStore('addAccountRefsInProgress', false);
+        accountStore.tryToSetCurrentAccount();
+    },
 
     /**
         @todo "partial"
         @return string "none", "full", "partial" or undefined (pending a chain store lookup)
     */
     getMyAuthorityForAccount(account, recursion_count = 1) {
-        if (!account) return undefined;
+        if (!account) {
+            return undefined
+        };
 
         let owner_authority = account.get("owner");
         let active_authority = account.get("active");
@@ -513,14 +404,14 @@ class AccountStore extends BaseStore {
         //     debugger;
         // }
         if (recursion_count < 3) {
-            owner_account_threshold = this._accountThreshold(
+            owner_account_threshold = _accountThreshold(
                 owner_authority,
                 recursion_count
             );
             if (owner_account_threshold === undefined) return undefined;
             if (owner_account_threshold == "full") return "full";
 
-            active_account_threshold = this._accountThreshold(
+            active_account_threshold = _accountThreshold(
                 active_authority,
                 recursion_count
             );
@@ -538,101 +429,60 @@ class AccountStore extends BaseStore {
         )
             return "partial";
         return "none";
-    }
-
-    _accountThreshold(authority, recursion_count) {
-        let account_auths = authority.get("account_auths");
-        if (!account_auths.size) return "none";
-
-        let auths = account_auths.map(auth => {
-            let account = ChainStore.getAccount(auth.get(0), false);
-            if (account === undefined) return undefined;
-            return this.getMyAuthorityForAccount(account, ++recursion_count);
-        });
-
-        let final = auths.reduce((map, auth) => {
-            return map.set(auth, true);
-        }, Immutable.Map());
-
-        return final.get("full") && final.size === 1
-            ? "full"
-            : final.get("partial") && final.size === 1
-            ? "partial"
-            : final.get("none") && final.size === 1
-            ? "none"
-            : final.get("full") || final.get("partial")
-            ? "partial"
-            : undefined;
-    }
-
+    },
     isMyAccount(account) {
-        let authority = this.getMyAuthorityForAccount(account);
+        let authority = accountStore.getMyAuthorityForAccount(account);
         if (authority === undefined) return undefined;
         return authority === "partial" || authority === "full";
-    }
-
+    },
     onAccountSearch(payload) {
-        this.state.searchTerm = payload.searchTerm;
-        this.state.searchAccounts = this.state.searchAccounts.clear();
+        accountStore.searchTerm = payload.searchTerm;
+        accountStore.searchAccounts = accountStore.searchAccounts.clear();
         payload.accounts.forEach(account => {
-            this.state.searchAccounts = this.state.searchAccounts.withMutations(
+            accountStore.searchAccounts = accountStore.searchAccounts.withMutations(
                 map => {
                     map.set(account[1], account[0]);
                 }
             );
         });
-    }
-
-    _getStorageKey(key = "currentAccount", state = this.state) {
-        const wallet = state.wallet_name;
-        const chainId = Apis.instance().chain_id;
-        return (
-            key +
-            (chainId ? `_${chainId.substr(0, 8)}` : "") +
-            (wallet ? `_${wallet}` : "")
-        );
-    }
-
+    },
     tryToSetCurrentAccount() {
-        const passwordAccountKey = this._getStorageKey("passwordAccount");
-        const currentAccountKey = this._getStorageKey("currentAccount");
+        const passwordAccountKey = _getStorageKey("passwordAccount");
+        const currentAccountKey = _getStorageKey("currentAccount");
         if (ss.has(passwordAccountKey)) {
             const acc = ss.get(passwordAccountKey, null);
-            if (this.state.passwordAccount !== acc) {
-                this.setState({passwordAccount: acc});
+            if (accountStore.passwordAccount !== acc) {
+                setAccountStore('passwordAccount', acc);
             }
-            return this.setCurrentAccount(acc);
+            return accountStore.setCurrentAccount(acc);
         } else if (ss.has(currentAccountKey)) {
-            return this.setCurrentAccount(ss.get(currentAccountKey, null));
+            return accountStore.setCurrentAccount(ss.get(currentAccountKey, null));
         }
 
-        let {starredAccounts} = this.state;
+        let {starredAccounts} = accountStore;
         if (starredAccounts.size) {
-            return this.setCurrentAccount(starredAccounts.first().name);
+            return accountStore.setCurrentAccount(starredAccounts.first().name);
         }
-        if (this.state.myActiveAccounts.size) {
-            return this.setCurrentAccount(this.state.myActiveAccounts.first());
+        if (accountStore.myActiveAccounts.size) {
+            return accountStore.setCurrentAccount(accountStore.myActiveAccounts.first());
         }
-    }
-
+    },
     setCurrentAccount(name) {
-        if (this.state.passwordAccount) name = this.state.passwordAccount;
-        const key = this._getStorageKey();
+        if (accountStore.passwordAccount) name = accountStore.passwordAccount;
+        const key = _getStorageKey();
         if (!name) {
             name = null;
         }
 
-        if (this.state.currentAccount !== name) {
-            this.setState({currentAccount: name});
+        if (accountStore.currentAccount !== name) {
+            setAccountStore('currentAccount', name);
         }
 
         ss.set(key, name || null);
-    }
-
+    },
     onSetCurrentAccount(name) {
-        this.setCurrentAccount(name);
-    }
-
+        accountStore.setCurrentAccount(name);
+    },
     onCreateAccount(name_or_account) {
         let account = name_or_account;
         if (typeof account === "string") {
@@ -643,11 +493,12 @@ class AccountStore extends BaseStore {
 
         if (account["toJS"]) account = account.toJS();
 
-        if (account.name == "" || this.state.myActiveAccounts.get(account.name))
+        if (account.name == "" || accountStore.myActiveAccounts.get(account.name))
             return Promise.resolve();
 
-        if (!ChainValidation.is_account_name(account.name))
+        if (!ChainValidation.is_account_name(account.name)) {
             throw new Error("Invalid account name: " + account.name);
+        }
 
         return iDB
             .add_to_store("linked_accounts", {
@@ -659,107 +510,217 @@ class AccountStore extends BaseStore {
                     "[AccountStore.js] ----- Added account to store: ----->",
                     account.name
                 );
-                this.state.myActiveAccounts = this.state.myActiveAccounts.add(
+                accountStore.myActiveAccounts = accountStore.myActiveAccounts.add(
                     account.name
                 );
-                if (this.state.myActiveAccounts.size === 1) {
-                    this.setCurrentAccount(account.name);
+                if (accountStore.myActiveAccounts.size === 1) {
+                    accountStore.setCurrentAccount(account.name);
                 }
             });
-    }
-
+    },
     onAddAccountContact(name) {
-        if (!ChainValidation.is_account_name(name, true))
+        if (!ChainValidation.is_account_name(name, true)) {
             throw new Error("Invalid account name: " + name);
+        }
 
-        if (!this.state.accountContacts.has(name)) {
-            const accountContacts = this.state.accountContacts.add(name);
+        if (!accountStore.accountContacts.has(name)) {
+            const accountContacts = accountStore.accountContacts.add(name);
             ss.set(
-                this._getStorageKey("accountContacts"),
+                _getStorageKey("accountContacts"),
                 accountContacts.toArray()
             );
-            this.setState({
-                accountContacts: accountContacts
-            });
+            setAccountStore('accountContacts', accountContacts);
         }
-    }
-
+    },
     onRemoveAccountContact(name) {
-        if (!ChainValidation.is_account_name(name, true))
+        if (!ChainValidation.is_account_name(name, true)) {
             throw new Error("Invalid account name: " + name);
-
-        if (this.state.accountContacts.has(name)) {
-            const accountContacts = this.state.accountContacts.remove(name);
-
-            ss.set(this._getStorageKey("accountContacts"), accountContacts);
-
-            this.setState({
-                accountContacts: accountContacts
-            });
         }
-    }
 
-    _linkAccount(name) {
-        if (!ChainValidation.is_account_name(name, true))
-            throw new Error("Invalid account name: " + name);
-
-        // Link
-        const linkedEntry = {
-            name,
-            chainId: Apis.instance().chain_id
-        };
-        try {
-            iDB.add_to_store("linked_accounts", linkedEntry);
-            this.state.linkedAccounts = this.state.linkedAccounts.add(
-                Immutable.fromJS(linkedEntry)
-            ); // Keep the local linkedAccounts in sync with the db
-            if (!this.state.myHiddenAccounts.has(name))
-                this.state.myActiveAccounts = this.state.myActiveAccounts.add(
-                    name
-                );
-
-            // Update current account if only one account is linked
-            if (this.state.myActiveAccounts.size === 1) {
-                this.setCurrentAccount(name);
-            }
-        } catch (err) {
-            console.error(err);
+        if (accountStore.accountContacts.has(name)) {
+            const accountContacts = accountStore.accountContacts.remove(name);
+            ss.set(_getStorageKey("accountContacts"), accountContacts);
+            setAccountStore('accountContacts', accountContacts);
         }
-    }
-
-    _unlinkAccount(name) {
-        if (!ChainValidation.is_account_name(name, true))
-            throw new Error("Invalid account name: " + name);
-
-        // Unlink
-        iDB.remove_from_store("linked_accounts", name);
-        // this.state.myActiveAccounts = this.state.myActiveAccounts.delete(name);
-
-        // Update current account if no accounts are linked
-        // if (this.state.myActiveAccounts.size === 0) {
-        //     this.setCurrentAccount(null);
-        // }
-    }
-
+    },
     isMyKey(key) {
         return PrivateKeyStore.hasKey(key);
-    }
-
+    },
     onChangeSetting(payload) {
         if (payload.setting === "passwordLogin") {
             if (payload.value === false) {
-                this.onSetPasswordAccount(null);
-                ss.remove(this._getStorageKey());
-                this.loadDbData();
+                accountStore.onSetPasswordAccount(null);
+                ss.remove(_getStorageKey());
+                accountStore.loadDbData();
             } else {
-                this.setState({myActiveAccounts: Immutable.Set()});
+                setAccountStore('myActiveAccounts', Immutable.Set());
             }
-            this.setState({passwordLogin: payload.value});
+            setAccountStore('passwordLogin', payload.value);
         }
+    }
+});
+
+/*
+    this.bindListeners({
+        onSetCurrentAccount: AccountActions.setCurrentAccount,
+        onCreateAccount: AccountActions.createAccount,
+        onAccountSearch: AccountActions.accountSearch,
+        tryToSetCurrentAccount: AccountActions.tryToSetCurrentAccount,
+        onSetPasswordAccount: AccountActions.setPasswordAccount,
+        onChangeSetting: SettingsActions.changeSetting,
+        onSetWallet: WalletActions.setWallet,
+        onAddStarAccount: AccountActions.addStarAccount,
+        onRemoveStarAccount: AccountActions.removeStarAccount,
+        onAddAccountContact: AccountActions.addAccountContact,
+        onRemoveAccountContact: AccountActions.removeAccountContact,
+        onToggleHideAccount: AccountActions.toggleHideAccount
+        // onNewPrivateKeys: [ PrivateKeyActions.loadDbData, PrivateKeyActions.addKey ]
+    });
+*/
+
+export const useAccountStore = () => [accountStore, setAccountStore];
+
+function _getStorageKey(key = "currentAccount", state = accountStore) {
+    const wallet = state.wallet_name;
+    const chainId = Apis.instance().chain_id;
+    return (
+        key +
+        (chainId ? `_${chainId.substr(0, 8)}` : "") +
+        (wallet ? `_${wallet}` : "")
+    );
+},
+
+function _migrateUnfollowedAccounts(state) {
+    try {
+        let unfollowed_accounts = ss.get("unfollowed_accounts", []);
+        let hiddenAccounts = ss.get(
+            _getStorageKey("hiddenAccounts", state),
+            []
+        );
+        if (unfollowed_accounts.length && !hiddenAccounts.length) {
+            ss.set(
+                _getStorageKey("hiddenAccounts", state),
+                unfollowed_accounts
+            );
+            ss.remove("unfollowed_accounts");
+            setAccountStore('myHiddenAccounts', Immutable.Set(unfollowed_accounts));
+        }
+    } catch (err) {
+        console.error(err);
     }
 }
 
-export default alt.createStore(AccountStore, "AccountStore");
+function _checkReferrer() {
+    let referralAccount = "";
+    if (window) {
+        function getQueryParam(param) {
+            var result = window.location.search.match(
+                new RegExp("(\\?|&)" + param + "(\\[\\])?=([^&]*)")
+            );
+
+            return result ? decodeURIComponent(result[3]) : false;
+        }
+        let validQueries = ["r", "ref", "referrer", "referral"];
+        for (let i = 0; i < validQueries.length; i++) {
+            referralAccount = getQueryParam(validQueries[i]);
+            if (referralAccount) break;
+        }
+    }
+
+    let prevRef = ss.get("referralAccount", null);
+
+    // Store referreral only if there is no previous referral
+    if (referralAccount && !prevRef) {
+        ss.set("referralAccount", referralAccount);
+    }
+
+    if (!referralAccount && !!prevRef) {
+        referralAccount = prevRef;
+    }
+
+    if (referralAccount) console.log("referralAccount", referralAccount);
+    return referralAccount;
+}
+
+function _accountThreshold(authority, recursion_count) {
+    let account_auths = authority.get("account_auths");
+    if (!account_auths.size) return "none";
+
+    let auths = account_auths.map(auth => {
+        let account = ChainStore.getAccount(auth.get(0), false);
+        if (account === undefined) return undefined;
+        return accountStore.getMyAuthorityForAccount(account, ++recursion_count);
+    });
+
+    let final = auths.reduce((map, auth) => {
+        return map.set(auth, true);
+    }, Immutable.Map());
+
+    return final.get("full") && final.size === 1
+        ? "full"
+        : final.get("partial") && final.size === 1
+        ? "partial"
+        : final.get("none") && final.size === 1
+        ? "none"
+        : final.get("full") || final.get("partial")
+        ? "partial"
+        : undefined;
+}
+
+function _linkAccount(name) {
+    if (!ChainValidation.is_account_name(name, true))
+        throw new Error("Invalid account name: " + name);
+
+    // Link
+    const linkedEntry = {
+        name,
+        chainId: Apis.instance().chain_id
+    };
+    try {
+        iDB.add_to_store("linked_accounts", linkedEntry);
+
+        setAccountStore(
+            'linkedAccounts',
+            accountStore.linkedAccounts.add(
+                Immutable.fromJS(linkedEntry)
+            ) // Keep the local linkedAccounts in sync with the db
+        );
+        
+        if (!accountStore.myHiddenAccounts.has(name)) {
+            setAccountStore(
+                'myActiveAccounts',
+                accountStore.myActiveAccounts.add(name)
+            );
+        }
+        
+        // Update current account if only one account is linked
+        if (accountStore.myActiveAccounts.size === 1) {
+            accountStore.setCurrentAccount(name);
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function _unlinkAccount(name) {
+    if (!ChainValidation.is_account_name(name, true)) {
+        throw new Error("Invalid account name: " + name);
+    }
+
+    // Unlink
+    iDB.remove_from_store("linked_accounts", name);
+    /*
+    setAccountStore(
+        'myActiveAccounts',
+        accountStore.myActiveAccounts.delete(name)
+    );
+    */
+    
+    // Update current account if no accounts are linked
+    // if (accountStore.myActiveAccounts.size === 0) {
+    //     accountStore.setCurrentAccount(null);
+    // }
+} 
 
 // @return 3 full, 2 partial, 0 none
 function pubkeyThreshold(authority) {
