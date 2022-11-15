@@ -6,12 +6,6 @@ var locale_en = require("assets/locales/locale-en.json");
 import ls from "common/localStorage";
 let ss = ls("__graphene__");
 
-/*
-const [accountStore, setAccountStore] = createStore({
-
-});
-*/
-
 counterpart.registerTranslations("en", locale_en);
 counterpart.setFallbackLocale("en");
 
@@ -22,36 +16,28 @@ for (let localeCode of localeCodes) {
     addLocaleData(require(`react-intl/locale-data/${localeCode}`));
 }
 
-class IntlStore {
-    constructor() {
-        const storedSettings = ss.get("settings_v4", {});
-        if (storedSettings.locale === undefined) {
-            storedSettings.locale = "en";
-        }
-        this.currentLocale = storedSettings.locale;
+/*
+    intlStore.bindListeners({
+        onSwitchLocale: IntlActions.switchLocale,
+        onGetLocale: IntlActions.getLocale,
+        onClearSettings: SettingsActions.clearSettings
+    });
+*/
 
-        this.locales = ["en"];
-        this.localesObject = {en: locale_en};
-
-        this.bindListeners({
-            onSwitchLocale: IntlActions.switchLocale,
-            onGetLocale: IntlActions.getLocale,
-            onClearSettings: SettingsActions.clearSettings
-        });
-    }
-
+const [intlStore, setIntlStore] = createStore({
+    locales: ["en"],
+    localesObject: {en: locale_en},
+    currentLocale: ss.get("settings_v4", {}).locale ?? "en",
     hasLocale(locale) {
-        return this.locales.indexOf(locale) !== -1;
-    }
-
+        return intlStore.locales.indexOf(locale) !== -1;
+    },
     getCurrentLocale() {
-        return this.currentLocale;
-    }
-
+        return intlStore.currentLocale;
+    },
     onSwitchLocale({locale, localeData}) {
         switch (locale) {
             case "en":
-                counterpart.registerTranslations("en", this.localesObject.en);
+                counterpart.registerTranslations("en", intlStore.localesObject.en);
                 break;
 
             default:
@@ -60,16 +46,16 @@ class IntlStore {
         }
 
         counterpart.setLocale(locale);
-        this.currentLocale = locale;
-    }
-
+        setIntlStore("currentLocale", locale);
+    },
     onGetLocale(locale) {
-        if (this.locales.indexOf(locale) === -1) {
-            this.locales.push(locale);
+        if (intlStore.locales.indexOf(locale) === -1) {
+            setIntlStore("locales", [...intlStore.locales, locale]);
         }
-    }
-
+    },
     onClearSettings() {
-        this.onSwitchLocale({locale: "en"});
+        intlStore.onSwitchLocale({locale: "en"});
     }
-}
+});
+
+export const useIntlStore = () => [intlStore, setIntlStore];

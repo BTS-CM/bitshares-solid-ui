@@ -19,12 +19,6 @@ import {
 } from "common/MarketClasses";
 import asset_utils from "../lib/common/asset_utils";
 
-/*
-const [accountStore, setAccountStore] = createStore({
-
-});
-*/
-
 // import {
 //     SettleOrder
 // }
@@ -41,54 +35,95 @@ const nullPrice = {
 
 let marketStorage = ls("__graphene__");
 
-class MarketsStore {
-    constructor() {
-        this.markets = Immutable.Map();
-        this.asset_symbol_to_id = {};
-        this.pendingOrders = Immutable.Map();
-        this.marketLimitOrders = Immutable.Map();
-        this.marketCallOrders = Immutable.Map();
-        this.allCallOrders = [];
-        this.feedPrice = null;
-        this.marketSettleOrders = Immutable.OrderedSet();
-        this.activeMarketHistory = Immutable.OrderedSet();
-        this.marketData = {
-            bids: [],
-            asks: [],
-            calls: [],
-            combinedBids: [],
-            highestBid: nullPrice,
-            combinedAsks: [],
-            lowestAsk: nullPrice,
-            flatBids: [],
-            flatAsks: [],
-            flatCalls: [],
-            flatSettles: [],
-            groupedBids: [],
-            groupedAsks: []
-        };
-        this.totals = {
-            bid: 0,
-            ask: 0,
-            call: 0
-        };
-        this.priceData = [];
-        this.pendingCreateLimitOrders = [];
-        this.activeMarket = null;
-        this.quoteAsset = null;
-        this.pendingCounter = 0;
-        this.buckets = [15, 60, 300, 3600, 86400];
-        this.bucketSize = this._getBucketSize();
-        this.priceHistory = [];
-        this.lowestCallPrice = null;
-        this.marketBase = "BTS";
-        this.marketStats = Immutable.Map({
-            change: 0,
-            volumeBase: 0,
-            volumeQuote: 0
-        });
-        this.marketReady = false;
+/*
+    marketsStore.bindListeners({
+        onSubscribeMarket: MarketsActions.subscribeMarket,
+        onUnSubscribeMarket: MarketsActions.unSubscribeMarket,
+        onChangeBase: MarketsActions.changeBase,
+        onChangeBucketSize: MarketsActions.changeBucketSize,
+        onCancelLimitOrderSuccess: MarketsActions.cancelLimitOrderSuccess,
+        onCloseCallOrderSuccess: MarketsActions.closeCallOrderSuccess,
+        onCallOrderUpdate: MarketsActions.callOrderUpdate,
+        // onClearMarket: MarketsActions.clearMarket,
+        onGetMarketStats: MarketsActions.getMarketStats,
+        onSettleOrderUpdate: MarketsActions.settleOrderUpdate,
+        onSwitchMarket: MarketsActions.switchMarket,
+        onFeedUpdate: MarketsActions.feedUpdate,
+        onToggleStars: MarketsActions.toggleStars,
+        onGetTrackedGroupsConfig: MarketsActions.getTrackedGroupsConfig,
+        onChangeCurrentGroupLimit: MarketsActions.changeCurrentGroupLimit
+    });
 
+    marketsStore.exportPublicMethods({
+        subscribe: marketsStore.subscribe.bind(this),
+        unsubscribe: marketsStore.unsubscribe.bind(this),
+        clearSubs: marketsStore.clearSubs.bind(this)
+    });
+*/
+
+// TODO: Replace marketsStore.blah = value with setmarkestsStore({blah: value}) ...
+
+const [marketsStore, setMarketsStore] = createStore({
+    markets: Immutable.Map(),
+    asset_symbol_to_id: {},
+    pendingOrders: Immutable.Map(),
+    marketLimitOrders: Immutable.Map(),
+    marketCallOrders: Immutable.Map(),
+    allCallOrders: [],
+    feedPrice: null,
+    marketSettleOrders: Immutable.OrderedSet(),
+    activeMarketHistory: Immutable.OrderedSet(),
+    marketData: {
+        bids: [],
+        asks: [],
+        calls: [],
+        combinedBids: [],
+        highestBid: nullPrice,
+        combinedAsks: [],
+        lowestAsk: nullPrice,
+        flatBids: [],
+        flatAsks: [],
+        flatCalls: [],
+        flatSettles: [],
+        groupedBids: [],
+        groupedAsks: []
+    },
+    totals: {
+        bid: 0,
+        ask: 0,
+        call: 0
+    },
+    priceData: [],
+    pendingCreateLimitOrders: [],
+    activeMarket: null,
+    quoteAsset: null,
+    pendingCounter: 0,
+    buckets: [15, 60, 300, 3600, 86400],
+    bucketSize: _getBucketSize(),
+    priceHistory: [],
+    lowestCallPrice: null,
+    marketBase: "BTS",
+    marketStats: Immutable.Map({
+        change: 0,
+        volumeBase: 0,
+        volumeQuote: 0
+    }),
+    marketReady: false,
+    baseAsset: {
+        id: "1.3.0",
+        symbol: "BTS",
+        precision: 5
+    },
+    coreAsset: {
+        id: "1.3.0",
+        symbol: "CORE",
+        precision: 5
+    },
+    onlyStars: marketStorage.get("onlyStars", false),
+    trackedGroupsConfig: [],
+    currentGroupLimit: 0,
+    subscribers: new Map(),
+    allMarketStats: () => {
         let allMarketStats = marketStorage.get("allMarketStats", {});
         for (let market in allMarketStats) {
             if (allMarketStats[market].price) {
@@ -98,132 +133,74 @@ class MarketsStore {
                 });
             }
         }
-        this.allMarketStats = Immutable.Map(allMarketStats);
-        this.onlyStars = marketStorage.get("onlyStars", false);
-
-        this.baseAsset = {
-            id: "1.3.0",
-            symbol: "BTS",
-            precision: 5
-        };
-
-        this.coreAsset = {
-            id: "1.3.0",
-            symbol: "CORE",
-            precision: 5
-        };
-
-        this.trackedGroupsConfig = [];
-        this.currentGroupLimit = 0;
-
-        this.bindListeners({
-            onSubscribeMarket: MarketsActions.subscribeMarket,
-            onUnSubscribeMarket: MarketsActions.unSubscribeMarket,
-            onChangeBase: MarketsActions.changeBase,
-            onChangeBucketSize: MarketsActions.changeBucketSize,
-            onCancelLimitOrderSuccess: MarketsActions.cancelLimitOrderSuccess,
-            onCloseCallOrderSuccess: MarketsActions.closeCallOrderSuccess,
-            onCallOrderUpdate: MarketsActions.callOrderUpdate,
-            // onClearMarket: MarketsActions.clearMarket,
-            onGetMarketStats: MarketsActions.getMarketStats,
-            onSettleOrderUpdate: MarketsActions.settleOrderUpdate,
-            onSwitchMarket: MarketsActions.switchMarket,
-            onFeedUpdate: MarketsActions.feedUpdate,
-            onToggleStars: MarketsActions.toggleStars,
-            onGetTrackedGroupsConfig: MarketsActions.getTrackedGroupsConfig,
-            onChangeCurrentGroupLimit: MarketsActions.changeCurrentGroupLimit
-        });
-
-        this.subscribers = new Map();
-
-        this.exportPublicMethods({
-            subscribe: this.subscribe.bind(this),
-            unsubscribe: this.unsubscribe.bind(this),
-            clearSubs: this.clearSubs.bind(this)
-        });
-    }
-
+        
+        return Immutable.Map(allMarketStats);
+    },
     /**
      *  Add a callback that will be called anytime any object in the cache is updated
      */
     subscribe(id, callback) {
-        if (this.subscribers.has(id) && this.subscribers.get(id) === callback)
+        if (marketsStore.subscribers.has(id) && marketsStore.subscribers.get(id) === callback) {
             return console.error("Subscribe callback already exists", callback);
-        this.subscribers.set(id, callback);
-    }
-
+        }
+        setMarketsStore({subscribers: marketsStore.subscribers.set(id, callback)});
+    },
     /**
      *  Remove a callback that was previously added via subscribe
      */
     unsubscribe(id) {
-        if (this.subscribers.has(id)) {
-            this.subscribers.delete(id);
+        if (marketsStore.subscribers.has(id)) {
+            setMarketsStore({subscribers: marketsStore.subscribers.delete(id)});
         }
-    }
-
-    _notifySubscriber(id, data) {
-        if (this.subscribers.has(id)) this.subscribers.get(id)(data);
-    }
-
+    },
     clearSubs() {
-        this.subscribers.clear();
-    }
-
+        setMarketsStore({subscribers: new Map()});
+    },
     onGetCollateralPositions(payload) {
-        this.borrowMarketState = {
-            totalDebt: payload.totalDebt,
-            totalCollateral: payload.totalCollateral
-        };
-    }
-
-    _getBucketSize() {
-        return parseInt(marketStorage.get("bucketSize", 3600));
-    }
-
-    _setBucketSize(size) {
-        this.bucketSize = size;
-        marketStorage.set("bucketSize", size);
-    }
-
+        setMarketsStore(
+            "borrowMarketState",
+            {
+                totalDebt: payload.totalDebt,
+                totalCollateral: payload.totalCollateral
+            }
+        )
+    },
     onChangeBase(market) {
-        this.marketBase = market;
-    }
-
+        setMarketsStore({marketBase: market});
+    },
     onChangeBucketSize(size) {
-        this._setBucketSize(size);
-    }
-
+        _setBucketSize(size);
+    },
     onToggleStars() {
-        this.onlyStars = !this.onlyStars;
-        marketStorage.set("onlyStars", this.onlyStars);
-    }
-
+        setMarketsStore({onlyStars: !marketsStore.onlyStars});
+        marketStorage.set("onlyStars", marketsStore.onlyStars);
+    },
     onUnSubscribeMarket(payload) {
         // Optimistic removal of activeMarket
         if (payload.unSub) {
-            this.activeMarket = null;
+            setMarketsStore({activeMarket: null});
         } else {
             // Unsub failed, restore activeMarket
-            this.activeMarket = payload.market;
+            setMarketsStore({activeMarket: payload.market});
         }
 
-        if (payload.resolve) payload.resolve();
-    }
-
+        if (payload.resolve) {
+            payload.resolve();
+        }
+    },
     onSwitchMarket() {
-        this.marketReady = false;
-    }
-
+        setMarketsStore({marketReady: false});
+    },
     onClearMarket() {
-        this.activeMarket = null;
-        this.is_prediction_market = false;
-        this.marketLimitOrders = this.marketLimitOrders.clear();
-        this.marketCallOrders = this.marketCallOrders.clear();
-        this.allCallOrders = [];
-        this.feedPrice = null;
-        this.marketSettleOrders = this.marketSettleOrders.clear();
-        this.activeMarketHistory = this.activeMarketHistory.clear();
-        this.marketData = {
+        setMarketsStore("activeMarket", null)
+        setMarketsStore("is_prediction_market", false)
+        setMarketsStore("marketLimitOrders", marketsStore.marketLimitOrders.clear())
+        setMarketsStore("marketCallOrders", marketsStore.marketCallOrders.clear())
+        setMarketsStore("allCallOrders", [])
+        setMarketsStore("feedPrice", null)
+        setMarketsStore("marketSettleOrders", marketsStore.marketSettleOrders.clear())
+        setMarketsStore("activeMarketHistory", marketsStore.activeMarketHistory.clear())
+        setMarketsStore("marketData", {
             bids: [],
             asks: [],
             calls: [],
@@ -237,121 +214,105 @@ class MarketsStore {
             flatSettles: [],
             groupedBids: [],
             groupedAsks: []
-        };
-        this.totals = {
+        })
+        setMarketsStore("totals", {
             bid: 0,
             ask: 0,
             call: 0
-        };
-        this.lowestCallPrice = null;
-        this.pendingCreateLimitOrders = [];
-        this.priceHistory = [];
-        this.marketStats = Immutable.Map({
+        })
+        setMarketsStore("lowestCallPrice", null)
+        setMarketsStore("pendingCreateLimitOrders", [])
+        setMarketsStore("priceHistory", [])
+        setMarketsStore("marketStats", Immutable.Map({
             change: 0,
             volumeBase: 0,
             volumeQuote: 0
-        });
-    }
-
-    _marketHasCalls() {
-        const {quoteAsset, baseAsset} = this;
-        if (
-            quoteAsset.has("bitasset") &&
-            quoteAsset.getIn(["bitasset", "options", "short_backing_asset"]) ===
-                baseAsset.get("id")
-        ) {
-            return true;
-        } else if (
-            baseAsset.has("bitasset") &&
-            baseAsset.getIn(["bitasset", "options", "short_backing_asset"]) ===
-                quoteAsset.get("id")
-        ) {
-            return true;
-        }
-        return false;
-    }
-
+        }))
+    },
     onSubscribeMarket(result) {
         let newMarket = false;
+        let limitsChanged = false;
+        let callsChanged = false;
+
         if (result.switchMarket) {
-            this.marketReady = false;
-            return this.emitChange();
+            setMarketsStore("marketReady", false);
+            return marketsStore.emitChange();
         }
 
-        let limitsChanged = false,
-            callsChanged = false;
-
-        this.invertedCalls = result.inverted;
+        setMarketsStore("invertedCalls", result.inverted);
+        setMarketsStore("quoteAsset", ChainStore.getAsset(result.quote.get("id")));
+        setMarketsStore("baseAsset", ChainStore.getAsset(result.base.get("id")));
 
         // Get updated assets every time for updated feed data
-        this.quoteAsset = ChainStore.getAsset(result.quote.get("id"));
-        this.baseAsset = ChainStore.getAsset(result.base.get("id"));
 
         const assets = {
-            [this.quoteAsset.get("id")]: {
-                precision: this.quoteAsset.get("precision")
+            [marketsStore.quoteAsset.get("id")]: {
+                precision: marketsStore.quoteAsset.get("precision")
             },
-            [this.baseAsset.get("id")]: {
-                precision: this.baseAsset.get("precision")
+            [marketsStore.baseAsset.get("id")]: {
+                precision: marketsStore.baseAsset.get("precision")
             }
         };
 
-        if (result.market && result.market !== this.activeMarket) {
-            this.onClearMarket();
-            this.activeMarket = result.market;
+        if (result.market && result.market !== marketsStore.activeMarket) {
+            marketsStore.onClearMarket();
+            setMarketsStore("activeMarket", result.market);
             newMarket = true;
             /*
-             * To prevent the callback from DataFeed to be called with new data
-             * before subscribeBars in DataFeed has been updated, we clear the
-             * callback subscription here
-             */
-            this.unsubscribe("subscribeBars");
+            * To prevent the callback from DataFeed to be called with new data
+            * before subscribeBars in DataFeed has been updated, we clear the
+            * callback subscription here
+            */
+            marketsStore.unsubscribe("subscribeBars");
         }
 
         /* Set the feed price (null if not a bitasset market) */
-        this.feedPrice = this._getFeed();
+        setMarketsStore("feedPrice", _getFeed());
 
         if (result.buckets) {
-            this.buckets = result.buckets;
-            if (result.buckets.indexOf(this.bucketSize) === -1) {
-                this.bucketSize = result.buckets[result.buckets.length - 1];
+            setMarketsStore("buckets", result.buckets);
+            if (result.buckets.indexOf(marketsStore.bucketSize) === -1) {
+                setMarketsStore("bucketSize", result.buckets[result.buckets.length - 1]);
             }
         }
 
         if (result.buckets) {
-            this.buckets = result.buckets;
+            setMarketsStore("buckets", result.buckets);
         }
 
         if (result.limits) {
             // Keep an eye on this as the number of orders increases, it might not scale well
-            const oldmarketLimitOrders = this.marketLimitOrders;
-            this.marketLimitOrders = this.marketLimitOrders.clear();
-            // console.time("Create limit orders " + this.activeMarket);
+            const oldmarketLimitOrders = marketsStore.marketLimitOrders;
+            setMarketsStore("marketLimitOrders", marketsStore.marketLimitOrders.clear());
+            // console.time("Create limit orders " + marketsStore.activeMarket);
             result.limits.forEach(order => {
                 // ChainStore._updateObject(order, false, false);
                 if (typeof order.for_sale !== "number") {
                     order.for_sale = parseInt(order.for_sale, 10);
                 }
                 order.expiration = new Date(order.expiration);
-                this.marketLimitOrders = this.marketLimitOrders.set(
-                    order.id,
-                    new LimitOrder(order, assets, this.quoteAsset.get("id"))
+                setMarketsStore(
+                    "marketLimitOrders",
+                    marketsStore.marketLimitOrders.set(
+                        order.id,
+                        new LimitOrder(order, assets, marketsStore.quoteAsset.get("id"))
+                    )
                 );
             });
 
             limitsChanged = didOrdersChange(
-                this.marketLimitOrders,
+                marketsStore.marketLimitOrders,
                 oldmarketLimitOrders
             );
 
             // Loop over pending orders to remove temp order from orders map and remove from pending
             for (
-                let i = this.pendingCreateLimitOrders.length - 1;
+                let i = marketsStore.pendingCreateLimitOrders.length - 1;
                 i >= 0;
                 i--
             ) {
-                let myOrder = this.pendingCreateLimitOrders[i];
-                let order = this.marketLimitOrders.find(order => {
+                let myOrder = marketsStore.pendingCreateLimitOrders[i];
+                let order = marketsStore.marketLimitOrders.find(order => {
                     return (
                         myOrder.seller === order.seller &&
                         myOrder.expiration === order.expiration
@@ -360,29 +321,32 @@ class MarketsStore {
 
                 // If the order was found it has been confirmed, delete it from pending
                 if (order) {
-                    this.pendingCreateLimitOrders.splice(i, 1);
+                    setMarketsStore(
+                        "pendingCreateLimitOrders",
+                        marketsStore.pendingCreateLimitOrders.splice(i, 1)
+                    );
                 }
             }
 
-            // console.timeEnd("Create limit orders " + this.activeMarket);
+            // console.timeEnd("Create limit orders " + marketsStore.activeMarket);
 
-            if (this.pendingCreateLimitOrders.length === 0) {
-                this.pendingCounter = 0;
+            if (marketsStore.pendingCreateLimitOrders.length === 0) {
+                setMarketsStore("pendingCounter", 0);
             }
 
             // console.log("time to process limit orders:", new Date() - limitStart, "ms");
         }
 
         if (result.calls) {
-            const oldmarketCallOrders = this.marketCallOrders;
-            this.allCallOrders = result.calls;
-            this.marketCallOrders = this.marketCallOrders.clear();
+            const oldmarketCallOrders = marketsStore.marketCallOrders;
+            setMarketsStore("allCallOrders", result.calls);
+            setMarketsStore("marketCallOrders", marketsStore.marketCallOrders.clear());
 
             result.calls.forEach(call => {
                 // ChainStore._updateObject(call, false, false);
                 try {
                     let mcr = this[
-                        this.invertedCalls ? "baseAsset" : "quoteAsset"
+                        marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"
                     ].getIn([
                         "bitasset",
                         "current_feed",
@@ -392,17 +356,16 @@ class MarketsStore {
                     let callOrder = new CallOrder(
                         call,
                         assets,
-                        this.quoteAsset.get("id"),
-                        this.feedPrice,
+                        marketsStore.quoteAsset.get("id"),
+                        marketsStore.feedPrice,
                         mcr,
-                        this.is_prediction_market
+                        marketsStore.is_prediction_market
                     );
                     if (callOrder.isMarginCalled()) {
-                        this.marketCallOrders = this.marketCallOrders.set(
-                            call.id,
-                            callOrder,
-                            mcr
-                        );
+                        setMarketsStore(
+                            "marketCallOrders",
+                            marketsStore.marketCallOrders.set(call.id, callOrder, mcr)
+                        )
                     }
                 } catch (err) {
                     console.error(
@@ -412,15 +375,15 @@ class MarketsStore {
             });
 
             callsChanged = didOrdersChange(
-                this.marketCallOrders,
+                marketsStore.marketCallOrders,
                 oldmarketCallOrders
             );
         }
 
-        this.updateSettleOrders(result);
+        marketsStore.updateSettleOrders(result);
 
         if (result.history) {
-            this.activeMarketHistory = this.activeMarketHistory.clear();
+            setMarketsStore("activeMarketHistory", marketStore.activeMarketHistory.clear());
             result.history.forEach(order => {
                 /* Only include history objects that aren't 'something for nothing' to avoid confusion */
                 if (
@@ -430,67 +393,66 @@ class MarketsStore {
                         order.op.pays.amount == 0
                     )
                 ) {
-                    this.activeMarketHistory = this.activeMarketHistory.add(
-                        new FillOrder(order, assets, this.quoteAsset.get("id"))
-                    );
+                    setMarketsStore(
+                        "activeMarketHistory",
+                        marketsStore.activeMarketHistory.add(
+                            new FillOrder(order.op, assets, marketsStore.quoteAsset.get("id"))
+                        )
+                    )
                 }
             });
         }
 
         if (result.fillOrders) {
             result.fillOrders.forEach(fill => {
-                this.activeMarketHistory = this.activeMarketHistory.add(
-                    new FillOrder(fill[0][1], assets, this.quoteAsset.get("id"))
+                setMarketsStore(
+                    "activeMarketHistory",
+                    marketsStore.activeMarketHistory.add(
+                        new FillOrder(fill[0][1], assets, marketsStore.quoteAsset.get("id"))
+                    )
                 );
             });
         }
 
         if (result.ticker) {
             let marketName =
-                this.quoteAsset.get("symbol") +
+                marketsStore.quoteAsset.get("symbol") +
                 "_" +
-                this.baseAsset.get("symbol");
-            let stats = this._calcMarketStats(
-                this.baseAsset,
-                this.quoteAsset,
+                marketsStore.baseAsset.get("symbol");
+            let stats = _calcMarketStats(
+                marketsStore.baseAsset,
+                marketsStore.quoteAsset,
                 marketName,
                 result.ticker
             );
 
-            this.allMarketStats = this.allMarketStats.set(marketName, stats);
-            let {invertedStats, invertedMarketName} = this._invertMarketStats(
+            setMarketsStore("allMarketStats", marketsStore.allMarketStats.set(marketName, stats));
+
+            let {invertedStats, invertedMarketName} = _invertMarketStats(
                 stats,
                 marketName
             );
-            this.allMarketStats = this.allMarketStats.set(
-                invertedMarketName,
-                invertedStats
-            );
-            this._saveMarketStats();
 
-            this.marketStats = this.marketStats.set("change", stats.change);
-            this.marketStats = this.marketStats.set(
-                "volumeBase",
-                stats.volumeBase
-            );
-            this.marketStats = this.marketStats.set(
-                "volumeQuote",
-                stats.volumeQuote
-            );
+            setMarketsStore("allMarketStats", marketsStore.allMarketStats.set(invertedMarketName, invertedStats));
+            _saveMarketStats();
+
+            setMarketsStore("marketStats", marketStore.marketStats.set("change", stats.change));
+            setMarketsStore("marketStats", marketStore.marketStats.set("volumeBase", stats.volumeBase));
+            setMarketsStore("marketStats", marketStore.marketStats.set("volumeQuote", stats.volumeQuote));
         }
 
         if (callsChanged || limitsChanged) {
             // Update orderbook
-            this._orderBook(limitsChanged, callsChanged);
+            _orderBook(limitsChanged, callsChanged);
 
             // Update depth chart data
-            this._depthChart();
+            _depthChart();
         }
 
         // Update pricechart data
         if (result.price) {
-            this.priceHistory = result.price;
-            this._priceChart();
+            setMarketsStore("priceHistory", result.price);
+            _priceChart();
         }
 
         if (
@@ -506,93 +468,87 @@ class MarketsStore {
                 groupedOrdersAsks.push(new GroupedOrder(order, assets, false));
             });
             // Update groupedOrderbook
-            this._groupedOrderBook(groupedOrdersBids, groupedOrdersAsks);
+            _groupedOrderBook(groupedOrdersBids, groupedOrdersAsks);
 
             // Update depth chart data
-            this._depthChart();
+            _depthChart();
         }
 
-        this.marketReady = true;
-        this.emitChange();
+        setMarketsStore("marketReady", true);
+        marketsStore.emitChange();
 
         if (newMarket) {
-            this._notifySubscriber(
-                "market_change",
-                this.quoteAsset.get("symbol") +
-                    "_" +
-                    this.baseAsset.get("symbol")
-            );
+            let quote = marketsStore.quoteAsset.get("symbol");
+            let base = marketsStore.baseAsset.get("symbol");
+            _notifySubscriber("market_change", `${quote}_${base}`);
         }
-        if (result.resolve) result.resolve();
-    }
 
+        if (result.resolve) {
+            result.resolve();
+        }
+    },
     onCancelLimitOrderSuccess(cancellations) {
         if (cancellations && cancellations.length) {
             let didUpdate = false;
             cancellations.forEach(orderID => {
-                if (orderID && this.marketLimitOrders.has(orderID)) {
+                if (orderID && marketsStore.marketLimitOrders.has(orderID)) {
                     didUpdate = true;
-                    this.marketLimitOrders = this.marketLimitOrders.delete(
-                        orderID
-                    );
+                    setMarketsStore("marketLimitOrders", marketsStore.marketLimitOrders.delete(orderID));
                 }
             });
 
-            if (this.marketLimitOrders.size === 0) {
-                this.marketData.bids = [];
-                this.marketData.flatBids = [];
-                this.marketData.asks = [];
-                this.marketData.flatAsks = [];
+            if (marketsStore.marketLimitOrders.size === 0) {
+                setMarketsStore("marketData", {
+                    bids: [],
+                    flatBids: [],
+                    asks: [],
+                    flatAsks: []
+                });
             }
 
             if (didUpdate) {
                 // Update orderbook
-                this._orderBook(true, false);
+                _orderBook(true, false);
 
                 // Update depth chart data
-                this._depthChart();
+                _depthChart();
             }
         } else {
             return false;
         }
-    }
-
+    },
     onCloseCallOrderSuccess(orderID) {
-        if (orderID && this.marketCallOrders.has(orderID)) {
-            this.marketCallOrders = this.marketCallOrders.delete(orderID);
-            if (this.marketCallOrders.size === 0) {
-                this.marketData.calls = [];
-                this.marketData.flatCalls = [];
+        if (orderID && marketsStore.marketCallOrders.has(orderID)) {
+            setMarketsStore("marketCallOrders", marketsStore.marketCallOrders.delete(orderID));
+            if (marketsStore.marketCallOrders.size === 0) {
+                setMarketsStore("marketData", {...marketsStore.marketData, calls: [], flatCalls: []});
             }
             // Update orderbook
-            this._orderBook(false, true);
+            _orderBook(false, true);
 
             // Update depth chart data
-            this._depthChart();
+            _depthChart();
         } else {
             return false;
         }
-    }
-
+    },
     onCallOrderUpdate(call_order) {
-        if (call_order && this.quoteAsset && this.baseAsset && this.feedPrice) {
+        if (call_order && marketsStore.quoteAsset && marketsStore.baseAsset && marketsStore.feedPrice) {
             if (
-                call_order.call_price.quote.asset_id ===
-                    this.quoteAsset.get("id") ||
-                call_order.call_price.quote.asset_id ===
-                    this.baseAsset.get("id")
+                call_order.call_price.quote.asset_id === marketsStore.quoteAsset.get("id") ||
+                call_order.call_price.quote.asset_id === marketsStore.baseAsset.get("id")
             ) {
                 const assets = {
-                    [this.quoteAsset.get("id")]: {
-                        precision: this.quoteAsset.get("precision")
+                    [marketsStore.quoteAsset.get("id")]: {
+                        precision: marketsStore.quoteAsset.get("precision")
                     },
-                    [this.baseAsset.get("id")]: {
-                        precision: this.baseAsset.get("precision")
+                    [marketsStore.baseAsset.get("id")]: {
+                        precision: marketsStore.baseAsset.get("precision")
                     }
                 };
                 try {
                     let mcr = this[
-                        this.invertedCalls ? "baseAsset" : "quoteAsset"
+                        marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"
                     ].getIn([
                         "bitasset",
                         "current_feed",
@@ -602,84 +558,89 @@ class MarketsStore {
                     let callOrder = new CallOrder(
                         call_order,
                         assets,
-                        this.quoteAsset.get("id"),
-                        this.feedPrice,
+                        marketsStore.quoteAsset.get("id"),
+                        marketsStore.feedPrice,
                         mcr
                     );
                     // console.log("**** onCallOrderUpdate **", call_order, "isMarginCalled:", callOrder.isMarginCalled());
 
                     if (callOrder.isMarginCalled()) {
-                        this.marketCallOrders = this.marketCallOrders.set(
-                            call_order.id,
-                            callOrder,
-                            mcr
+                        setMarketsStore(
+                            "marketCallOrders",
+                            marketsStore.marketCallOrders.set(
+                                call_order.id,
+                                callOrder,
+                                mcr
+                            )
                         );
 
                         // Update orderbook
-                        this._orderBook(false, true);
+                        _orderBook(false, true);
 
                         // Update depth chart data
-                        this._depthChart();
+                        _depthChart();
                     }
                 } catch (err) {
                     console.error(
                         "Unable to construct calls array, invalid feed price or prediction market?",
                         call_order,
-                        this.quoteAsset && this.quoteAsset.get("id"),
-                        this.baseAsset && this.baseAsset.get("id")
+                        marketsStore.quoteAsset && marketsStore.quoteAsset.get("id"),
+                        marketsStore.baseAsset && marketsStore.baseAsset.get("id")
                     );
                 }
             }
         } else {
             return false;
         }
-    }
-    //
+    },
     onFeedUpdate(asset) {
-        if (!this.quoteAsset || !this.baseAsset) {
+        if (!marketsStore.quoteAsset || !marketsStore.baseAsset) {
             return false;
         }
+
         if (
             asset.get("id") ===
-            this[this.invertedCalls ? "baseAsset" : "quoteAsset"].get("id")
+            marketsStore.invertedCalls
+                ? marketsStore.baseAsset.get("id")
+                : marketsStore.quoteAsset.get("id")
         ) {
-            this[this.invertedCalls ? "baseAsset" : "quoteAsset"] = asset;
+            setMarketsStore(marketsStore.invertedCalls ? "baseAsset" : "quoteAsset", asset);
         } else {
             return false;
         }
 
         let feedChanged = false;
-        let newFeed = this._getFeed();
+        let newFeed = _getFeed();
         if (
-            (newFeed && !this.feedPrice) ||
-            (this.feedPrice && this.feedPrice.ne(newFeed))
+            (newFeed && !marketsStore.feedPrice) ||
+            (marketsStore.feedPrice && marketsStore.feedPrice.ne(newFeed))
         ) {
             feedChanged = true;
         }
 
         if (feedChanged) {
-            this.feedPrice = newFeed;
+            setMarketsStore("feedPrice", newFeed);
             const assets = {
-                [this.quoteAsset.get("id")]: {
-                    precision: this.quoteAsset.get("precision")
+                [marketsStore.quoteAsset.get("id")]: {
+                    precision: marketsStore.quoteAsset.get("precision")
                 },
-                [this.baseAsset.get("id")]: {
-                    precision: this.baseAsset.get("precision")
+                [marketsStore.baseAsset.get("id")]: {
+                    precision: marketsStore.baseAsset.get("precision")
                 }
             };
 
             /*
-             * If the feed price changed, we need to check whether the orders
-             * being margin called have changed and filter accordingly. To do so
-             * we recreate the marketCallOrders map from scratch using the
-             * previously fetched data and the new feed price.
-             */
-            this.marketCallOrders = this.marketCallOrders.clear();
-            this.allCallOrders.forEach(call => {
+                * If the feed price changed, we need to check whether the orders
+                * being margin called have changed and filter accordingly. To do so
+                * we recreate the marketCallOrders map from scratch using the
+                * previously fetched data and the new feed price.
+                */
+            setMarketsStore("marketCallOrders", marketsStore.marketCallOrders.clear());
+            marketsStore.allCallOrders.forEach(call => {
                 // ChainStore._updateObject(call, false, false);
                 try {
-                    let mcr = this[
-                        this.invertedCalls ? "baseAsset" : "quoteAsset"
+                    let mcr = marketsStore[
+                        marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"
                     ].getIn([
                         "bitasset",
                         "current_feed",
@@ -689,22 +650,26 @@ class MarketsStore {
                     let callOrder = new CallOrder(
                         call,
                         assets,
-                        this.quoteAsset.get("id"),
-                        this.feedPrice,
+                        marketsStore.quoteAsset.get("id"),
+                        marketsStore.feedPrice,
                         mcr,
-                        this.is_prediction_market
+                        marketsStore.is_prediction_market
                     );
+
                     if (callOrder.isMarginCalled()) {
-                        this.marketCallOrders = this.marketCallOrders.set(
-                            call.id,
-                            new CallOrder(
-                                call,
-                                assets,
-                                this.quoteAsset.get("id"),
-                                this.feedPrice,
-                                mcr
+                        setMarketsStore(
+                            "marketCallOrders",
+                            marketsStore.marketCallOrders.set(
+                                call.id,
+                                new CallOrder(
+                                    call,
+                                    assets,
+                                    marketsStore.quoteAsset.get("id"),
+                                    marketsStore.feedPrice,
+                                    mcr
+                                )
                             )
-                        );
+                        )
                     }
                 } catch (err) {
                     console.error(
@@ -713,369 +678,13 @@ class MarketsStore {
                 }
             });
 
-            // this.marketCallOrders = this.marketCallOrders.withMutations(callOrder => {
-            //     if (callOrder && callOrder.first()) {
-            //         callOrder.first().setFeed(this.feedPrice);
-            //     }
-            // });
-
-            // this.marketCallOrders = this.marketCallOrders.filter(callOrder => {
-            //     if (callOrder) {
-            //         return callOrder.isMarginCalled();
-            //     } else {
-            //         return false;
-            //     }
-            // });
-
             // Update orderbook
-            this._orderBook(true, true);
+            _orderBook(true, true);
 
             // Update depth chart data
-            this._depthChart();
+            _depthChart();
         }
-    }
-
-    _getFeed() {
-        if (!this._marketHasCalls()) {
-            this.bitasset_options = null;
-            this.is_prediction_market = false;
-            return null;
-        }
-
-        const assets = {
-            [this.quoteAsset.get("id")]: {
-                precision: this.quoteAsset.get("precision")
-            },
-            [this.baseAsset.get("id")]: {
-                precision: this.baseAsset.get("precision")
-            }
-        };
-        let feedPriceRaw = asset_utils.extractRawFeedPrice(
-            this[this.invertedCalls ? "baseAsset" : "quoteAsset"]
-        );
-
-        try {
-            let sqr = this[
-                this.invertedCalls ? "baseAsset" : "quoteAsset"
-            ].getIn([
-                "bitasset",
-                "current_feed",
-                "maximum_short_squeeze_ratio"
-            ]);
-            let mcfr = this[
-                this.invertedCalls ? "baseAsset" : "quoteAsset"
-            ].getIn([
-                "bitasset",
-                "options",
-                "extensions",
-                "margin_call_fee_ratio"
-            ]);
-
-            this.is_prediction_market = this[
-                this.invertedCalls ? "baseAsset" : "quoteAsset"
-            ].getIn(["bitasset", "is_prediction_market"], false);
-            this.bitasset_options = this[
-                this.invertedCalls ? "baseAsset" : "quoteAsset"
-            ]
-                .getIn(["bitasset", "options"])
-                .toJS();
-            /* Prediction markets don't need feeds for shorting, so the settlement price can be set to 1:1 */
-            if (
-                this.is_prediction_market &&
-                feedPriceRaw.getIn(["base", "asset_id"]) ===
-                    feedPriceRaw.getIn(["quote", "asset_id"])
-            ) {
-                const backingAsset = this.bitasset_options.short_backing_asset;
-                if (!assets[backingAsset])
-                    assets[backingAsset] = {
-                        precision: this.quoteAsset.get("precision")
-                    };
-                feedPriceRaw = feedPriceRaw.setIn(["base", "amount"], 1);
-                feedPriceRaw = feedPriceRaw.setIn(
-                    ["base", "asset_id"],
-                    backingAsset
-                );
-                feedPriceRaw = feedPriceRaw.setIn(["quote", "amount"], 1);
-                feedPriceRaw = feedPriceRaw.setIn(
-                    ["quote", "asset_id"],
-                    this.quoteAsset.get("id")
-                );
-                sqr = 1000;
-            }
-            const feedPrice = new FeedPrice({
-                priceObject: feedPriceRaw,
-                market_base: this.quoteAsset.get("id"),
-                sqr,
-                mcfr,
-                assets
-            });
-
-            return feedPrice;
-        } catch (err) {
-            console.error(
-                this.activeMarket,
-                "does not have a properly configured feed price"
-            );
-            return null;
-        }
-    }
-
-    _priceChart() {
-        let prices = [];
-
-        let open, high, low, close, volume;
-
-        for (let i = 0; i < this.priceHistory.length; i++) {
-            let current = this.priceHistory[i];
-            if (!/Z$/.test(current.key.open)) {
-                current.key.open += "Z";
-            }
-            let date = new Date(current.key.open);
-
-            if (this.quoteAsset.get("id") === current.key.quote) {
-                high = utils.get_asset_price(
-                    current.high_base,
-                    this.baseAsset,
-                    current.high_quote,
-                    this.quoteAsset
-                );
-                low = utils.get_asset_price(
-                    current.low_base,
-                    this.baseAsset,
-                    current.low_quote,
-                    this.quoteAsset
-                );
-                open = utils.get_asset_price(
-                    current.open_base,
-                    this.baseAsset,
-                    current.open_quote,
-                    this.quoteAsset
-                );
-                close = utils.get_asset_price(
-                    current.close_base,
-                    this.baseAsset,
-                    current.close_quote,
-                    this.quoteAsset
-                );
-                volume = utils.get_asset_amount(
-                    current.quote_volume,
-                    this.quoteAsset
-                );
-            } else {
-                low = utils.get_asset_price(
-                    current.high_quote,
-                    this.baseAsset,
-                    current.high_base,
-                    this.quoteAsset
-                );
-                high = utils.get_asset_price(
-                    current.low_quote,
-                    this.baseAsset,
-                    current.low_base,
-                    this.quoteAsset
-                );
-                open = utils.get_asset_price(
-                    current.open_quote,
-                    this.baseAsset,
-                    current.open_base,
-                    this.quoteAsset
-                );
-                close = utils.get_asset_price(
-                    current.close_quote,
-                    this.baseAsset,
-                    current.close_base,
-                    this.quoteAsset
-                );
-                volume = utils.get_asset_amount(
-                    current.base_volume,
-                    this.quoteAsset
-                );
-            }
-
-            function findMax(a, b) {
-                if (a !== Infinity && b !== Infinity) {
-                    return Math.max(a, b);
-                } else if (a === Infinity) {
-                    return b;
-                } else {
-                    return a;
-                }
-            }
-
-            function findMin(a, b) {
-                if (a !== 0 && b !== 0) {
-                    return Math.min(a, b);
-                } else if (a === 0) {
-                    return b;
-                } else {
-                    return a;
-                }
-            }
-
-            if (low === 0) {
-                low = findMin(open, close);
-            }
-
-            if (isNaN(high) || high === Infinity) {
-                high = findMax(open, close);
-            }
-
-            if (close === Infinity || close === 0) {
-                close = open;
-            }
-
-            if (open === Infinity || open === 0) {
-                open = close;
-            }
-
-            if (high > 1.3 * ((open + close) / 2)) {
-                high = findMax(open, close);
-            }
-
-            if (low < 0.7 * ((open + close) / 2)) {
-                low = findMin(open, close);
-            }
-
-            prices.push({time: date.getTime(), open, high, low, close, volume});
-        }
-
-        this.priceData = prices;
-
-        this._notifySubscriber("subscribeBars");
-    }
-
-    _orderBook(limitsChanged = true, callsChanged = false) {
-        // Loop over limit orders and return array containing bids
-        let constructBids = orderArray => {
-            let bids = orderArray
-                .filter(a => {
-                    return a.isBid();
-                })
-                .sort((a, b) => {
-                    return a.getPrice() - b.getPrice();
-                })
-                .map(order => {
-                    return order;
-                })
-                .toArray();
-
-            // Sum bids at same price
-            if (bids.length > 1) {
-                for (let i = bids.length - 2; i >= 0; i--) {
-                    if (bids[i].getPrice() === bids[i + 1].getPrice()) {
-                        bids[i] = bids[i].sum(bids[i + 1]);
-                        bids.splice(i + 1, 1);
-                    }
-                }
-            }
-            return bids;
-        };
-        // Loop over limit orders and return array containing asks
-        let constructAsks = orderArray => {
-            let asks = orderArray
-                .filter(a => {
-                    return !a.isBid();
-                })
-                .sort((a, b) => {
-                    return a.getPrice() - b.getPrice();
-                })
-                .map(order => {
-                    return order;
-                })
-                .toArray();
-
-            // Sum asks at same price
-            if (asks.length > 1) {
-                for (let i = asks.length - 2; i >= 0; i--) {
-                    if (asks[i].getPrice() === asks[i + 1].getPrice()) {
-                        asks[i] = asks[i].sum(asks[i + 1]);
-                        asks.splice(i + 1, 1);
-                    }
-                }
-            }
-            return asks;
-        };
-
-        // Assign to store variables
-        if (limitsChanged) {
-            if (__DEV__)
-                console.time("Construct limit orders " + this.activeMarket);
-            this.marketData.bids = constructBids(this.marketLimitOrders);
-            this.marketData.asks = constructAsks(this.marketLimitOrders);
-            if (!callsChanged) {
-                this._combineOrders();
-            }
-            if (__DEV__)
-                console.timeEnd("Construct limit orders " + this.activeMarket);
-        }
-
-        if (callsChanged) {
-            if (__DEV__) console.time("Construct calls " + this.activeMarket);
-            this.marketData.calls = this.constructCalls(this.marketCallOrders);
-            this._combineOrders();
-            if (__DEV__)
-                console.timeEnd("Construct calls " + this.activeMarket);
-        }
-
-        // console.log("time to construct orderbook:", new Date() - orderBookStart, "ms");
-    }
-
-    _groupedOrderBook(groupedOrdersBids = null, groupedOrdersAsks = null) {
-        // Sum and assign to store variables
-        if (groupedOrdersBids && groupedOrdersAsks) {
-            if (__DEV__)
-                console.time("Sum grouped orders " + this.activeMarket);
-
-            let totalToReceive = new Asset({
-                asset_id: this.quoteAsset.get("id"),
-                precision: this.quoteAsset.get("precision")
-            });
-
-            let totalForSale = new Asset({
-                asset_id: this.baseAsset.get("id"),
-                precision: this.baseAsset.get("precision")
-            });
-            groupedOrdersBids
-                .sort((a, b) => {
-                    return b.getPrice() - a.getPrice();
-                })
-                .forEach(a => {
-                    totalForSale.plus(a.amountForSale());
-                    totalToReceive.plus(a.amountToReceive(true));
-
-                    a.setTotalForSale(totalForSale.clone());
-                    a.setTotalToReceive(totalToReceive.clone());
-                });
-
-            totalToReceive = new Asset({
-                asset_id: this.baseAsset.get("id"),
-                precision: this.baseAsset.get("precision")
-            });
-
-            totalForSale = new Asset({
-                asset_id: this.quoteAsset.get("id"),
-                precision: this.quoteAsset.get("precision")
-            });
-
-            groupedOrdersAsks
-                .sort((a, b) => {
-                    return a.getPrice() - b.getPrice();
-                })
-                .forEach(a => {
-                    totalForSale.plus(a.amountForSale());
-                    totalToReceive.plus(a.amountToReceive(false));
-                    a.setTotalForSale(totalForSale.clone());
-                    a.setTotalToReceive(totalToReceive.clone());
-                });
-
-            this.marketData.groupedBids = groupedOrdersBids;
-            this.marketData.groupedAsks = groupedOrdersAsks;
-
-            if (__DEV__)
-                console.timeEnd("Sum grouped orders " + this.activeMarket);
-        }
-    }
-
+    },
     constructCalls(callsArray) {
         let calls = [];
         if (callsArray.size) {
@@ -1084,20 +693,26 @@ class MarketsStore {
                     return a.getPrice() - b.getPrice();
                 })
                 .map(order => {
-                    if (this.invertedCalls) {
-                        this.lowestCallPrice = !this.lowestCallPrice
-                            ? order.getPrice(false)
-                            : Math.max(
-                                  this.lowestCallPrice,
-                                  order.getPrice(false)
-                              );
+                    if (marketsStore.invertedCalls) {
+                        setMarketsStore(
+                            "lowestCallPrice",
+                            !marketsStore.lowestCallPrice
+                                ? order.getPrice(false)
+                                : Math.max(
+                                        marketsStore.lowestCallPrice,
+                                        order.getPrice(false)
+                                    )
+                        );
                     } else {
-                        this.lowestCallPrice = !this.lowestCallPrice
-                            ? order.getPrice(false)
-                            : Math.min(
-                                  this.lowestCallPrice,
-                                  order.getPrice(false)
-                              );
+                        setMarketsStore(
+                            "lowestCallPrice",
+                            !marketsStore.lowestCallPrice
+                                ? order.getPrice(false)
+                                : Math.min(
+                                        marketsStore.lowestCallPrice,
+                                        order.getPrice(false)
+                                    )
+                        );
                     }
 
                     return order;
@@ -1112,70 +727,440 @@ class MarketsStore {
                 }
             }
         } else {
-            this.lowestCallPrice = null;
+            setMarketsStore("lowestCallPrice", null);
         }
         return calls;
-    }
+    },
+    // TODO: Continue here 
+    onGetMarketStats(payload) {
+        if (payload && payload.tickers) {
+            for (var i = 0; i < payload.tickers.length; i++) {
+                let stats = _calcMarketStats(
+                    payload.bases[i],
+                    payload.quotes[i],
+                    payload.markets[i],
+                    payload.tickers[i]
+                );
+                marketsStore.allMarketStats = marketsStore.allMarketStats.set(
+                    payload.markets[i],
+                    stats
+                );
 
-    _saveMarketStats() {
-        /*
-         * Only save stats once every 30s to limit writes and
-         * allMarketStats JS conversions
-         */
-        if (!this.saveStatsTimeout) {
-            this.saveStatsTimeout = setTimeout(() => {
-                marketStorage.set("allMarketStats", this.allMarketStats.toJS());
-                this.saveStatsTimeout = null;
-            }, 1000 * 30);
+                let {
+                    invertedStats,
+                    invertedMarketName
+                } = _invertMarketStats(stats, payload.markets[i]);
+                marketsStore.allMarketStats = marketsStore.allMarketStats.set(
+                    invertedMarketName,
+                    invertedStats
+                );
+            }
+
+            _saveMarketStats();
+
+            return true;
         }
+        return false;
+    },
+    onSettleOrderUpdate(result) {
+        marketsStore.updateSettleOrders(result);
+    },
+    updateSettleOrders(result) {
+        if (result.settles && result.settles.length) {
+            const assets = {
+                [marketsStore.quoteAsset.get("id")]: {
+                    precision: marketsStore.quoteAsset.get("precision")
+                },
+                [marketsStore.baseAsset.get("id")]: {
+                    precision: marketsStore.baseAsset.get("precision")
+                }
+            };
+            marketsStore.marketSettleOrders = marketsStore.marketSettleOrders.clear();
+
+            result.settles.forEach(settle => {
+                // let key = settle.owner + "_" + settle.balance.asset_id;
+
+                settle.settlement_date = new Date(settle.settlement_date + "Z");
+
+                marketsStore.marketSettleOrders = marketsStore.marketSettleOrders.add(
+                    new SettleOrder(
+                        settle,
+                        assets,
+                        marketsStore.quoteAsset.get("id"),
+                        marketsStore.feedPrice,
+                        marketsStore.bitasset_options
+                    )
+                );
+            });
+        }
+    },
+    onGetTrackedGroupsConfig(result) {
+        if (result.trackedGroupsConfig.length > 0) {
+            marketsStore.trackedGroupsConfig = result.trackedGroupsConfig;
+        }
+    },
+    onChangeCurrentGroupLimit(groupLimit) {
+        marketsStore.currentGroupLimit = groupLimit;
+    }
+});
+
+function _notifySubscriber(id, data) {
+    if (marketsStore.subscribers.has(id)) marketsStore.subscribers.get(id)(data);
+}
+
+function _getBucketSize() {
+    return parseInt(marketStorage.get("bucketSize", 3600));
+}
+
+/**
+ * @param {Number} size
+ */
+ function _setBucketSize(size) {
+    marketsStore.bucketSize = size;
+    marketStorage.set("bucketSize", size);
+}
+
+function _marketHasCalls() {
+    const {quoteAsset, baseAsset} = this;
+    if (
+        quoteAsset.has("bitasset") &&
+        quoteAsset.getIn(["bitasset", "options", "short_backing_asset"]) ===
+            baseAsset.get("id")
+    ) {
+        return true;
+    } else if (
+        baseAsset.has("bitasset") &&
+        baseAsset.getIn(["bitasset", "options", "short_backing_asset"]) ===
+            quoteAsset.get("id")
+    ) {
+        return true;
+    }
+    return false;
+}
+
+function _getFeed() {
+    if (!_marketHasCalls()) {
+        marketsStore.bitasset_options = null;
+        marketsStore.is_prediction_market = false;
+        return null;
     }
 
-    _combineOrders() {
-        const hasCalls = !!this.marketCallOrders.size;
-        const isBid = hasCalls && this.marketCallOrders.first().isBid();
+    const assets = {
+        [marketsStore.quoteAsset.get("id")]: {
+            precision: marketsStore.quoteAsset.get("precision")
+        },
+        [marketsStore.baseAsset.get("id")]: {
+            precision: marketsStore.baseAsset.get("precision")
+        }
+    };
+    let feedPriceRaw = asset_utils.extractRawFeedPrice(
+        this[marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"]
+    );
 
-        let combinedBids, combinedAsks;
+    try {
+        let sqr = this[
+            marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"
+        ].getIn([
+            "bitasset",
+            "current_feed",
+            "maximum_short_squeeze_ratio"
+        ]);
+        let mcfr = this[
+            marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"
+        ].getIn([
+            "bitasset",
+            "options",
+            "extensions",
+            "margin_call_fee_ratio"
+        ]);
 
-        if (isBid) {
-            combinedBids = this.marketData.bids.concat(this.marketData.calls);
-            combinedAsks = this.marketData.asks.concat([]);
+        marketsStore.is_prediction_market = this[
+            marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"
+        ].getIn(["bitasset", "is_prediction_market"], false);
+        marketsStore.bitasset_options = this[
+            marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"
+        ]
+            .getIn(["bitasset", "options"])
+            .toJS();
+        /* Prediction markets don't need feeds for shorting, so the settlement price can be set to 1:1 */
+        if (
+            marketsStore.is_prediction_market &&
+            feedPriceRaw.getIn(["base", "asset_id"]) ===
+                feedPriceRaw.getIn(["quote", "asset_id"])
+        ) {
+            const backingAsset = marketsStore.bitasset_options.short_backing_asset;
+            if (!assets[backingAsset])
+                assets[backingAsset] = {
+                    precision: marketsStore.quoteAsset.get("precision")
+                };
+            feedPriceRaw = feedPriceRaw.setIn(["base", "amount"], 1);
+            feedPriceRaw = feedPriceRaw.setIn(
+                ["base", "asset_id"],
+                backingAsset
+            );
+            feedPriceRaw = feedPriceRaw.setIn(["quote", "amount"], 1);
+            feedPriceRaw = feedPriceRaw.setIn(
+                ["quote", "asset_id"],
+                marketsStore.quoteAsset.get("id")
+            );
+            sqr = 1000;
+        }
+        const feedPrice = new FeedPrice({
+            priceObject: feedPriceRaw,
+            market_base: marketsStore.quoteAsset.get("id"),
+            sqr,
+            mcfr,
+            assets
+        });
+
+        return feedPrice;
+    } catch (err) {
+        console.error(
+            marketsStore.activeMarket,
+            "does not have a properly configured feed price"
+        );
+        return null;
+    }
+}
+
+function _priceChart() {
+    let prices = [];
+
+    let open, high, low, close, volume;
+
+    for (let i = 0; i < marketsStore.priceHistory.length; i++) {
+        let current = marketsStore.priceHistory[i];
+        if (!/Z$/.test(current.key.open)) {
+            current.key.open += "Z";
+        }
+        let date = new Date(current.key.open);
+
+        if (marketsStore.quoteAsset.get("id") === current.key.quote) {
+            high = utils.get_asset_price(
+                current.high_base,
+                marketsStore.baseAsset,
+                current.high_quote,
+                marketsStore.quoteAsset
+            );
+            low = utils.get_asset_price(
+                current.low_base,
+                marketsStore.baseAsset,
+                current.low_quote,
+                marketsStore.quoteAsset
+            );
+            open = utils.get_asset_price(
+                current.open_base,
+                marketsStore.baseAsset,
+                current.open_quote,
+                marketsStore.quoteAsset
+            );
+            close = utils.get_asset_price(
+                current.close_base,
+                marketsStore.baseAsset,
+                current.close_quote,
+                marketsStore.quoteAsset
+            );
+            volume = utils.get_asset_amount(
+                current.quote_volume,
+                marketsStore.quoteAsset
+            );
         } else {
-            combinedBids = this.marketData.bids.concat([]);
-            combinedAsks = this.marketData.asks.concat(this.marketData.calls);
+            low = utils.get_asset_price(
+                current.high_quote,
+                marketsStore.baseAsset,
+                current.high_base,
+                marketsStore.quoteAsset
+            );
+            high = utils.get_asset_price(
+                current.low_quote,
+                marketsStore.baseAsset,
+                current.low_base,
+                marketsStore.quoteAsset
+            );
+            open = utils.get_asset_price(
+                current.open_quote,
+                marketsStore.baseAsset,
+                current.open_base,
+                marketsStore.quoteAsset
+            );
+            close = utils.get_asset_price(
+                current.close_quote,
+                marketsStore.baseAsset,
+                current.close_base,
+                marketsStore.quoteAsset
+            );
+            volume = utils.get_asset_amount(
+                current.base_volume,
+                marketsStore.quoteAsset
+            );
         }
+
+        function findMax(a, b) {
+            if (a !== Infinity && b !== Infinity) {
+                return Math.max(a, b);
+            } else if (a === Infinity) {
+                return b;
+            } else {
+                return a;
+            }
+        }
+
+        function findMin(a, b) {
+            if (a !== 0 && b !== 0) {
+                return Math.min(a, b);
+            } else if (a === 0) {
+                return b;
+            } else {
+                return a;
+            }
+        }
+
+        if (low === 0) {
+            low = findMin(open, close);
+        }
+
+        if (isNaN(high) || high === Infinity) {
+            high = findMax(open, close);
+        }
+
+        if (close === Infinity || close === 0) {
+            close = open;
+        }
+
+        if (open === Infinity || open === 0) {
+            open = close;
+        }
+
+        if (high > 1.3 * ((open + close) / 2)) {
+            high = findMax(open, close);
+        }
+
+        if (low < 0.7 * ((open + close) / 2)) {
+            low = findMin(open, close);
+        }
+
+        prices.push({time: date.getTime(), open, high, low, close, volume});
+    }
+
+    marketsStore.priceData = prices;
+
+    _notifySubscriber("subscribeBars");
+}
+
+function _orderBook(limitsChanged = true, callsChanged = false) {
+    // Loop over limit orders and return array containing bids
+    let constructBids = orderArray => {
+        let bids = orderArray
+            .filter(a => {
+                return a.isBid();
+            })
+            .sort((a, b) => {
+                return a.getPrice() - b.getPrice();
+            })
+            .map(order => {
+                return order;
+            })
+            .toArray();
+
+        // Sum bids at same price
+        if (bids.length > 1) {
+            for (let i = bids.length - 2; i >= 0; i--) {
+                if (bids[i].getPrice() === bids[i + 1].getPrice()) {
+                    bids[i] = bids[i].sum(bids[i + 1]);
+                    bids.splice(i + 1, 1);
+                }
+            }
+        }
+        return bids;
+    };
+    // Loop over limit orders and return array containing asks
+    let constructAsks = orderArray => {
+        let asks = orderArray
+            .filter(a => {
+                return !a.isBid();
+            })
+            .sort((a, b) => {
+                return a.getPrice() - b.getPrice();
+            })
+            .map(order => {
+                return order;
+            })
+            .toArray();
+
+        // Sum asks at same price
+        if (asks.length > 1) {
+            for (let i = asks.length - 2; i >= 0; i--) {
+                if (asks[i].getPrice() === asks[i + 1].getPrice()) {
+                    asks[i] = asks[i].sum(asks[i + 1]);
+                    asks.splice(i + 1, 1);
+                }
+            }
+        }
+        return asks;
+    };
+
+    // Assign to store variables
+    if (limitsChanged) {
+        if (__DEV__)
+            console.time("Construct limit orders " + marketsStore.activeMarket);
+        marketsStore.marketData.bids = constructBids(marketsStore.marketLimitOrders);
+        marketsStore.marketData.asks = constructAsks(marketsStore.marketLimitOrders);
+        if (!callsChanged) {
+            _combineOrders();
+        }
+        if (__DEV__)
+            console.timeEnd("Construct limit orders " + marketsStore.activeMarket);
+    }
+
+    if (callsChanged) {
+        if (__DEV__) console.time("Construct calls " + marketsStore.activeMarket);
+        marketsStore.marketData.calls = marketsStore.constructCalls(marketsStore.marketCallOrders);
+        _combineOrders();
+        if (__DEV__)
+            console.timeEnd("Construct calls " + marketsStore.activeMarket);
+    }
+
+    // console.log("time to construct orderbook:", new Date() - orderBookStart, "ms");
+}
+
+function _groupedOrderBook(groupedOrdersBids = null, groupedOrdersAsks = null) {
+    // Sum and assign to store variables
+    if (groupedOrdersBids && groupedOrdersAsks) {
+        if (__DEV__)
+            console.time("Sum grouped orders " + marketsStore.activeMarket);
 
         let totalToReceive = new Asset({
-            asset_id: this.quoteAsset.get("id"),
-            precision: this.quoteAsset.get("precision")
+            asset_id: marketsStore.quoteAsset.get("id"),
+            precision: marketsStore.quoteAsset.get("precision")
         });
 
         let totalForSale = new Asset({
-            asset_id: this.baseAsset.get("id"),
-            precision: this.baseAsset.get("precision")
+            asset_id: marketsStore.baseAsset.get("id"),
+            precision: marketsStore.baseAsset.get("precision")
         });
-        combinedBids
+        groupedOrdersBids
             .sort((a, b) => {
                 return b.getPrice() - a.getPrice();
             })
             .forEach(a => {
-                totalToReceive.plus(a.amountToReceive(true));
                 totalForSale.plus(a.amountForSale());
+                totalToReceive.plus(a.amountToReceive(true));
 
                 a.setTotalForSale(totalForSale.clone());
                 a.setTotalToReceive(totalToReceive.clone());
             });
 
         totalToReceive = new Asset({
-            asset_id: this.baseAsset.get("id"),
-            precision: this.baseAsset.get("precision")
+            asset_id: marketsStore.baseAsset.get("id"),
+            precision: marketsStore.baseAsset.get("precision")
         });
 
         totalForSale = new Asset({
-            asset_id: this.quoteAsset.get("id"),
-            precision: this.quoteAsset.get("precision")
+            asset_id: marketsStore.quoteAsset.get("id"),
+            precision: marketsStore.quoteAsset.get("precision")
         });
 
-        combinedAsks
+        groupedOrdersAsks
             .sort((a, b) => {
                 return a.getPrice() - b.getPrice();
             })
@@ -1186,386 +1171,386 @@ class MarketsStore {
                 a.setTotalToReceive(totalToReceive.clone());
             });
 
-        this.marketData.lowestAsk = !combinedAsks.length
-            ? nullPrice
-            : combinedAsks[0];
+        marketsStore.marketData.groupedBids = groupedOrdersBids;
+        marketsStore.marketData.groupedAsks = groupedOrdersAsks;
 
-        this.marketData.highestBid = !combinedBids.length
-            ? nullPrice
-            : combinedBids[0];
+        if (__DEV__)
+            console.timeEnd("Sum grouped orders " + marketsStore.activeMarket);
+    }
+}
 
-        this.marketData.combinedBids = combinedBids;
-        this.marketData.combinedAsks = combinedAsks;
+function _saveMarketStats() {
+    /*
+     * Only save stats once every 30s to limit writes and
+     * allMarketStats JS conversions
+     */
+    if (!marketsStore.saveStatsTimeout) {
+        marketsStore.saveStatsTimeout = setTimeout(() => {
+            marketStorage.set("allMarketStats", marketsStore.allMarketStats.toJS());
+            marketsStore.saveStatsTimeout = null;
+        }, 1000 * 30);
+    }
+}
+
+function _combineOrders() {
+    const hasCalls = !!marketsStore.marketCallOrders.size;
+    const isBid = hasCalls && marketsStore.marketCallOrders.first().isBid();
+
+    let combinedBids, combinedAsks;
+
+    if (isBid) {
+        combinedBids = marketsStore.marketData.bids.concat(marketsStore.marketData.calls);
+        combinedAsks = marketsStore.marketData.asks.concat([]);
+    } else {
+        combinedBids = marketsStore.marketData.bids.concat([]);
+        combinedAsks = marketsStore.marketData.asks.concat(marketsStore.marketData.calls);
     }
 
-    _depthChart() {
-        let bids = [],
-            asks = [],
-            calls = [],
-            totalBids = 0,
-            totalAsks = 0,
-            totalCalls = 0;
-        let flat_bids = [],
-            flat_asks = [],
-            flat_calls = [],
-            flat_settles = [];
+    let totalToReceive = new Asset({
+        asset_id: marketsStore.quoteAsset.get("id"),
+        precision: marketsStore.quoteAsset.get("precision")
+    });
 
-        if (this.marketLimitOrders.size) {
-            this.marketData.bids.forEach(order => {
-                bids.push([
-                    order.getPrice(),
-                    order.amountToReceive().getAmount({real: true})
-                ]);
-                totalBids += order.amountForSale().getAmount({real: true});
-            });
+    let totalForSale = new Asset({
+        asset_id: marketsStore.baseAsset.get("id"),
+        precision: marketsStore.baseAsset.get("precision")
+    });
+    combinedBids
+        .sort((a, b) => {
+            return b.getPrice() - a.getPrice();
+        })
+        .forEach(a => {
+            totalToReceive.plus(a.amountToReceive(true));
+            totalForSale.plus(a.amountForSale());
 
-            this.marketData.asks.forEach(order => {
-                asks.push([
-                    order.getPrice(),
-                    order.amountForSale().getAmount({real: true})
-                ]);
-            });
+            a.setTotalForSale(totalForSale.clone());
+            a.setTotalToReceive(totalToReceive.clone());
+        });
 
-            // Make sure the arrays are sorted properly
-            asks.sort((a, b) => {
-                return a[0] - b[0];
-            });
+    totalToReceive = new Asset({
+        asset_id: marketsStore.baseAsset.get("id"),
+        precision: marketsStore.baseAsset.get("precision")
+    });
 
-            bids.sort((a, b) => {
-                return a[0] - b[0];
-            });
+    totalForSale = new Asset({
+        asset_id: marketsStore.quoteAsset.get("id"),
+        precision: marketsStore.quoteAsset.get("precision")
+    });
 
-            // Flatten the arrays to get the step plot look
-            flat_bids = market_utils.flatten_orderbookchart_highcharts(
-                bids,
-                true,
-                true,
-                1000
-            );
+    combinedAsks
+        .sort((a, b) => {
+            return a.getPrice() - b.getPrice();
+        })
+        .forEach(a => {
+            totalForSale.plus(a.amountForSale());
+            totalToReceive.plus(a.amountToReceive(false));
+            a.setTotalForSale(totalForSale.clone());
+            a.setTotalToReceive(totalToReceive.clone());
+        });
 
-            if (flat_bids.length > 0) {
-                flat_bids.unshift([0, flat_bids[0][1]]);
+    marketsStore.marketData.lowestAsk = !combinedAsks.length
+        ? nullPrice
+        : combinedAsks[0];
+
+    marketsStore.marketData.highestBid = !combinedBids.length
+        ? nullPrice
+        : combinedBids[0];
+
+    marketsStore.marketData.combinedBids = combinedBids;
+    marketsStore.marketData.combinedAsks = combinedAsks;
+}
+
+function _depthChart() {
+    let bids = [],
+        asks = [],
+        calls = [],
+        totalBids = 0,
+        totalAsks = 0,
+        totalCalls = 0;
+    let flat_bids = [],
+        flat_asks = [],
+        flat_calls = [],
+        flat_settles = [];
+
+    if (marketsStore.marketLimitOrders.size) {
+        marketsStore.marketData.bids.forEach(order => {
+            bids.push([
+                order.getPrice(),
+                order.amountToReceive().getAmount({real: true})
+            ]);
+            totalBids += order.amountForSale().getAmount({real: true});
+        });
+
+        marketsStore.marketData.asks.forEach(order => {
+            asks.push([
+                order.getPrice(),
+                order.amountForSale().getAmount({real: true})
+            ]);
+        });
+
+        // Make sure the arrays are sorted properly
+        asks.sort((a, b) => {
+            return a[0] - b[0];
+        });
+
+        bids.sort((a, b) => {
+            return a[0] - b[0];
+        });
+
+        // Flatten the arrays to get the step plot look
+        flat_bids = market_utils.flatten_orderbookchart_highcharts(
+            bids,
+            true,
+            true,
+            1000
+        );
+
+        if (flat_bids.length > 0) {
+            flat_bids.unshift([0, flat_bids[0][1]]);
+        }
+
+        flat_asks = market_utils.flatten_orderbookchart_highcharts(
+            asks,
+            true,
+            false,
+            1000
+        );
+
+        if (flat_asks.length > 0) {
+            flat_asks.push([
+                flat_asks[flat_asks.length - 1][0] * 1.5,
+                flat_asks[flat_asks.length - 1][1]
+            ]);
+            totalAsks = flat_asks[flat_asks.length - 1][1];
+        }
+    }
+
+    /* Flatten call orders if there any */
+    if (marketsStore.marketData.calls.length) {
+        let callsAsBids = marketsStore.marketData.calls[0].isBid();
+        marketsStore.marketData.calls.forEach(order => {
+            calls.push([
+                order.getSqueezePrice(),
+                order[
+                    order.isBid() ? "amountToReceive" : "amountForSale"
+                ]().getAmount({real: true})
+            ]);
+        });
+
+        // Calculate total value of call orders
+        calls.forEach(call => {
+            if (marketsStore.invertedCalls) {
+                totalCalls += call[1];
+            } else {
+                totalCalls += call[1] * call[0];
             }
+        });
 
-            flat_asks = market_utils.flatten_orderbookchart_highcharts(
-                asks,
+        if (callsAsBids) {
+            totalBids += totalCalls;
+        } else {
+            totalAsks += totalCalls;
+        }
+
+        // Make sure the array is sorted properly
+        calls.sort((a, b) => {
+            return a[0] - b[0];
+        });
+
+        // Flatten the array to get the step plot look
+        if (marketsStore.invertedCalls) {
+            flat_calls = market_utils.flatten_orderbookchart_highcharts(
+                calls,
                 true,
                 false,
                 1000
             );
-
-            if (flat_asks.length > 0) {
-                flat_asks.push([
-                    flat_asks[flat_asks.length - 1][0] * 1.5,
-                    flat_asks[flat_asks.length - 1][1]
+            if (
+                flat_asks.length > 0 &&
+                flat_calls[flat_calls.length - 1][0] <
+                    flat_asks[flat_asks.length - 1][0]
+            ) {
+                flat_calls.push([
+                    flat_asks[flat_asks.length - 1][0],
+                    flat_calls[flat_calls.length - 1][1]
                 ]);
-                totalAsks = flat_asks[flat_asks.length - 1][1];
+            }
+        } else {
+            flat_calls = market_utils.flatten_orderbookchart_highcharts(
+                calls,
+                true,
+                true,
+                1000
+            );
+            if (flat_calls.length > 0) {
+                flat_calls.unshift([0, flat_calls[0][1]]);
             }
         }
+    }
 
-        /* Flatten call orders if there any */
-        if (this.marketData.calls.length) {
-            let callsAsBids = this.marketData.calls[0].isBid();
-            this.marketData.calls.forEach(order => {
-                calls.push([
-                    order.getSqueezePrice(),
-                    order[
-                        order.isBid() ? "amountToReceive" : "amountForSale"
-                    ]().getAmount({real: true})
-                ]);
-            });
-
-            // Calculate total value of call orders
-            calls.forEach(call => {
-                if (this.invertedCalls) {
-                    totalCalls += call[1];
-                } else {
-                    totalCalls += call[1] * call[0];
-                }
-            });
-
-            if (callsAsBids) {
-                totalBids += totalCalls;
-            } else {
-                totalAsks += totalCalls;
-            }
-
-            // Make sure the array is sorted properly
-            calls.sort((a, b) => {
-                return a[0] - b[0];
-            });
-
-            // Flatten the array to get the step plot look
-            if (this.invertedCalls) {
-                flat_calls = market_utils.flatten_orderbookchart_highcharts(
-                    calls,
-                    true,
-                    false,
-                    1000
-                );
-                if (
-                    flat_asks.length > 0 &&
-                    flat_calls[flat_calls.length - 1][0] <
-                        flat_asks[flat_asks.length - 1][0]
-                ) {
-                    flat_calls.push([
-                        flat_asks[flat_asks.length - 1][0],
-                        flat_calls[flat_calls.length - 1][1]
-                    ]);
-                }
-            } else {
-                flat_calls = market_utils.flatten_orderbookchart_highcharts(
-                    calls,
-                    true,
-                    true,
-                    1000
-                );
-                if (flat_calls.length > 0) {
-                    flat_calls.unshift([0, flat_calls[0][1]]);
-                }
-            }
-        }
-
-        /* Flatten settle orders if there are any */
-        if (this.marketSettleOrders.size) {
-            flat_settles = this.marketSettleOrders.reduce((final, a) => {
-                if (!final) {
-                    return [
-                        [
-                            a.getPrice(),
-                            a[
-                                !a.isBid() ? "amountForSale" : "amountToReceive"
-                            ]().getAmount({real: true})
-                        ]
-                    ];
-                } else {
-                    final[0][1] =
-                        final[0][1] +
+    /* Flatten settle orders if there are any */
+    if (marketsStore.marketSettleOrders.size) {
+        flat_settles = marketsStore.marketSettleOrders.reduce((final, a) => {
+            if (!final) {
+                return [
+                    [
+                        a.getPrice(),
                         a[
                             !a.isBid() ? "amountForSale" : "amountToReceive"
-                        ]().getAmount({real: true});
-                    return final;
-                }
-            }, null);
-
-            if (!this.feedPrice.inverted) {
-                flat_settles.unshift([0, flat_settles[0][1]]);
-            } else if (flat_asks.length > 0) {
-                flat_settles.push([
-                    flat_asks[flat_asks.length - 1][0],
-                    flat_settles[0][1]
-                ]);
+                        ]().getAmount({real: true})
+                    ]
+                ];
+            } else {
+                final[0][1] =
+                    final[0][1] +
+                    a[
+                        !a.isBid() ? "amountForSale" : "amountToReceive"
+                    ]().getAmount({real: true});
+                return final;
             }
+        }, null);
+
+        if (!marketsStore.feedPrice.inverted) {
+            flat_settles.unshift([0, flat_settles[0][1]]);
+        } else if (flat_asks.length > 0) {
+            flat_settles.push([
+                flat_asks[flat_asks.length - 1][0],
+                flat_settles[0][1]
+            ]);
         }
-
-        if (
-            this.marketData.groupedBids.length > 0 &&
-            this.marketData.groupedAsks.length > 0
-        ) {
-            bids = [];
-            asks = [];
-            totalBids = 0;
-            totalAsks = 0;
-            this.marketData.groupedBids.forEach(order => {
-                bids.push([
-                    order.getPrice(),
-                    order.amountToReceive().getAmount({real: true})
-                ]);
-                totalBids += order.amountForSale().getAmount({real: true});
-            });
-
-            this.marketData.groupedAsks.forEach(order => {
-                asks.push([
-                    order.getPrice(),
-                    order.amountForSale().getAmount({real: true})
-                ]);
-            });
-
-            // Make sure the arrays are sorted properly
-            asks.sort((a, b) => {
-                return a[0] - b[0];
-            });
-
-            bids.sort((a, b) => {
-                return a[0] - b[0];
-            });
-
-            // Flatten the arrays to get the step plot look
-            flat_bids = market_utils.flatten_orderbookchart_highcharts(
-                bids,
-                true,
-                true,
-                1000
-            );
-
-            if (flat_bids.length > 0) {
-                flat_bids.unshift([0, flat_bids[0][1]]);
-            }
-
-            flat_asks = market_utils.flatten_orderbookchart_highcharts(
-                asks,
-                true,
-                false,
-                1000
-            );
-            if (flat_asks.length > 0) {
-                flat_asks.push([
-                    flat_asks[flat_asks.length - 1][0] * 1.5,
-                    flat_asks[flat_asks.length - 1][1]
-                ]);
-                totalAsks = flat_asks[flat_asks.length - 1][1];
-            }
-        }
-
-        // Assign to store variables
-        this.marketData.flatAsks = flat_asks;
-        this.marketData.flatBids = flat_bids;
-        this.marketData.flatCalls = flat_calls;
-        this.marketData.flatSettles = flat_settles;
-        this.totals = {
-            bid: totalBids,
-            ask: totalAsks,
-            call: totalCalls
-        };
-        // console.log(this.totals);
     }
 
-    _calcMarketStats(base, quote, market, ticker) {
-        let volumeBaseAsset = new Asset({
-            real: parseFloat(ticker.base_volume),
-            asset_id: base.get("id"),
-            precision: base.get("precision")
-        });
-        let volumeQuoteAsset = new Asset({
-            real: parseFloat(ticker.quote_volume),
-            asset_id: quote.get("id"),
-            precision: quote.get("precision")
+    if (
+        marketsStore.marketData.groupedBids.length > 0 &&
+        marketsStore.marketData.groupedAsks.length > 0
+    ) {
+        bids = [];
+        asks = [];
+        totalBids = 0;
+        totalAsks = 0;
+        marketsStore.marketData.groupedBids.forEach(order => {
+            bids.push([
+                order.getPrice(),
+                order.amountToReceive().getAmount({real: true})
+            ]);
+            totalBids += order.amountForSale().getAmount({real: true});
         });
 
-        let price;
-        try {
-            price = new Price({
-                base: volumeBaseAsset,
-                quote: volumeQuoteAsset,
-                real: parseFloat(ticker.latest)
-            });
-        } catch (err) {}
-        let close = !!price
-            ? {
-                  base: price.base.toObject(),
-                  quote: price.quote.toObject()
-              }
-            : null;
+        marketsStore.marketData.groupedAsks.forEach(order => {
+            asks.push([
+                order.getPrice(),
+                order.amountForSale().getAmount({real: true})
+            ]);
+        });
 
-        if (!!price && isNaN(price.toReal())) {
-            price = undefined;
-            close = null;
+        // Make sure the arrays are sorted properly
+        asks.sort((a, b) => {
+            return a[0] - b[0];
+        });
+
+        bids.sort((a, b) => {
+            return a[0] - b[0];
+        });
+
+        // Flatten the arrays to get the step plot look
+        flat_bids = market_utils.flatten_orderbookchart_highcharts(
+            bids,
+            true,
+            true,
+            1000
+        );
+
+        if (flat_bids.length > 0) {
+            flat_bids.unshift([0, flat_bids[0][1]]);
         }
 
-        return {
-            change: parseFloat(ticker.percent_change).toFixed(2),
-            volumeBase: volumeBaseAsset.getAmount({real: true}),
-            volumeQuote: volumeQuoteAsset.getAmount({real: true}),
-            price,
-            close
-        };
-    }
-
-    _invertMarketStats(stats, market) {
-        let invertedMarketName =
-            market.split("_")[1] + "_" + market.split("_")[0];
-        return {
-            invertedStats: {
-                change: (
-                    (1 / (1 + parseFloat(stats.change) / 100) - 1) *
-                    100
-                ).toFixed(2),
-                price: stats.price ? stats.price.invert() : stats.price,
-                volumeBase: stats.volumeQuote,
-                volumeQuote: stats.volumeBase,
-                close: stats.close
-                    ? {
-                          base: stats.close.quote,
-                          quote: stats.close.base
-                      }
-                    : stats.close
-            },
-            invertedMarketName
-        };
-    }
-
-    onGetMarketStats(payload) {
-        if (payload && payload.tickers) {
-            for (var i = 0; i < payload.tickers.length; i++) {
-                let stats = this._calcMarketStats(
-                    payload.bases[i],
-                    payload.quotes[i],
-                    payload.markets[i],
-                    payload.tickers[i]
-                );
-                this.allMarketStats = this.allMarketStats.set(
-                    payload.markets[i],
-                    stats
-                );
-
-                let {
-                    invertedStats,
-                    invertedMarketName
-                } = this._invertMarketStats(stats, payload.markets[i]);
-                this.allMarketStats = this.allMarketStats.set(
-                    invertedMarketName,
-                    invertedStats
-                );
-            }
-
-            this._saveMarketStats();
-
-            return true;
-        }
-        return false;
-    }
-
-    onSettleOrderUpdate(result) {
-        this.updateSettleOrders(result);
-    }
-
-    updateSettleOrders(result) {
-        if (result.settles && result.settles.length) {
-            const assets = {
-                [this.quoteAsset.get("id")]: {
-                    precision: this.quoteAsset.get("precision")
-                },
-                [this.baseAsset.get("id")]: {
-                    precision: this.baseAsset.get("precision")
-                }
-            };
-            this.marketSettleOrders = this.marketSettleOrders.clear();
-
-            result.settles.forEach(settle => {
-                // let key = settle.owner + "_" + settle.balance.asset_id;
-
-                settle.settlement_date = new Date(settle.settlement_date + "Z");
-
-                this.marketSettleOrders = this.marketSettleOrders.add(
-                    new SettleOrder(
-                        settle,
-                        assets,
-                        this.quoteAsset.get("id"),
-                        this.feedPrice,
-                        this.bitasset_options
-                    )
-                );
-            });
+        flat_asks = market_utils.flatten_orderbookchart_highcharts(
+            asks,
+            true,
+            false,
+            1000
+        );
+        if (flat_asks.length > 0) {
+            flat_asks.push([
+                flat_asks[flat_asks.length - 1][0] * 1.5,
+                flat_asks[flat_asks.length - 1][1]
+            ]);
+            totalAsks = flat_asks[flat_asks.length - 1][1];
         }
     }
 
-    onGetTrackedGroupsConfig(result) {
-        if (result.trackedGroupsConfig.length > 0) {
-            this.trackedGroupsConfig = result.trackedGroupsConfig;
-        }
+    // Assign to store variables
+    marketsStore.marketData.flatAsks = flat_asks;
+    marketsStore.marketData.flatBids = flat_bids;
+    marketsStore.marketData.flatCalls = flat_calls;
+    marketsStore.marketData.flatSettles = flat_settles;
+    marketsStore.totals = {
+        bid: totalBids,
+        ask: totalAsks,
+        call: totalCalls
+    };
+    // console.log(marketsStore.totals);
+}
+
+function _calcMarketStats(base, quote, market, ticker) {
+    let volumeBaseAsset = new Asset({
+        real: parseFloat(ticker.base_volume),
+        asset_id: base.get("id"),
+        precision: base.get("precision")
+    });
+    let volumeQuoteAsset = new Asset({
+        real: parseFloat(ticker.quote_volume),
+        asset_id: quote.get("id"),
+        precision: quote.get("precision")
+    });
+
+    let price;
+    try {
+        price = new Price({
+            base: volumeBaseAsset,
+            quote: volumeQuoteAsset,
+            real: parseFloat(ticker.latest)
+        });
+    } catch (err) {}
+    let close = !!price
+        ? {
+              base: price.base.toObject(),
+              quote: price.quote.toObject()
+          }
+        : null;
+
+    if (!!price && isNaN(price.toReal())) {
+        price = undefined;
+        close = null;
     }
 
-    onChangeCurrentGroupLimit(groupLimit) {
-        this.currentGroupLimit = groupLimit;
-    }
+    return {
+        change: parseFloat(ticker.percent_change).toFixed(2),
+        volumeBase: volumeBaseAsset.getAmount({real: true}),
+        volumeQuote: volumeQuoteAsset.getAmount({real: true}),
+        price,
+        close
+    };
+}
+
+function _invertMarketStats(stats, market) {
+    let invertedMarketName = market.split("_")[1] + "_" + market.split("_")[0];
+    return {
+        invertedStats: {
+            change: (
+                (1 / (1 + parseFloat(stats.change) / 100) - 1) *
+                100
+            ).toFixed(2),
+            price: stats.price ? stats.price.invert() : stats.price,
+            volumeBase: stats.volumeQuote,
+            volumeQuote: stats.volumeBase,
+            close: stats.close
+                ? {
+                      base: stats.close.quote,
+                      quote: stats.close.base
+                  }
+                : stats.close
+        },
+        invertedMarketName
+    };
 }

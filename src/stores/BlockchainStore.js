@@ -5,54 +5,46 @@ import {ChainStore} from "bitsharesjs";
 // import {Block} from "./tcomb_structs";
 
 /*
-const [accountStore, setAccountStore] = createStore({
-
+this.bindListeners({
+    onGetBlock: BlockchainActions.getBlock,
+    onGetLatest: BlockchainActions.getLatest,
+    onGetHeader: BlockchainActions.getHeader,
+    onUpdateRpcConnectionStatus:
+        BlockchainActions.updateRpcConnectionStatus
 });
 */
 
-class BlockchainStore {
-    constructor() {
-        // This might not need to be an immutable map, a normal structure might suffice..
-        this.blocks = Immutable.Map();
-        this.latestBlocks = Immutable.List();
-        this.latestTransactions = Immutable.List();
-        this.rpc_connection_status = null;
-        this.no_ws_connection = false;
-        this.blockHeaders = new Map();
-
-        this.bindListeners({
-            onGetBlock: BlockchainActions.getBlock,
-            onGetLatest: BlockchainActions.getLatest,
-            onGetHeader: BlockchainActions.getHeader,
-            onUpdateRpcConnectionStatus:
-                BlockchainActions.updateRpcConnectionStatus
-        });
-
-        this.maxBlocks = 30;
-    }
-
+const [blockchainStore, setBlockchainStore] = createStore({
+    blocks: Immutable.Map(),
+    latestBlocks: Immutable.List(),
+    latestTransactions: Immutable.List(),
+    rpc_connection_status: null,
+    no_ws_connection: false,
+    blockHeaders: new Map(),
+    maxBlocks: 30,
     onGetHeader({header, height}) {
         if (header && height) {
             if (!/Z$/.test(header.timestamp)) {
                 header.timestamp += "Z";
             }
             header.timestamp = new Date(header.timestamp);
-            this.blockHeaders.set(height, header);
+            setBlockchainStore(
+                'blockHeaders', 
+                blockchainStore.blockHeaders.set(height, header)
+            );
         } else {
             return false;
         }
-    }
-
+    },
     onGetBlock(block) {
-        if (!this.blocks.get(block.id)) {
+        if (!blockchainStore.blocks.get(block.id)) {
             if (!/Z$/.test(block.timestamp)) {
                 block.timestamp += "Z";
             }
             block.timestamp = new Date(block.timestamp);
-            this.blocks = this.blocks.set(block.id, block);
+            setBlockchainStore('blocks', blockchainStore.blocks.set(block.id, block));
         }
-    }
-
+    },
     onGetLatest(payload) {
         let {block, maxBlock} = payload;
         if (typeof block.timestamp === "string") {
@@ -61,36 +53,47 @@ class BlockchainStore {
             }
         }
         block.timestamp = new Date(block.timestamp);
-        this.blocks = this.blocks.set(block.id, block);
+        setblockchainStore('blocks', blockchainStore.blocks.set(block.id, block));
         if (block.id > maxBlock - this.maxBlocks) {
-            this.latestBlocks = this.latestBlocks.unshift(block);
-            if (this.latestBlocks.size > this.maxBlocks) {
-                this.latestBlocks = this.latestBlocks.pop();
+            setblockchainStore(
+                'latestBlocks',
+                blockchainStore.latestBlocks.unshift(block.id)
+            );
+            if (blockchainStore.latestBlocks.size > blockchainStore.maxBlocks) {
+                setblockchainStore('latestBlocks', blockchainStore.latestBlocks.pop());
             }
 
             if (block.transactions.length > 0) {
                 block.transactions.forEach(trx => {
                     trx.block_num = block.id;
-                    this.latestTransactions = this.latestTransactions.unshift(
-                        trx
+                    setblockchainStore(
+                        'latestTransactions',
+                        blockchainStore.latestTransactions.unshift(trx)
                     );
                 });
             }
 
-            if (this.latestTransactions.size > this.maxBlocks) {
-                this.latestTransactions = this.latestTransactions.pop();
+            if (blockchainStore.latestTransactions.size > blockchainStore.maxBlocks) {
+                setblockchainStore('latestTransactions', blockchainStore.latestTransactions.pop());
             }
         }
-    }
-
+    },
     onUpdateRpcConnectionStatus(status) {
-        let prev_status = this.rpc_connection_status;
-        if (status === "reconnect") ChainStore.resetCache(false);
-        else this.rpc_connection_status = status;
-        if (prev_status === null && status === "error")
-            this.no_ws_connection = true;
-        if (this.no_ws_connection && status === "open")
-            this.no_ws_connection = false;
-        if (status === "closed") this.no_ws_connection = true;
+        let prev_status = blockchainStore.rpc_connection_status;
+        if (status === "reconnect") {
+            ChainStore.resetCache(false);
+        } else {
+            setblockchainStore('rpc_connection_status', status);
+        } 
+
+        if (prev_status === null && status === "error" || status === "closed") {
+            setblockchainStore('no_ws_connection', true);
+        }
+
+        if (blockchainStore.no_ws_connection && status === "open") {
+            setblockchainStore('no_ws_connection', false);
+        }
     }
-}
+});
+
+export const useBlockchainStore = () => [blockchainStore, setBlockchainStore];

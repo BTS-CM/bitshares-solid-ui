@@ -1,40 +1,33 @@
 import { createStore } from 'solid-js/store'
-import CreditOfferActions from "../actions/CreditOfferActions";
+import * as CreditOfferActions from "../actions/CreditOfferActions";
 
 /*
-const [accountStore, setAccountStore] = createStore({
-
-});
+    this.bindListeners({
+        onGetCreditOffersByOwner: CreditOfferActions.getCreditOffersByOwner,
+        onGetCreditDealsByBorrower:
+            CreditOfferActions.getCreditDealsByBorrower,
+        onGetCreditDealsByOfferOwner:
+            CreditOfferActions.getCreditDealsByOfferOwner,
+        onGetAll: CreditOfferActions.getAll,
+        onCreate: CreditOfferActions.create,
+        onDelete: CreditOfferActions.delete,
+        onUpdate: CreditOfferActions.update,
+        onDisabled: CreditOfferActions.disabled,
+        onAccept: CreditOfferActions.accept,
+        onRepay: CreditOfferActions.repay
+    });
 */
 
-class CreditOfferStore {
-    constructor() {
-        this.allList = [];
-        this.listByOwner = [];
-        this.dealsByBorrower = [];
-        this.dealsByOfferOwner = [];
-        this.bindListeners({
-            onGetCreditOffersByOwner: CreditOfferActions.getCreditOffersByOwner,
-            onGetCreditDealsByBorrower:
-                CreditOfferActions.getCreditDealsByBorrower,
-            onGetCreditDealsByOfferOwner:
-                CreditOfferActions.getCreditDealsByOfferOwner,
-            onGetAll: CreditOfferActions.getAll,
-            onCreate: CreditOfferActions.create,
-            onDelete: CreditOfferActions.delete,
-            onUpdate: CreditOfferActions.update,
-            onDisabled: CreditOfferActions.disabled,
-            onAccept: CreditOfferActions.accept,
-            onRepay: CreditOfferActions.repay
-        });
-    }
-
+const [creditOfferStore, setCreditOfferStore] = createStore({
+    allList: [],
+    listByOwner: [],
+    dealsByBorrower: [],
+    dealsbyofferOwner: [],
     onCreate({transaction}) {
         // console.log("transaction: ", transaction);
         if (transaction && transaction.length > 0) {
             let offer_id = transaction[0].trx.operation_results[0][1];
-            let owner_account =
-                transaction[0].trx.operations[0][1].owner_account;
+            let owner_account = transaction[0].trx.operations[0][1].owner_account;
             CreditOfferActions.getCreditOffersByOwner({
                 name_or_id: owner_account,
                 limit: 1,
@@ -42,8 +35,7 @@ class CreditOfferStore {
                 flag: "create"
             });
         }
-    }
-
+    },
     onDisabled({transaction}) {
         // console.log("transaction: ", transaction);
         if (transaction && transaction.length > 0) {
@@ -57,8 +49,7 @@ class CreditOfferStore {
                 flag: "update"
             });
         }
-    }
-
+    },
     onUpdate({transaction}) {
         if (transaction && transaction.length > 0) {
             let op = transaction[0].trx.operations[0][1];
@@ -69,19 +60,22 @@ class CreditOfferStore {
                 flag: "update"
             });
         }
-    }
-
+    },
     onDelete({transaction}) {
         // console.log("transaction: ", transaction);
         if (transaction && transaction.length > 0) {
             let dId = transaction[0].trx.operations[0][1].offer_id;
             if (dId) {
-                let index = this.listByOwner.findIndex(v => v.id == dId);
-                if (index > -1) this.listByOwner.splice(index, 1);
+                let index = creditOfferStore.listByOwner.findIndex(v => v.id == dId);
+                if (index > -1) {
+                    setCreditOfferStore(
+                        "listByOwner",
+                        creditOfferStore.listByOwner.splice(index, 1)
+                    );
+                }
             }
         }
-    }
-
+    },
     onAccept({transaction}) {
         if (transaction && transaction.length > 0) {
             let offer_id = transaction[0].trx.operations[0][1].offer_id;
@@ -91,8 +85,7 @@ class CreditOfferStore {
                 flag: "update"
             });
         }
-    }
-
+    },
     onRepay({transaction}) {
         if (transaction && transaction.length > 0) {
             let deal_id = transaction[0].trx.operations[0][1].deal_id;
@@ -104,20 +97,19 @@ class CreditOfferStore {
                 flag: "update"
             });
         }
-    }
-
+    },
     onGetCreditOffersByOwner(result) {
         if (result.list.length > 0) {
             switch (result.flag) {
                 case "first":
-                    this.listByOwner = result.list;
+                    setCreditOfferStore("listByOwner", result.list);
                     break;
                 case "update":
-                    let index = this.listByOwner.findIndex(
+                    let index = creditOfferStore.listByOwner.findIndex(
                         v => v.id == result.list[0].id
                     );
                     if (index > -1) {
-                        this.listByOwner.splice(
+                        creditOfferStore.listByOwner.splice(
                             index,
                             1,
                             JSON.parse(JSON.stringify(result.list[0]))
@@ -126,9 +118,10 @@ class CreditOfferStore {
                     break;
                 case "create":
                 default:
-                    this.listByOwner = this.listByOwner.concat(result.list);
+                    setCreditOfferStore('listByOwner', creditOfferStore.listByOwner.concat(result.list));
                     break;
             }
+
             if (result.end === false) {
                 let oId = result.list[result.list.length - 1].id.split(".");
                 CreditOfferActions.getCreditOffersByOwner({
@@ -138,30 +131,33 @@ class CreditOfferStore {
                 });
             }
         }
-    }
-
+    },
     onGetCreditDealsByBorrower(result) {
         if (result.list.length > 0) {
             switch (result.flag) {
                 case "first":
-                    this.dealsByBorrower = result.list;
+                    setCreditOfferStore("dealsByBorrower", result.list);
                     break;
                 case "update":
-                    let index = this.dealsByBorrower.findIndex(
+                    let index = creditOfferStore.dealsByBorrower.findIndex(
                         v => v.id == result.list[0].id
                     );
                     if (index > -1) {
-                        this.dealsByBorrower.splice(
-                            index,
-                            1,
-                            JSON.parse(JSON.stringify(result.list[0]))
+                        setCreditOfferStore(
+                            "dealsByBorrower",
+                            creditOfferStore.dealsByBorrower.splice(
+                                index,
+                                1,
+                                JSON.parse(JSON.stringify(result.list[0]))
+                            )
                         );
                     }
                     break;
                 default:
-                    this.dealsByBorrower = this.dealsByBorrower.concat(
-                        result.list
-                    );
+                    setCreditOfferStore(
+                        "dealsByBorrower",
+                        creditOfferStore.dealsByBorrower.concat(result.list)
+                    )
                     break;
             }
             if (result.end === false) {
@@ -173,36 +169,42 @@ class CreditOfferStore {
                 });
             }
         } else if (result.flag === "update") {
-            let index = this.dealsByBorrower.findIndex(
+            let index = creditOfferStore.dealsByBorrower.findIndex(
                 v => v.id == result.pars.start_id
             );
             if (index > -1) {
-                this.dealsByBorrower.splice(index, 1);
+                setCreditOfferStore(
+                    "dealsByBorrower",
+                    creditOfferStore.dealsByBorrower.splice(index, 1)
+                );
             }
         }
-    }
-
+    },
     onGetCreditDealsByOfferOwner(result) {
         if (result.list.length > 0) {
             switch (result.flag) {
                 case "first":
-                    this.dealsByOfferOwner = result.list;
+                    setCreditOfferStore("dealsByOfferOwner", result.list);
                     break;
                 case "update":
-                    let index = this.dealsByOfferOwner.findIndex(
+                    let index = creditOfferStore.dealsByOfferOwner.findIndex(
                         v => v.id == result.list[0].id
                     );
                     if (index > -1) {
-                        this.dealsByOfferOwner.splice(
-                            index,
-                            1,
-                            JSON.parse(JSON.stringify(result.list[0]))
+                        setCreditOfferStore(
+                            "dealsByOfferOwner",
+                            creditOfferStore.dealsByOfferOwner.splice(
+                                index,
+                                1,
+                                JSON.parse(JSON.stringify(result.list[0]))
+                            )
                         );
                     }
                     break;
                 default:
-                    this.dealsByOfferOwner = this.dealsByOfferOwner.concat(
-                        result.list
+                    setCreditOfferStore(
+                        "dealsByOfferOwner",
+                        creditOfferStore.dealsByOfferOwner.concat(result.list)
                     );
                     break;
             }
@@ -215,29 +217,35 @@ class CreditOfferStore {
                 });
             }
         }
-    }
-
+    },
     onGetAll(result) {
         if (result.list.length > 0) {
             switch (result.flag) {
                 case "first":
-                    this.allList = result.list.filter(v => v.enabled);
+                    setCreditOfferStore("allList", result.list.filter(v => v.enabled));
                     break;
                 case "update":
-                    let index = this.allList.findIndex(
+                    let index = creditOfferStore.allList.findIndex(
                         v => v.id == result.list[0].id
                     );
                     if (index > -1) {
                         if (result.list[0].enabled) {
-                            this.allList.splice(index, 1, result.list[0]);
+                            setCreditOfferStore(
+                                "allList",
+                                creditOfferStore.allList.splice(index, 1, result.list[0])
+                            );
                         } else {
-                            this.allList.splice(index, 1);
+                            setCreditOfferStore(
+                                "allList",
+                                creditOfferStore.allList.splice(index, 1)
+                            );
                         }
                     }
                     break;
                 default:
-                    this.allList = this.allList.concat(
-                        result.list.filter(v => v.enabled)
+                    setCreditOfferStore(
+                        "allList",
+                        creditOfferStore.allList.concat(result.list.filter(v => v.enabled))
                     );
                     break;
             }
@@ -250,4 +258,6 @@ class CreditOfferStore {
             }
         }
     }
-}
+});
+
+export const useCreditOfferStore = () => [creditOfferStore, setCreditOfferStore];

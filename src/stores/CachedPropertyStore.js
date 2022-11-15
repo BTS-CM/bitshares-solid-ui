@@ -1,58 +1,47 @@
 import { createStore } from 'solid-js/store'
 import Immutable from "immutable";
 import iDB from "idb-instance";
-import CachedPropertyActions from "actions/CachedPropertyActions";
+//import CachedPropertyActions from "actions/CachedPropertyActions";
 
 /*
-const [accountStore, setAccountStore] = createStore({
-
+this.bindListeners({
+    onSet: CachedPropertyActions.set,
+    onGet: CachedPropertyActions.get
 });
 */
 
-class CachedPropertyStore extends BaseStore {
-    constructor() {
-        super();
-        this.state = this._getInitialState();
-        this.bindListeners({
-            onSet: CachedPropertyActions.set,
-            onGet: CachedPropertyActions.get
-        });
-        this._export("get", "reset");
-    }
-
-    _getInitialState() {
-        return {
-            props: Immutable.Map()
-        };
-    }
-
+const [cachedPropertyStore, setCachedPropertyStore] = createStore({
+    props: Immutable.Map(),
     get(name) {
-        return this.onGet({name});
-    }
-
+        return cachedPropertyStore.onGet({name});
+    },
     onSet({name, value}) {
-        if (this.state.props.get(name) === value) return;
-        var props = this.state.props.set(name, value);
-        this.state.props = props;
-        iDB.setCachedProperty(name, value).then(() => this.setState({props}));
-    }
-
+        if (cachedPropertyStore.props.get(name) === value) {
+            return
+        };
+        var props = cachedPropertyStore.props.set(name, value);
+        setCachedPropertyStore('props', props);
+        iDB.setCachedProperty(name, value).then(() => {
+            setCachedPropertyStore('props', props);
+        });
+    },
     onGet({name}) {
-        var value = this.state.props.get(name);
-        if (value !== undefined) return value;
+        var value = cachedPropertyStore.props.get(name);
+        if (value !== undefined) {
+            return value
+        };
         try {
             iDB.getCachedProperty(name, null).then(value => {
-                var props = this.state.props.set(name, value);
-                this.state.props = props;
-                this.setState({props});
+                var props = cachedPropertyStore.props.set(name, value);
+                setCachedPropertyStore('props', props);
             });
         } catch (err) {
             console.error("getCachedProperty error:", err);
         }
-    }
-
+    },
     reset() {
-        this.state = this._getInitialState();
-        this.setState(this.state);
+        setCachedPropertyStore('props', Immutable.Map());
     }
-}
+});
+
+export const useCachedPropertyStore = () => [cachedPropertyStore, setCachedPropertyStore];
