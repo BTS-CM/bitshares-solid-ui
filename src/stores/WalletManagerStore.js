@@ -1,7 +1,7 @@
 import { createStore } from 'solid-js/store';
 import WalletDb from "stores/WalletDb";
 import AccountRefsStore from "stores/AccountRefsStore";
-import AccountStore from "stores/AccountStore";
+import walletManagerStore from "stores/walletManagerStore";
 import BalanceClaimActiveStore from "stores/BalanceClaimActiveStore";
 import CachedPropertyStore from "stores/CachedPropertyStore";
 import PrivateKeyActions from "actions/PrivateKeyActions";
@@ -11,53 +11,33 @@ import iDB from "idb-instance";
 import Immutable from "immutable";
 
 /*
-const [accountStore, setAccountStore] = createStore({
-
-});
+    walletManagerStore.bindListeners({
+        onRestore: WalletActions.restore,
+        onSetWallet: WalletActions.setWallet,
+        onSetBackupDate: WalletActions.setBackupDate,
+        onSetBrainkeyBackupDate: WalletActions.setBrainkeyBackupDate,
+        onDeleteWallet: WalletActions.deleteWallet
+    });
 */
 
 /**  High-level container for managing multiple wallets.
  */
-class WalletManagerStore extends BaseStore {
-    constructor() {
-        super();
-        this.state = this._getInitialState();
-        this.bindListeners({
-            onRestore: WalletActions.restore,
-            onSetWallet: WalletActions.setWallet,
-            onSetBackupDate: WalletActions.setBackupDate,
-            onSetBrainkeyBackupDate: WalletActions.setBrainkeyBackupDate,
-            onDeleteWallet: WalletActions.deleteWallet
-        });
-        super._export(
-            "init",
-            "setNewWallet",
-            "onDeleteWallet",
-            "onDeleteAllWallets"
-        );
-    }
-
-    _getInitialState() {
-        return {
-            new_wallet: undefined, // pending restore
-            current_wallet: undefined,
-            wallet_names: Immutable.Set()
-        };
-    }
-
+const [walletManagerStore, setWalletManagerStore] = createStore({
+    new_wallet: undefined, // pending restore
+    current_wallet: undefined,
+    wallet_names: Immutable.Set(),
     /** This will change the current wallet the newly restored wallet. */
     onRestore({wallet_name, wallet_object}) {
         iDB.restore(wallet_name, wallet_object)
             .then(() => {
-                AccountStore.setWallet(wallet_name);
-                return this.onSetWallet({wallet_name});
+                walletManagerStore.setWallet(wallet_name);
+                return walletManagerStore.onSetWallet({wallet_name});
             })
             .catch(error => {
                 console.error(error);
                 return Promise.reject(error);
             });
-    }
-
+    },
     /** This may result in a new wallet name being added, only in this case
         should a <b>create_wallet_password</b> be provided.
     */
@@ -71,16 +51,16 @@ class WalletManagerStore extends BaseStore {
             if (/[^a-z0-9_-]/.test(wallet_name) || wallet_name === "")
                 throw new Error("Invalid wallet name");
 
-            if (this.state.current_wallet === wallet_name) {
+            if (walletManagerStore.current_wallet === wallet_name) {
                 res();
                 return;
             }
 
             var add;
-            if (!this.state.wallet_names.has(wallet_name)) {
-                var wallet_names = this.state.wallet_names.add(wallet_name);
+            if (!walletManagerStore.wallet_names.has(wallet_name)) {
+                var wallet_names = walletManagerStore.wallet_names.add(wallet_name);
                 add = iDB.root.setProperty("wallet_names", wallet_names);
-                this.setState({wallet_names});
+                setWalletManagerStore("wallet_names", wallet_names);
             }
 
             var current = iDB.root.setProperty("current_wallet", wallet_name);
@@ -98,7 +78,7 @@ class WalletManagerStore extends BaseStore {
                         CachedPropertyStore.reset();
                         return Promise.all([
                             WalletDb.loadDbData().then(() =>
-                                AccountStore.loadDbData()
+                                walletManagerStore.loadDbData()
                             ),
                             PrivateKeyActions.loadDbData().then(() =>
                                 AccountRefsStore.loadDbData()
@@ -107,7 +87,7 @@ class WalletManagerStore extends BaseStore {
                             // Update state here again to make sure listeners re-render
 
                             if (!create_wallet_password) {
-                                this.setState({current_wallet: wallet_name});
+                                setWalletManagerStore("current_wallet", wallet_name);
                                 return;
                             }
 
@@ -117,7 +97,7 @@ class WalletManagerStore extends BaseStore {
                                 true, //unlock
                                 wallet_name
                             ).then(() =>
-                                this.setState({current_wallet: wallet_name})
+                                setWalletManagerStore("current_wallet", wallet_name)
                             );
                         });
                     });
@@ -127,39 +107,36 @@ class WalletManagerStore extends BaseStore {
             console.error(error);
             return Promise.reject(error);
         });
-        if (resolve) resolve(p);
-    }
 
+        if (resolve) {
+            resolve(p)
+        };
+    },
     /** Used by the components during a pending wallet create. */
     setNewWallet(new_wallet) {
-        this.setState({new_wallet});
-    }
-
+        setWalletManagerStore("new_wallet", new_wallet);
+    },
     init() {
         return iDB.root.getProperty("current_wallet").then(current_wallet => {
             return iDB.root
                 .getProperty("wallet_names", [])
                 .then(wallet_names => {
-                    this.setState({
-                        wallet_names: Immutable.Set(wallet_names),
-                        current_wallet
-                    });
-                    AccountStore.setWallet(current_wallet);
+                    setWalletManagerStore("wallet_names", Immutable.Set(wallet_names));
+                    setWalletManagerStore("current_wallet", current_wallet);
+                    walletManagerStore.setWallet(current_wallet);
                 });
         });
-    }
-
+    },
     onDeleteAllWallets() {
         var deletes = [];
-        this.state.wallet_names.forEach(wallet_name =>
-            deletes.push(this.onDeleteWallet(wallet_name))
+        walletManagerStore.wallet_names.forEach(wallet_name =>
+            deletes.push(walletManagerStore.onDeleteWallet(wallet_name))
         );
         return Promise.all(deletes);
-    }
-
+    },
     onDeleteWallet(delete_wallet_name) {
         return new Promise(resolve => {
-            var {current_wallet, wallet_names} = this.state;
+            var {current_wallet, wallet_names} = walletManagerStore;
             if (!wallet_names.has(delete_wallet_name)) {
                 throw new Error("Can't delete wallet, does not exist in index");
             }
@@ -170,20 +147,23 @@ class WalletManagerStore extends BaseStore {
                     ? wallet_names.first()
                     : undefined;
                 iDB.root.setProperty("current_wallet", current_wallet);
-                if (current_wallet) WalletActions.setWallet(current_wallet);
+                if (current_wallet) {
+                    WalletActions.setWallet(current_wallet)
+                };
             }
-            this.setState({current_wallet, wallet_names});
+            setWalletManagerStore("current_wallet", current_wallet);
+            setWalletManagerStore("wallet_names", wallet_names);
             var database_name = iDB.getDatabaseName(delete_wallet_name);
             var req = iDB.impl.deleteDatabase(database_name);
             resolve(database_name);
         });
-    }
-
+    },
     onSetBackupDate() {
         WalletDb.setBackupDate();
-    }
-
+    },
     onSetBrainkeyBackupDate() {
         WalletDb.setBrainkeyBackupDate();
     }
-}
+});
+
+export const useWalletManagerStore = () => [walletManagerStore, setWalletManagerStore];

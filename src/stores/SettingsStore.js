@@ -1,6 +1,6 @@
 import { createStore } from 'solid-js/store';
-import SettingsActions from "actions/SettingsActions";
-import IntlActions from "actions/IntlActions";
+//import SettingsActions from "actions/SettingsActions";
+//import IntlActions from "actions/IntlActions";
 import Immutable, {fromJS} from "immutable";
 import ls from "common/localStorage";
 import {Apis} from "bitsharesjs-ws";

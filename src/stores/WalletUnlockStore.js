@@ -12,44 +12,17 @@ const STORAGE_KEY = "__graphene__";
 let ss = ls(STORAGE_KEY);
 
 /*
-const [accountStore, setAccountStore] = createStore({
+    this.bindActions(WalletUnlockActions);
 
-});
+    this.bindListeners({
+        onChangeSetting: SettingsActions.changeSetting
+    });
 */
 
-class WalletUnlockStore {
-    constructor() {
-        this.bindActions(WalletUnlockActions);
-
-        // can't use settings store due to possible initialization race conditions
-        const storedSettings = ss.get("settings_v4", {});
-        if (storedSettings.passwordLogin === undefined) {
-            storedSettings.passwordLogin = true;
-        }
-        let passwordLogin = storedSettings.passwordLogin;
-        this.state = {
-            locked: true,
-            passwordLogin: passwordLogin,
-            rememberMe:
-                storedSettings.rememberMe === undefined
-                    ? true
-                    : storedSettings.rememberMe
-        };
-
-        this.walletLockTimeout = this._getTimeout(); // seconds (10 minutes)
-        this.timeout = null;
-
-        this.bindListeners({
-            onChangeSetting: SettingsActions.changeSetting
-        });
-
-        // let timeoutSetting = this._getTimeout();
-
-        // if (timeoutSetting) {
-        //     this.walletLockTimeout = timeoutSetting;
-        // }
-    }
-
+const [walletUnlockStore, setWalletUnlockStore] = createStore({
+    // TODO: init state
+    walletLockTimeout: this._getTimeout(), // seconds (10 minutes)
+    timeout: null,
     onUnlock({resolve, reject}) {
         //DEBUG console.log('... onUnlock setState', WalletDb.isLocked())
         //
@@ -61,8 +34,7 @@ class WalletUnlockStore {
         }
 
         this.setState({resolve, reject, locked: WalletDb.isLocked()});
-    }
-
+    },
     onLock({resolve}) {
         //DEBUG console.log('... WalletUnlockStore\tprogramatic lock', WalletDb.isLocked())
         if (WalletDb.isLocked()) {
@@ -79,18 +51,15 @@ class WalletUnlockStore {
             setLocalStorageType("persistant");
         }
         resolve();
-    }
-
+    },
     onCancel() {
         if (typeof this.state.reject === "function")
             this.state.reject({isCanceled: true});
         this.setState({resolve: null, reject: null});
-    }
-
+    },
     onChange() {
         this.setState({locked: WalletDb.isLocked()});
-    }
-
+    },
     onChangeSetting(payload) {
         if (payload.setting === "walletLockTimeout") {
             this.walletLockTimeout = payload.value;
@@ -105,38 +74,56 @@ class WalletUnlockStore {
                 rememberMe: payload.rememberMe
             });
         }
-    }
-
-    _setLockTimeout() {
-        this._clearLockTimeout();
-        /* If the timeout is different from zero, auto unlock the wallet using a timeout */
-        if (!!this.walletLockTimeout) {
-            this.timeout = setTimeout(() => {
-                if (!WalletDb.isLocked()) {
-                    console.log(
-                        "auto locking after",
-                        this.walletLockTimeout,
-                        "s"
-                    );
-                    WalletDb.onLock();
-                    this.setState({locked: true});
-                }
-            }, this.walletLockTimeout * 1000);
-        }
-    }
-
-    _clearLockTimeout() {
-        if (this.timeout) {
-            clearTimeout(this.timeout);
-            this.timeout = null;
-        }
-    }
-
-    _getTimeout() {
-        return parseInt(ss.get("lockTimeout", 600), 10);
-    }
-
+    },
     onCheckLock() {
         this.setState({locked: WalletDb.isLocked()});
     }
+});
+
+class WalletUnlockStore {
+    constructor() {
+        // can't use settings store due to possible initialization race conditions
+        const storedSettings = ss.get("settings_v4", {});
+        if (storedSettings.passwordLogin === undefined) {
+            storedSettings.passwordLogin = true;
+        }
+        let passwordLogin = storedSettings.passwordLogin;
+        this.state = {
+            locked: true,
+            passwordLogin: passwordLogin,
+            rememberMe:
+                storedSettings.rememberMe === undefined
+                    ? true
+                    : storedSettings.rememberMe
+        };
+    }
+}
+
+function _setLockTimeout() {
+    this._clearLockTimeout();
+    /* If the timeout is different from zero, auto unlock the wallet using a timeout */
+    if (!!this.walletLockTimeout) {
+        this.timeout = setTimeout(() => {
+            if (!WalletDb.isLocked()) {
+                console.log(
+                    "auto locking after",
+                    this.walletLockTimeout,
+                    "s"
+                );
+                WalletDb.onLock();
+                this.setState({locked: true});
+            }
+        }, this.walletLockTimeout * 1000);
+    }
+}
+
+function _clearLockTimeout() {
+    if (this.timeout) {
+        clearTimeout(this.timeout);
+        this.timeout = null;
+    }
+}
+
+function _getTimeout() {
+    return parseInt(ss.get("lockTimeout", 600), 10);
 }
