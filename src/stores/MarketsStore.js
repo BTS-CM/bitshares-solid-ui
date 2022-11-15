@@ -53,15 +53,7 @@ let marketStorage = ls("__graphene__");
         onGetTrackedGroupsConfig: MarketsActions.getTrackedGroupsConfig,
         onChangeCurrentGroupLimit: MarketsActions.changeCurrentGroupLimit
     });
-
-    marketsStore.exportPublicMethods({
-        subscribe: marketsStore.subscribe.bind(this),
-        unsubscribe: marketsStore.unsubscribe.bind(this),
-        clearSubs: marketsStore.clearSubs.bind(this)
-    });
 */
-
-// TODO: Replace marketsStore.blah = value with setmarkestsStore({blah: value}) ...
 
 const [marketsStore, setMarketsStore] = createStore({
     markets: Immutable.Map(),
@@ -731,7 +723,6 @@ const [marketsStore, setMarketsStore] = createStore({
         }
         return calls;
     },
-    // TODO: Continue here 
     onGetMarketStats(payload) {
         if (payload && payload.tickers) {
             for (var i = 0; i < payload.tickers.length; i++) {
@@ -741,18 +732,18 @@ const [marketsStore, setMarketsStore] = createStore({
                     payload.markets[i],
                     payload.tickers[i]
                 );
-                marketsStore.allMarketStats = marketsStore.allMarketStats.set(
-                    payload.markets[i],
-                    stats
+                setMarketsStore(
+                    "allMarketStats",
+                    marketsStore.allMarketStats.set(payload.markets[i], stats)
                 );
 
                 let {
                     invertedStats,
                     invertedMarketName
                 } = _invertMarketStats(stats, payload.markets[i]);
-                marketsStore.allMarketStats = marketsStore.allMarketStats.set(
-                    invertedMarketName,
-                    invertedStats
+                setMarketsStore(
+                    "allMarketStats",
+                    marketsStore.allMarketStats.set(invertedMarketName, invertedStats)
                 );
             }
 
@@ -775,37 +766,45 @@ const [marketsStore, setMarketsStore] = createStore({
                     precision: marketsStore.baseAsset.get("precision")
                 }
             };
-            marketsStore.marketSettleOrders = marketsStore.marketSettleOrders.clear();
+
+            setMarketsStore("marketSettleOrders", marketsStore.marketSettleOrders.clear());
 
             result.settles.forEach(settle => {
                 // let key = settle.owner + "_" + settle.balance.asset_id;
 
                 settle.settlement_date = new Date(settle.settlement_date + "Z");
 
-                marketsStore.marketSettleOrders = marketsStore.marketSettleOrders.add(
-                    new SettleOrder(
-                        settle,
-                        assets,
-                        marketsStore.quoteAsset.get("id"),
-                        marketsStore.feedPrice,
-                        marketsStore.bitasset_options
+                setMarketsStore(
+                    "marketSettleOrders",
+                    marketsStore.marketSettleOrders.add(
+                        new SettleOrder(
+                            settle,
+                            assets,
+                            marketsStore.quoteAsset.get("id"),
+                            marketsStore.feedPrice,
+                            marketsStore.bitasset_options
+                        )
                     )
-                );
+                )
             });
         }
     },
     onGetTrackedGroupsConfig(result) {
         if (result.trackedGroupsConfig.length > 0) {
-            marketsStore.trackedGroupsConfig = result.trackedGroupsConfig;
+            setMarketsStore("trackedGroupsConfig", result.trackedGroupsConfig);
         }
     },
     onChangeCurrentGroupLimit(groupLimit) {
-        marketsStore.currentGroupLimit = groupLimit;
+        setMarketsStore("currentGroupLimit", groupLimit);
     }
 });
 
+export const useMarketsStore = () => [marketsStore, setMarketsStore];
+
 function _notifySubscriber(id, data) {
-    if (marketsStore.subscribers.has(id)) marketsStore.subscribers.get(id)(data);
+    if (marketsStore.subscribers.has(id)) {
+        marketsStore.subscribers.get(id)(data);
+    }
 }
 
 function _getBucketSize() {
@@ -816,12 +815,12 @@ function _getBucketSize() {
  * @param {Number} size
  */
  function _setBucketSize(size) {
-    marketsStore.bucketSize = size;
+    setMarketsStore("bucketSize", size);
     marketStorage.set("bucketSize", size);
 }
 
 function _marketHasCalls() {
-    const {quoteAsset, baseAsset} = this;
+    const {quoteAsset, baseAsset} = marketStore;
     if (
         quoteAsset.has("bitasset") &&
         quoteAsset.getIn(["bitasset", "options", "short_backing_asset"]) ===
@@ -840,8 +839,8 @@ function _marketHasCalls() {
 
 function _getFeed() {
     if (!_marketHasCalls()) {
-        marketsStore.bitasset_options = null;
-        marketsStore.is_prediction_market = false;
+        setMarketsStore("bitasset_options", null);
+        setMarketsStore("is_prediction_market", false);
         return null;
     }
 
@@ -853,46 +852,44 @@ function _getFeed() {
             precision: marketsStore.baseAsset.get("precision")
         }
     };
-    let feedPriceRaw = asset_utils.extractRawFeedPrice(
-        this[marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"]
-    );
+
+    let relevantMarketStore = marketsStore.invertedCalls
+                ? marketStore["baseAsset"]
+                : marketStore["quoteAsset"]
+
+    let feedPriceRaw = asset_utils.extractRawFeedPrice(relevantMarketStore);
 
     try {
-        let sqr = this[
-            marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"
-        ].getIn([
+        let sqr = relevantMarketStore.getIn([
             "bitasset",
             "current_feed",
             "maximum_short_squeeze_ratio"
         ]);
-        let mcfr = this[
-            marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"
-        ].getIn([
+
+        let mcfr = relevantMarketStore.getIn([
             "bitasset",
             "options",
             "extensions",
             "margin_call_fee_ratio"
         ]);
 
-        marketsStore.is_prediction_market = this[
-            marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"
-        ].getIn(["bitasset", "is_prediction_market"], false);
-        marketsStore.bitasset_options = this[
-            marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"
-        ]
-            .getIn(["bitasset", "options"])
-            .toJS();
+        marketsStore.is_prediction_market = relevantMarketStore.getIn(
+            ["bitasset", "is_prediction_market"],
+            false
+        );
+        marketsStore.bitasset_options = relevantMarketStore.getIn(["bitasset", "options"]).toJS();
         /* Prediction markets don't need feeds for shorting, so the settlement price can be set to 1:1 */
         if (
             marketsStore.is_prediction_market &&
-            feedPriceRaw.getIn(["base", "asset_id"]) ===
-                feedPriceRaw.getIn(["quote", "asset_id"])
+            feedPriceRaw.getIn(["base", "asset_id"]) === feedPriceRaw.getIn(["quote", "asset_id"])
         ) {
             const backingAsset = marketsStore.bitasset_options.short_backing_asset;
-            if (!assets[backingAsset])
+            if (!assets[backingAsset]) {
                 assets[backingAsset] = {
                     precision: marketsStore.quoteAsset.get("precision")
                 };
+            }
+
             feedPriceRaw = feedPriceRaw.setIn(["base", "amount"], 1);
             feedPriceRaw = feedPriceRaw.setIn(
                 ["base", "asset_id"],
@@ -1042,8 +1039,7 @@ function _priceChart() {
         prices.push({time: date.getTime(), open, high, low, close, volume});
     }
 
-    marketsStore.priceData = prices;
-
+    setMarketsStore("priceData", prices);
     _notifySubscriber("subscribeBars");
 }
 
@@ -1101,23 +1097,45 @@ function _orderBook(limitsChanged = true, callsChanged = false) {
 
     // Assign to store variables
     if (limitsChanged) {
-        if (__DEV__)
+        if (__DEV__) {
             console.time("Construct limit orders " + marketsStore.activeMarket);
-        marketsStore.marketData.bids = constructBids(marketsStore.marketLimitOrders);
-        marketsStore.marketData.asks = constructAsks(marketsStore.marketLimitOrders);
+        }
+
+        setMarketsStore(
+            "marketData",
+            {
+                ...marketsStore.marketData,
+                bids: constructBids(marketsStore.limitOrders),
+                asks: constructAsks(marketsStore.limitOrders)
+            }
+        );
+        
         if (!callsChanged) {
             _combineOrders();
         }
-        if (__DEV__)
+
+        if (__DEV__) {
             console.timeEnd("Construct limit orders " + marketsStore.activeMarket);
+        }
     }
 
     if (callsChanged) {
-        if (__DEV__) console.time("Construct calls " + marketsStore.activeMarket);
-        marketsStore.marketData.calls = marketsStore.constructCalls(marketsStore.marketCallOrders);
+        if (__DEV__) {
+            console.time("Construct calls " + marketsStore.activeMarket);
+        }
+
+        setMarketsStore(
+            "marketData",
+            {
+                ...marketsStore.marketData,
+                calls: marketsStore.constructCalls(marketsStore.marketCallOrders)
+            }
+        );
+        
         _combineOrders();
-        if (__DEV__)
+        if (__DEV__) {
             console.timeEnd("Construct calls " + marketsStore.activeMarket);
+        }
     }
 
     // console.log("time to construct orderbook:", new Date() - orderBookStart, "ms");
@@ -1126,8 +1144,9 @@ function _orderBook(limitsChanged = true, callsChanged = false) {
 function _groupedOrderBook(groupedOrdersBids = null, groupedOrdersAsks = null) {
     // Sum and assign to store variables
     if (groupedOrdersBids && groupedOrdersAsks) {
-        if (__DEV__)
+        if (__DEV__) {
             console.time("Sum grouped orders " + marketsStore.activeMarket);
+        }
 
         let totalToReceive = new Asset({
             asset_id: marketsStore.quoteAsset.get("id"),
@@ -1138,6 +1157,7 @@ function _groupedOrderBook(groupedOrdersBids = null, groupedOrdersAsks = null) {
             asset_id: marketsStore.baseAsset.get("id"),
             precision: marketsStore.baseAsset.get("precision")
         });
+
         groupedOrdersBids
             .sort((a, b) => {
                 return b.getPrice() - a.getPrice();
@@ -1171,11 +1191,18 @@ function _groupedOrderBook(groupedOrdersBids = null, groupedOrdersAsks = null) {
                 a.setTotalToReceive(totalToReceive.clone());
             });
 
-        marketsStore.marketData.groupedBids = groupedOrdersBids;
-        marketsStore.marketData.groupedAsks = groupedOrdersAsks;
+        setMarketsStore(
+            "marketData",
+            {
+                ...marketsStore.marketData,
+                groupedBids: groupedOrdersBids,
+                groupedAsks: groupedOrdersAsks
+            }
+        );
 
-        if (__DEV__)
+        if (__DEV__) {
             console.timeEnd("Sum grouped orders " + marketsStore.activeMarket);
+        }
     }
 }
 
@@ -1187,7 +1214,7 @@ function _saveMarketStats() {
     if (!marketsStore.saveStatsTimeout) {
         marketsStore.saveStatsTimeout = setTimeout(() => {
             marketStorage.set("allMarketStats", marketsStore.allMarketStats.toJS());
-            marketsStore.saveStatsTimeout = null;
+            setMarketsStore("saveStatsTimeout", null);
         }, 1000 * 30);
     }
 }
@@ -1248,16 +1275,16 @@ function _combineOrders() {
             a.setTotalToReceive(totalToReceive.clone());
         });
 
-    marketsStore.marketData.lowestAsk = !combinedAsks.length
-        ? nullPrice
-        : combinedAsks[0];
-
-    marketsStore.marketData.highestBid = !combinedBids.length
-        ? nullPrice
-        : combinedBids[0];
-
-    marketsStore.marketData.combinedBids = combinedBids;
-    marketsStore.marketData.combinedAsks = combinedAsks;
+    setMarketsStore(
+        "marketData",
+        {
+            ...marketsStore.marketData,
+            lowestAsk: combinedAsks.length ? combinedAsks[0] : nullPrice,
+            highestBid: combinedBids.length ? combinedBids[0] : nullPrice,
+            combinedBids: combinedBids,
+            combinedAsks: combinedAsks
+        }
+    );
 }
 
 function _depthChart() {
@@ -1480,15 +1507,21 @@ function _depthChart() {
     }
 
     // Assign to store variables
-    marketsStore.marketData.flatAsks = flat_asks;
-    marketsStore.marketData.flatBids = flat_bids;
-    marketsStore.marketData.flatCalls = flat_calls;
-    marketsStore.marketData.flatSettles = flat_settles;
-    marketsStore.totals = {
-        bid: totalBids,
-        ask: totalAsks,
-        call: totalCalls
-    };
+    setMarketsStore(
+        "marketData",
+        {
+            ...marketsStore.marketData,
+            flatAsks: flat_asks,
+            flatBids: flat_bids,
+            flatCalls: flat_calls,
+            flatSettles: flat_settles,
+            totals: {
+                bids: totalBids,
+                asks: totalAsks,
+                calls: totalCalls
+            }
+        }
+    )
     // console.log(marketsStore.totals);
 }
 
