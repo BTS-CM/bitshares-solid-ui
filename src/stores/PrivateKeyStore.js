@@ -10,63 +10,44 @@ import AddressIndex from "stores/AddressIndex";
 import {PublicKey, ChainStore, Aes} from "bitsharesjs";
 
 /*
-const [accountStore, setAccountStore] = createStore({
-
-});
+    privateKeyStore.bindListeners({
+        onLoadDbData: PrivateKeyActions.loadDbData,
+        onAddKey: PrivateKeyActions.addKey
+    });
 */
 
 /** No need to wait on the promises returned by this store as long as
-    this.state.privateKeyStorage_error == false and
-    this.state.pending_operation_count == 0 before performing any important
+    privateKeyStore.privateKeyStorage_error == false and
+    privateKeyStore.pending_operation_count == 0 before performing any important
     operations.
 */
-class PrivateKeyStore extends BaseStore {
-    constructor() {
-        super();
-        this.state = this._getInitialState();
-        this.pending_operation_count = 0;
-        this.bindListeners({
-            onLoadDbData: PrivateKeyActions.loadDbData,
-            onAddKey: PrivateKeyActions.addKey
-        });
-        this._export(
-            "hasKey",
-            "getPubkeys",
-            "getTcomb_byPubkey",
-            "getPubkeys_having_PrivateKey",
-            "addPrivateKeys_noindex",
-            "decodeMemo",
-            "setPasswordLoginKey"
-        );
-    }
-
-    _getInitialState() {
-        return {
-            keys: Immutable.Map(),
-            privateKeyStorage_error: false,
-            pending_operation_count: 0,
-            privateKeyStorage_error_add_key: null,
-            privateKeyStorage_error_loading: null
-        };
-    }
-
+const [privateKeyStore, setPrivateKeyStore] = createStore({
+    keys: Immutable.Map(),
+    privateKeyStorage_error: false,
+    pending_operation_count: 0,
+    privateKeyStorage_error_add_key: null,
+    privateKeyStorage_error_loading: null,
+    reset: () => {
+        setPrivateKeyStore("keys", Immutable.Map());
+        setPrivateKeyStore("privateKeyStorage_error", false);
+        setPrivateKeyStore("pending_operation_count", 0);
+        setPrivateKeyStore("privateKeyStorage_error_add_key", null);
+        setPrivateKeyStore("privateKeyStorage_error_loading", null);
+    },
     setPasswordLoginKey(key) {
-        let keys = this.state.keys.set(key.pubkey, key);
-        this.setState({
-            keys
-        });
-    }
-
+        let keys = privateKeyStore.keys.set(key.pubkey, key);
+        setPrivateKeyStore("keys", keys);
+    },
     /** This method may be called again should the main database change */
     onLoadDbData(resolve) {
         //resolve is deprecated
-        this.pendingOperation();
-        this.setState(this._getInitialState());
+        privateKeyStore.pendingOperation();
+        privateKeyStore.reset();
         let keys = Immutable.Map().asMutable();
         let p = idb_helper
             .cursor("private_keys", cursor => {
                 if (!cursor) {
-                    this.setState({keys: keys.asImmutable()});
+                    setPrivateKeyStore("keys", keys.asImmutable());
                     return;
                 }
                 let private_key_tcomb = PrivateKeyTcomb(cursor.value);
@@ -75,29 +56,26 @@ class PrivateKeyStore extends BaseStore {
                 cursor.continue();
             })
             .then(() => {
-                this.pendingOperationDone();
+                privateKeyStore.pendingOperationDone();
             })
             .catch(error => {
-                this.setState(this._getInitialState());
-                this.privateKeyStorageError("loading", error);
+                privateKeyStore.reset();
+                privateKeyStore.privateKeyStorageError("loading", error);
                 throw error;
             });
         resolve(p);
-    }
-
+    },
     hasKey(pubkey) {
-        return this.state.keys.has(pubkey);
-    }
-
+        return privateKeyStore.keys.has(pubkey);
+    },
     getPubkeys() {
-        return this.state.keys.keySeq().toArray();
-    }
-
+        return privateKeyStore.keys.keySeq().toArray();
+    },
     getPubkeys_having_PrivateKey(pubkeys, addys = null) {
         let return_pubkeys = [];
         if (pubkeys) {
             for (let pubkey of pubkeys) {
-                if (this.hasKey(pubkey)) {
+                if (privateKeyStore.hasKey(pubkey)) {
                     return_pubkeys.push(pubkey);
                 }
             }
@@ -110,29 +88,31 @@ class PrivateKeyStore extends BaseStore {
             }
         }
         return return_pubkeys;
-    }
-
+    },
     getTcomb_byPubkey(public_key) {
-        if (!public_key) return null;
-        if (public_key.Q) public_key = public_key.toPublicKeyString();
-        return this.state.keys.get(public_key);
-    }
-
+        if (!public_key) {
+            return null
+        };
+        if (public_key.Q) {
+            public_key = public_key.toPublicKeyString();
+        }
+        return privateKeyStore.keys.get(public_key);
+    },
     onAddKey({private_key_object, transaction, resolve}) {
         // resolve is deprecated
-        if (this.state.keys.has(private_key_object.pubkey)) {
+        if (privateKeyStore.keys.has(private_key_object.pubkey)) {
             resolve({result: "duplicate", id: null});
             return;
         }
 
-        this.pendingOperation();
+        privateKeyStore.pendingOperation();
         //console.log("... onAddKey private_key_object.pubkey", private_key_object.pubkey)
 
-        this.state.keys = this.state.keys.set(
+        privateKeyStore.keys = privateKeyStore.keys.set(
             private_key_object.pubkey,
             PrivateKeyTcomb(private_key_object)
         );
-        this.setState({keys: this.state.keys});
+        setPrivateKeyStore("keys", privateKeyStore.keys);
         AddressIndex.add(private_key_object.pubkey);
         let p = new Promise((resolve, reject) => {
             PrivateKeyTcomb(private_key_object);
@@ -150,18 +130,18 @@ class PrivateKeyStore extends BaseStore {
                     error.name != "ConstraintError" ||
                     error.message.indexOf("by_encrypted_key") == -1
                 ) {
-                    this.privateKeyStorageError("add_key", error);
+                    privateKeyStore.privateKeyStorageError("add_key", error);
                     throw event;
                 }
                 duplicate = true;
                 event.preventDefault();
             }).then(() => {
-                this.pendingOperationDone();
+                privateKeyStore.pendingOperationDone();
                 if (duplicate) return {result: "duplicate", id: null};
                 if (private_key_object.brainkey_sequence == null)
-                    this.binaryBackupRecommended(); // non-deterministic
+                    privateKeyStore.binaryBackupRecommended(); // non-deterministic
                 idb_helper.on_transaction_end(transaction).then(() => {
-                    this.setState({keys: this.state.keys});
+                    setPrivateKeyStore("keys", privateKeyStore.keys);
                 });
                 return {
                     result: "added",
@@ -171,17 +151,16 @@ class PrivateKeyStore extends BaseStore {
             resolve(p);
         });
         resolve(p);
-    }
-
+    },
     /** WARN: does not update AddressIndex.  This is designed for bulk importing.
         @return duplicate_count
     */
     addPrivateKeys_noindex(private_key_objects, transaction) {
         let store = transaction.objectStore("private_keys");
         let duplicate_count = 0;
-        let keys = this.state.keys.withMutations(keys => {
+        let keys = privateKeyStore.keys.withMutations(keys => {
             for (let private_key_object of private_key_objects) {
-                if (this.state.keys.has(private_key_object.pubkey)) {
+                if (privateKeyStore.keys.has(private_key_object.pubkey)) {
                     duplicate_count++;
                     continue;
                 }
@@ -191,41 +170,36 @@ class PrivateKeyStore extends BaseStore {
                 ChainStore.getAccountRefsOfKey(private_key_object.pubkey);
             }
         });
-        this.setState({keys});
-        this.binaryBackupRecommended();
+        setPrivateKeyStore("keys", keys);
+        privateKeyStore.binaryBackupRecommended();
         return duplicate_count;
-    }
-
+    },
     binaryBackupRecommended() {
         CachedPropertyActions.set("backup_recommended", true);
-    }
-
+    },
     pendingOperation() {
-        this.pending_operation_count++;
-        this.setState({pending_operation_count: this.pending_operation_count});
-    }
-
+        privateKeyStore.pending_operation_count++;
+        setPrivateKeyStore("pending_operation_count", privateKeyStore.pending_operation_count);
+    },
     pendingOperationDone() {
-        if (this.pending_operation_count == 0)
+        if (privateKeyStore.pending_operation_count == 0) {
             throw new Error("Pending operation done called too many times");
-        this.pending_operation_count--;
-        this.setState({pending_operation_count: this.pending_operation_count});
-    }
-
+        }
+        privateKeyStore.pending_operation_count--;
+        setPrivateKeyStore("pending_operation_count", privateKeyStore.pending_operation_count);
+    },
     privateKeyStorageError(property, error) {
-        this.pendingOperationDone();
-        let state = {privateKeyStorage_error: true};
-        state["privateKeyStorage_error_" + property] = error;
+        privateKeyStore.pendingOperationDone();
         console.error("privateKeyStorage_error_" + property, error);
-        this.setState(state);
-    }
-
+        setPrivateKeyStore("privateKeyStorage_error", true);
+        setPrivateKeyStore("privateKeyStorage_error_" + property, error);
+    },
     decodeMemo(memo) {
         let lockedWallet = false;
         let memo_text,
             isMine = false;
-        let from_private_key = this.state.keys.get(memo.from);
-        let to_private_key = this.state.keys.get(memo.to);
+        let from_private_key = privateKeyStore.keys.get(memo.from);
+        let to_private_key = privateKeyStore.keys.get(memo.to);
         let private_key = from_private_key ? from_private_key : to_private_key;
         let public_key = from_private_key ? memo.to : memo.from;
         public_key = PublicKey.fromPublicKeyString(public_key);
@@ -283,4 +257,6 @@ class PrivateKeyStore extends BaseStore {
             isMine
         };
     }
-}
+});
+
+export const usePrivateKeyStore = () => [privateKeyStore, setPrivateKeyStore];

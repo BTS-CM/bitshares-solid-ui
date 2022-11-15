@@ -1,31 +1,23 @@
 import Immutable from "immutable";
 import { createStore } from 'solid-js/store';
-import {ChainStore} from "bitsharesjs";
-import PoolmartActions from "actions/PoolmartActions";
+//import {ChainStore} from "bitsharesjs";
+//import PoolmartActions from "actions/PoolmartActions";
 
 /*
-const [accountStore, setAccountStore] = createStore({
-
-});
+    this.bindListeners({
+        onGetLiquidityPools: PoolmartActions.GET_LIQUIDITY_POOLS,
+        onGetLiquidityPoolsByShareAsset:
+            PoolmartActions.GET_LIQUIDITY_POOLS_BY_SHARE_ASSET,
+        onResetLiquidityPools: PoolmartActions.RESET_LIQUIDITY_POOLS,
+        onGetLiquidityPoolsAccount:PoolmartActions.GET_LIQUIDITY_POOLS_ACCOUNT
+    });
 */
 
-class PoolmartStore extends BaseStore {
-    constructor() {
-        super();
-        this.liquidityPools = Immutable.Map();
-        this.liquidityPoolsLoading = false;
-        this.assets = Immutable.Map();
-        this.lastPoolId = null;
-
-        this.bindListeners({
-            onGetLiquidityPools: PoolmartActions.GET_LIQUIDITY_POOLS,
-            onGetLiquidityPoolsByShareAsset:
-                PoolmartActions.GET_LIQUIDITY_POOLS_BY_SHARE_ASSET,
-            onResetLiquidityPools: PoolmartActions.RESET_LIQUIDITY_POOLS,
-            onGetLiquidityPoolsAccount:PoolmartActions.GET_LIQUIDITY_POOLS_ACCOUNT
-        });
-    }
-
+const [poolmartStore, setPoolmartStore] = createStore({
+    liquidityPools: Immutable.Map(),
+    liquidityPoolsLoading: false,
+    assets: Immutable.Map(),
+    lastPoolId: null,
     onGetLiquidityPools(payload) {
         if (!payload) {
             return false;
@@ -45,8 +37,7 @@ class PoolmartStore extends BaseStore {
         if (payload.reset === true) {
             this.lastPoolId = null;
         }
-    }
-
+    },
     onGetLiquidityPoolsByShareAsset(payload) {
         if (!payload) {
             return false;
@@ -66,8 +57,7 @@ class PoolmartStore extends BaseStore {
         if (payload.reset === true) {
             this.lastPoolId = null;
         }
-    }
-
+    },
     onGetLiquidityPoolsAccount(payload){
         console.log("onGetLiquidityPoolsAccount");
         if (!payload) {
@@ -89,9 +79,10 @@ class PoolmartStore extends BaseStore {
         if (payload.reset === true) {
             this.lastPoolId = null;
         }
-    }
-
+    },
     onResetLiquidityPools(payload) {
         this.liquidityPools = Immutable.Map();
     }
-}
+});
+
+export const usePoolmartStore = () => [poolmartStore, setPoolmartStore];

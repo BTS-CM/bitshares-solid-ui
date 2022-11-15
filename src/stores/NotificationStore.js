@@ -1,30 +1,23 @@
 import { createStore } from 'solid-js/store';
-import NotificationActions from "actions/NotificationActions";
+//import * as NotificationActions from "actions/NotificationActions";
 
 /*
-const [accountStore, setAccountStore] = createStore({
-
-});
+    this.bindListeners({
+        addNotification: [
+            NotificationActions.addNotification,
+            NotificationActions.success,
+            NotificationActions.warning,
+            NotificationActions.error,
+            NotificationActions.info
+        ]
+    });
 */
 
-class NotificationStore {
-    constructor() {
-        this.bindListeners({
-            addNotification: [
-                NotificationActions.addNotification,
-                NotificationActions.success,
-                NotificationActions.warning,
-                NotificationActions.error,
-                NotificationActions.info
-            ]
-        });
-
-        this.state = {
-            notification: null
-        };
-    }
-
+const [notificationStore, setNotificationStore] = createStore({
+    notifications: null,
     addNotification(notification) {
-        this.setState({notification: notification});
+        setNotificationStore("notifications", notification);
     }
-}
+});
+
+export const useNotificationStore = () => [notificationStore, setNotificationStore];
