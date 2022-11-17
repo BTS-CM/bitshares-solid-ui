@@ -79,8 +79,11 @@ const [addressIndex, setAddressIndex] = createStore({
                                 addresses => {
                                     for (let i = 0; i < pubkeys.length; i++) {
                                         let pubkey = pubkeys[i];
-                                        if (addressIndex.pubkeys.has(pubkey)) continue;
-                                        addressIndex.pubkeys.add(pubkey);
+                                        if (addressIndex.pubkeys.has(pubkey)) {
+                                            continue
+                                        };
+                                        
+                                        setAddressIndex('pubkeys', addressIndex.pubkeys.add(pubkey));
                                         // Gather all 5 legacy address formats (see key.addresses)
                                         let address_strings = key_addresses[i];
                                         for (let address of address_strings) {
@@ -117,13 +120,19 @@ const [addressIndex, setAddressIndex] = createStore({
             iDB.root
             .getProperty("AddressIndex")
             .then(map => {
-                addressIndex.addresses = map
+                setAddressIndex(
+                    "addresses",
+                    map
                     ? Immutable.Map(map)
-                    : Immutable.Map();
+                    : Immutable.Map()
+                );
+
                 // console.log("AddressIndex load", addressIndex.addresses.size);
                 addressIndex.addresses
                     .valueSeq()
-                    .forEach(pubkey => addressIndex.pubkeys.add(pubkey));
+                    .forEach(pubkey => {
+                        setAddressIndex('pubkeys', addressIndex.pubkeys.add(pubkey));
+                    });
                 
                 setAddressIndex('addresses', addressIndex.addresses);
             })

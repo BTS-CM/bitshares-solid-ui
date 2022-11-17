@@ -28,11 +28,13 @@ const [privateKeyStore, setPrivateKeyStore] = createStore({
     privateKeyStorage_error_add_key: null,
     privateKeyStorage_error_loading: null,
     reset: () => {
-        setPrivateKeyStore("keys", Immutable.Map());
-        setPrivateKeyStore("privateKeyStorage_error", false);
-        setPrivateKeyStore("pending_operation_count", 0);
-        setPrivateKeyStore("privateKeyStorage_error_add_key", null);
-        setPrivateKeyStore("privateKeyStorage_error_loading", null);
+        setPrivateKeyStore({
+            keys: Immutable.Map(),
+            privateKeyStorage_error: false,
+            pending_operation_count: 0,
+            privateKeyStorage_error_add_key: null,
+            privateKeyStorage_error_loading: null
+        });
     },
     setPasswordLoginKey(key) {
         let keys = privateKeyStore.keys.set(key.pubkey, key);

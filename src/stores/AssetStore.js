@@ -48,11 +48,10 @@ const [assetStore, setAssetStore] = createStore({
                     asset.market_asset = false;
                 }
 
-                setAssetStore('assets', assetStore.assets.set(asset.id, asset));
-                setAssetStore(
-                    'asset_symbol_to_id', 
-                    {...assetStore.asset_symbol_to_id, [asset.symbol]: asset.id}
-                );
+                setAssetStore({
+                    assets: assetStore.assets.set(asset.id, asset),
+                    asset_symbol_to_id: {...assetStore.asset_symbol_to_id, [asset.symbol]: asset.id}
+                });
             });
         }
     },
@@ -71,23 +70,18 @@ const [assetStore, setAssetStore] = createStore({
                     }
                 }
 
-                setAssetStore(
-                    'assets', 
-                    assetStore.assets.set(asset.id, asset)
-                );
-                setAssetStore(
-                    'asset_symbol_to_id',
-                    {...assetStore.asset_symbol_to_id, [asset.symbol]: asset.id}
-                );
+                setAssetStore({
+                    assets: assetStore.assets.set(asset.id, asset),
+                    asset_symbol_to_id: {...assetStore.asset_symbol_to_id, [asset.symbol]: asset.id}
+                });
             });
         }
     },
     onLookupAsset(payload) {
-        setAssetStore(
-            'searchTerms',
-            {...assetStore.searchTerms, [payload.searchID]: payload.symbol}
-        )
-        setAssetStore('lookupResults', payload.assets)
+        setAssetStore({
+            searchTerms: {...assetStore.searchTerms, [payload.searchID]: payload.symbol},
+            lookupResults: payload.assets
+        });
     }
 });
 

@@ -8,7 +8,7 @@ const STORAGE_KEY = "__graphene__";
 let ss = ls(STORAGE_KEY);
 
 /*
-    this.bindListeners({
+    gatewayStore.bindListeners({
         onFetchCoins: GatewayActions.fetchCoins,
         onFetchCoinsSimple: GatewayActions.fetchCoinsSimple,
         onFetchPairs: GatewayActions.fetchPairs,
@@ -45,28 +45,28 @@ const [gatewayStore, setGatewayStore] = createStore({
     onChainGatewayConfig: null,
     onFetchCoins({backer, coins, backedCoins, down} = {}) {
         if (backer && coins) {
-            this.backedCoins = this.backedCoins.set(backer, backedCoins);
-
-            ss.set("backedCoins", this.backedCoins.toJS());
-
-            this.down = this.down.set(backer, false);
+            setGatewayStore({
+                backedCoins: gatewayStore.backedCoins.set(backer, backedCoins),
+                down: gatewayStore.down.set(backer, false)
+            });
+            ss.set("backedCoins", gatewayStore.backedCoins.toJS());
         }
 
         if (down) {
-            this.down = this.down.set(down, true);
+            setGatewayStore("down", gatewayStore.down.set(down, true));
         }
     },
     onFetchCoinsSimple({backer, coins, down} = {}) {
         if (backer && coins) {
-            this.backedCoins = this.backedCoins.set(backer, coins);
-
-            ss.set("backedCoins", this.backedCoins.toJS());
-
-            this.down = this.down.set(backer, false);
+            setGatewayStore({
+                bridgeCoins: gatewayStore.bridgeCoins.set(backer, coins),
+                down: gatewayStore.down.set(backer, false)
+            });
+            ss.set("backedCoins", gatewayStore.backedCoins.toJS());
         }
 
         if (down) {
-            this.down = this.down.set(down, true);
+            setGatewayStore("down", gatewayStore.down.set(down, true));
         }
     },
     onFetchPairs({coins, bridgeCoins, wallets, down} = {}) {
@@ -82,7 +82,7 @@ const [gatewayStore, setGatewayStore] = createStore({
                         coins_by_type[a.outputCoinType] &&
                         coins_by_type[a.outputCoinType].walletType ===
                             "bitshares2" && // Only use bitshares2 wallet types
-                        this.bridgeInputs.indexOf(a.inputCoinType) !== -1 // Only use coin types defined in bridgeInputs
+                        gatewayStore.bridgeInputs.indexOf(a.inputCoinType) !== -1 // Only use coin types defined in bridgeInputs
                     );
                 })
                 .forEach(coin => {
@@ -90,34 +90,38 @@ const [gatewayStore, setGatewayStore] = createStore({
                         wallets.indexOf(
                             coins_by_type[coin.outputCoinType].walletType
                         ) !== -1;
-                    this.bridgeCoins = this.bridgeCoins.setIn(
-                        [
-                            coins_by_type[coin.outputCoinType].walletSymbol,
-                            coin.inputCoinType
-                        ],
-                        Immutable.fromJS(coin)
+                    
+                    setGatewayStore(
+                        "bridgeCoins",
+                        gatewayStore.bridgeCoins.setIn(
+                            [
+                                coins_by_type[coin.outputCoinType].walletSymbol,
+                                coin.inputCoinType
+                            ],
+                            Immutable.fromJS(coin)
+                        )
                     );
                 });
-            ss.set("bridgeCoins", this.bridgeCoins.toJS());
+            ss.set("bridgeCoins", gatewayStore.bridgeCoins.toJS());
         }
         if (down) {
-            this.down = this.down.set(down, true);
+            setGatewayStore("down", gatewayStore.down.set(down, true));
         }
     },
     onTemporarilyDisable({backer}) {
-        this.down = this.down.set(backer, true);
+        setGatewayStore("down", gatewayStore.down.set(backer, true));
 
-        if (this.backedCoins.get(backer)) {
-            this.backedCoins = this.backedCoins.remove(backer);
-            ss.set("backedCoins", this.backedCoins.toJS());
+        if (gatewayStore.backedCoins.get(backer)) {
+            setGatewayStore("backedCoins", gatewayStore.backedCoins.remove(backer));
+            ss.set("backedCoins", gatewayStore.backedCoins.toJS());
         }
-        if (this.bridgeCoins.get(backer)) {
-            this.bridgeCoins = this.bridgeCoins.remove(backer);
-            ss.set("bridgeCoins", this.bridgeCoins.toJS());
+        if (gatewayStore.bridgeCoins.get(backer)) {
+            setGatewayStore("bridgeCoins", gatewayStore.bridgeCoins.remove(backer));
+            ss.set("bridgeCoins", gatewayStore.bridgeCoins.toJS());
         }
     },
     onLoadOnChainGatewayConfig(config) {
-        this.onChainGatewayConfig = config || {};
+        setGatewayStore("onChainGatewayConfig", config || {});
     },
     isAllowed(backer) {
         return allowedGateway(backer);
@@ -127,21 +131,23 @@ const [gatewayStore, setGatewayStore] = createStore({
     },
     isDown(backer) {
         // call another static method with this
-        return !!this.getState().down.get(backer);
+        return !!gatewayStore.down.get(backer);
     },
     getOnChainConfig(gatewayKey) {
         if (!gatewayKey) {
             return {};
         }
         // call another static method with this
-        const onChainConfig = this.getState().onChainGatewayConfig;
+        const onChainConfig = gatewayStore.onChainGatewayConfig;
 
-        if (!onChainConfig || !onChainConfig.gateways) return undefined;
+        if (!onChainConfig || !onChainConfig.gateways) {
+            return undefined
+        };
 
         return onChainConfig.gateways[gatewayKey];
     },
     getGlobalOnChainConfig() {
-        return this.getState().onChainGatewayConfig;
+        return gatewayStore.onChainGatewayConfig;
     },
     /**
      * FIXME: This does not belong into GatewayStore, but only creating a new store for it seems excessive
@@ -160,7 +166,7 @@ const [gatewayStore, setGatewayStore] = createStore({
             // string
             symbol = asset;
         }
-        const globalOnChainConfig = this.getState().onChainGatewayConfig;
+        const globalOnChainConfig = gatewayStore.onChainGatewayConfig;
         if (
             !!globalOnChainConfig &&
             !!globalOnChainConfig.blacklists &&

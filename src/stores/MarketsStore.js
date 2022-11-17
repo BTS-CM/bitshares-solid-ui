@@ -184,42 +184,44 @@ const [marketsStore, setMarketsStore] = createStore({
         setMarketsStore({marketReady: false});
     },
     onClearMarket() {
-        setMarketsStore("activeMarket", null)
-        setMarketsStore("is_prediction_market", false)
-        setMarketsStore("marketLimitOrders", marketsStore.marketLimitOrders.clear())
-        setMarketsStore("marketCallOrders", marketsStore.marketCallOrders.clear())
-        setMarketsStore("allCallOrders", [])
-        setMarketsStore("feedPrice", null)
-        setMarketsStore("marketSettleOrders", marketsStore.marketSettleOrders.clear())
-        setMarketsStore("activeMarketHistory", marketsStore.activeMarketHistory.clear())
-        setMarketsStore("marketData", {
-            bids: [],
-            asks: [],
-            calls: [],
-            combinedBids: [],
-            highestBid: nullPrice,
-            combinedAsks: [],
-            lowestAsk: nullPrice,
-            flatBids: [],
-            flatAsks: [],
-            flatCalls: [],
-            flatSettles: [],
-            groupedBids: [],
-            groupedAsks: []
-        })
-        setMarketsStore("totals", {
-            bid: 0,
-            ask: 0,
-            call: 0
-        })
-        setMarketsStore("lowestCallPrice", null)
-        setMarketsStore("pendingCreateLimitOrders", [])
-        setMarketsStore("priceHistory", [])
-        setMarketsStore("marketStats", Immutable.Map({
-            change: 0,
-            volumeBase: 0,
-            volumeQuote: 0
-        }))
+        setMarketsStore({
+            activeMarket: null,
+            is_prediction_market: false,
+            marketLimitOrders: marketStore.marketLimitOrders.clear(),
+            marketCallOrders: marketStore.marketCallOrders.clear(),
+            allCallOrders: [],
+            feedPrice: null,
+            marketSettleOrders: marketStore.marketSettleOrders.clear(),
+            activeMarketHistory: marketStore.activeMarketHistory.clear(),
+            marketData: {
+                bids: [],
+                asks: [],
+                calls: [],
+                combinedBids: [],
+                highestBid: nullPrice,
+                combinedAsks: [],
+                lowestAsk: nullPrice,
+                flatBids: [],
+                flatAsks: [],
+                flatCalls: [],
+                flatSettles: [],
+                groupedBids: [],
+                groupedAsks: []
+            },
+            totals: {
+                bid: 0,
+                ask: 0,
+                call: 0
+            },
+            lowestCallPrice: null,
+            pendingCreateLimitOrders: [],
+            priceHistory: [],
+            marketStats: Immutable.Map({
+                change: 0,
+                volumeBase: 0,
+                volumeQuote: 0
+            })
+        });
     },
     onSubscribeMarket(result) {
         let newMarket = false;
@@ -231,12 +233,13 @@ const [marketsStore, setMarketsStore] = createStore({
             return marketsStore.emitChange();
         }
 
-        setMarketsStore("invertedCalls", result.inverted);
-        setMarketsStore("quoteAsset", ChainStore.getAsset(result.quote.get("id")));
-        setMarketsStore("baseAsset", ChainStore.getAsset(result.base.get("id")));
+        setMarketsStore({
+            invertedCalls: result.invertedCalls,
+            quoteAsset: ChainStore.getAsset(result.quote.get("id")),
+            baseAsset: ChainStore.getAsset(result.base.get("id"))
+        })
 
         // Get updated assets every time for updated feed data
-
         const assets = {
             [marketsStore.quoteAsset.get("id")]: {
                 precision: marketsStore.quoteAsset.get("precision")
@@ -331,15 +334,19 @@ const [marketsStore, setMarketsStore] = createStore({
 
         if (result.calls) {
             const oldmarketCallOrders = marketsStore.marketCallOrders;
-            setMarketsStore("allCallOrders", result.calls);
-            setMarketsStore("marketCallOrders", marketsStore.marketCallOrders.clear());
+            setMarketsStore({
+                allCallOrders: result.calls,
+                marketCallOrders: marketsStore.marketCallOrders.clear()
+            })
 
             result.calls.forEach(call => {
                 // ChainStore._updateObject(call, false, false);
                 try {
-                    let mcr = this[
-                        marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"
-                    ].getIn([
+                    let mcrTarget = marketsStore.invertedCalls
+                                    ? marketsStore.baseAsset
+                                    : marketsStore.quoteAsset;
+
+                    let mcr = mcrTarget.getIn([
                         "bitasset",
                         "current_feed",
                         "maintenance_collateral_ratio"
@@ -539,9 +546,11 @@ const [marketsStore, setMarketsStore] = createStore({
                     }
                 };
                 try {
-                    let mcr = this[
-                        marketsStore.invertedCalls ? "baseAsset" : "quoteAsset"
-                    ].getIn([
+                    let mcrTarget = marketsStore.invertedCalls
+                                    ? marketsStore.baseAsset
+                                    : marketsStore.quoteAsset;
+
+                    let mcr = mcrTarget.getIn([
                         "bitasset",
                         "current_feed",
                         "maintenance_collateral_ratio"

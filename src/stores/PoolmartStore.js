@@ -22,7 +22,7 @@ const [poolmartStore, setPoolmartStore] = createStore({
         if (!payload) {
             return false;
         }
-        this.liquidityPoolsLoading = payload.loading;
+        setPoolmartStore("liquidityPoolsLoading", payload.loading);
 
         if (payload.liquidityPools) {
             let tmp = Immutable.Map();
@@ -30,19 +30,21 @@ const [poolmartStore, setPoolmartStore] = createStore({
                 tmp = tmp.set(pool.id, pool);
             });
             if (tmp.size === 0) return;
-            this.lastPoolId = tmp.last().id;
-            this.liquidityPools = this.liquidityPools.merge(tmp);
+            setPoolmartStore({
+                lastPoolId: tmp.last().id,
+                liquidityPools: poolmartStore.liquidityPools.merge(tmp)
+            });
         }
 
         if (payload.reset === true) {
-            this.lastPoolId = null;
+            setPoolmartStore("lastPoolId", null);
         }
     },
     onGetLiquidityPoolsByShareAsset(payload) {
         if (!payload) {
             return false;
         }
-        this.liquidityPoolsLoading = payload.loading;
+        setPoolmartStore("liquidityPoolsLoading", payload.loading);
 
         if (payload.liquidityPools) {
             let tmp = Immutable.Map();
@@ -50,12 +52,14 @@ const [poolmartStore, setPoolmartStore] = createStore({
                 tmp = tmp.set(pool.id, pool);
             });
             if (tmp.size === 0) return;
-            this.lastPoolId = tmp.last().id;
-            this.liquidityPools = this.liquidityPools.merge(tmp);
+            setPoolmartStore({
+                lastPoolId: tmp.last().id,
+                liquidityPools: poolmartStore.liquidityPools.merge(tmp)
+            });
         }
 
         if (payload.reset === true) {
-            this.lastPoolId = null;
+            setPoolmartStore("lastPoolId", null);
         }
     },
     onGetLiquidityPoolsAccount(payload){
@@ -63,25 +67,29 @@ const [poolmartStore, setPoolmartStore] = createStore({
         if (!payload) {
             return false;
         }
-        this.liquidityPoolsLoading = payload.loading;
+        setPoolmartStore("liquidityPoolsLoading", payload.loading);
 
         if (payload.liquidityPools) {
             let tmp = Immutable.Map();
             payload.liquidityPools.forEach(pool => {
                 tmp = tmp.set(pool.id, pool);
             });
-            if (tmp.size === 0) return;
-            this.lastPoolId = tmp.last().id;
-            // this.liquidityPools = this.liquidityPools.merge(tmp);
-            this.liquidityPools = tmp;
+            if (tmp.size === 0) {
+                return
+            };
+            setPoolmartStore({
+                lastPoolId: tmp.last().id,
+                // liquidityPools: this.liquidityPools.merge(tmp),
+                liquidityPools: tmp
+            });
         }
 
         if (payload.reset === true) {
-            this.lastPoolId = null;
+            setPoolmartStore("lastPoolId", null);
         }
     },
     onResetLiquidityPools(payload) {
-        this.liquidityPools = Immutable.Map();
+        setPoolmartStore("liquidityPools", Immutable.Map());
     }
 });
 

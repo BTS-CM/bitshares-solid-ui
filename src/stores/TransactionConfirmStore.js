@@ -16,22 +16,26 @@ const [transactionConfirmStore, setTransactionConfirmStore] = createStore({
     propose: false,
     fee_paying_account: null, // proposal fee_paying_account
     onConfirm({transaction, resolve, reject}) {
-        setTransactionConfirmStore("transaction", null);
-        setTransactionConfirmStore("error", null);
-        setTransactionConfirmStore("broadcasting", false);
-        setTransactionConfirmStore("broadcast", false);
-        setTransactionConfirmStore("included", false);
-        setTransactionConfirmStore("trx_id", null);
-        setTransactionConfirmStore("trx_block_num", null);
-        setTransactionConfirmStore("closed", true);
-        setTransactionConfirmStore("broadcasted_transaction", null);
-        setTransactionConfirmStore("propose", false);
-        setTransactionConfirmStore("fee_paying_account", null);
+        setTransactionConfirmStore({
+            transaction: null,
+            error: null,
+            broadcasting: false,
+            broadcast: false,
+            included: false,
+            trx_id: null,
+            trx_block_num: null,
+            closed: true,
+            broadcasted_transaction: null,
+            propose: false,
+            fee_paying_account: null
+        });
 
-        setTransactionConfirmStore("transaction", transaction);
-        setTransactionConfirmStore("closed", false);
-        setTransactionConfirmStore("resolve", resolve);
-        setTransactionConfirmStore("reject", reject);
+        setTransactionConfirmStore({
+            transaction: transaction,
+            closed: false,
+            resolve: resolve,
+            reject: reject
+        });
 
         //console.log("-- TransactionConfirmStore.onConfirm -->", transactionConfirmStore);
     },
@@ -51,23 +55,29 @@ const [transactionConfirmStore, setTransactionConfirmStore] = createStore({
     },
     onWasBroadcast(res) {
         //console.log("-- TransactionConfirmStore.onWasBroadcast -->", transactionConfirmStore);
-        setTransactionConfirmStore("broadcasting", false);
-        setTransactionConfirmStore("broadcast", true);
+        setTransactionConfirmStore({
+            broadcasting: false,
+            broadcast: true
+        });
     },
     onWasIncluded(res) {
         //console.log("-- TransactionConfirmStore.onWasIncluded -->", transactionConfirmStore);
-        setTransactionConfirmStore("error", null);
-        setTransactionConfirmStore("broadcasting", false);
-        setTransactionConfirmStore("broadcast", true);
-        setTransactionConfirmStore("included", true);
-        setTransactionConfirmStore("trx_id", res[0].id);
-        setTransactionConfirmStore("trx_block_num", res[0].block_num);
-        setTransactionConfirmStore("broadcasted_transaction", transactionConfirmStore.transaction);
+        setTransactionConfirmStore({
+            error: null,
+            broadcasting: false,
+            broadcast: true,
+            included: true,
+            trx_id: res[0].id,
+            trx_block_num: res[0].block_num,
+            broadcasted_transaction: transactionConfirmStore.transaction
+        });
     },
     onError({error}) {
-        setTransactionConfirmStore("error", error);
-        setTransactionConfirmStore("broadcasting", false);
-        setTransactionConfirmStore("broadcast", false);
+        setTransactionConfirmStore({
+            error: error,
+            broadcasting: false,
+            broadcast: false
+        });
     },
     onTogglePropose() {
         setTransactionConfirmStore("propose", !transactionConfirmStore.propose);
@@ -77,17 +87,19 @@ const [transactionConfirmStore, setTransactionConfirmStore] = createStore({
     },
     reset() {
         //console.log("-- TransactionConfirmStore.reset -->");
-        setTransactionConfirmStore("transaction", null);
-        setTransactionConfirmStore("error", null);
-        setTransactionConfirmStore("broadcasting", false);
-        setTransactionConfirmStore("broadcast", false);
-        setTransactionConfirmStore("included", false);
-        setTransactionConfirmStore("trx_id", null);
-        setTransactionConfirmStore("trx_block_num", null);
-        setTransactionConfirmStore("closed", true);
-        setTransactionConfirmStore("broadcasted_transaction", null);
-        setTransactionConfirmStore("propose", false);
-        setTransactionConfirmStore("fee_paying_account", null);
+        setTransactionConfirmStore({
+            transaction: null,
+            error: null,
+            broadcasting: false,
+            broadcast: false,
+            included: false,
+            trx_id: null,
+            trx_block_num: null,
+            closed: true,
+            broadcasted_transaction: null,
+            propose: false,
+            fee_paying_account: null
+        });
     }
 });
 

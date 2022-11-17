@@ -86,21 +86,23 @@ const [accountStore, setAccountStore] = createStore({
     },
     setWallet(wallet_name) {
         if (wallet_name !== accountStore.wallet_name) {
-            setAccountStore('wallet_name', wallet_name);
-            setAccountStore('passwordAccount', ss.get(
-                _getStorageKey("passwordAccount", {wallet_name}),
-                null
-            ));
-            setAccountStore('starredAccounts', Immutable.Map(
-                ss.get(_getStorageKey("starredAccounts", {wallet_name}))
-            ));
-            setAccountStore('myActiveAccounts', Immutable.Set());
-            setAccountStore('accountContacts', Immutable.Set(
-                ss.get(_getStorageKey("accountContacts", {wallet_name}), [])
-            ));
-            setAccountStore('myHiddenAccounts', Immutable.Set(
-                ss.get(_getStorageKey("hiddenAccounts", {wallet_name}), [])
-            ));
+            setAccountStore({
+                wallet_name: wallet_name,
+                passwordAccount: ss.get(
+                    _getStorageKey("passwordAccount", {wallet_name}),
+                    null
+                ),
+                starredAccounts: Immutable.Map(
+                    ss.get(_getStorageKey("starredAccounts", {wallet_name}))
+                ),
+                myActiveAccounts: Immutable.Set(),
+                accountContacts: Immutable.Set(
+                    ss.get(_getStorageKey("accountContacts", {wallet_name}), [])
+                ),
+                myHiddenAccounts: Immutable.Set(
+                    ss.get(_getStorageKey("hiddenAccounts", {wallet_name}), [])
+                )
+            });
 
             accountStore.tryToSetCurrentAccount();
 
@@ -124,26 +126,25 @@ const [accountStore, setAccountStore] = createStore({
             ss.get(_getStorageKey("accountContacts", {wallet_name}), [])
         );
 
-        setAccountStore('neverShowBrowsingModeNotice', false);
-        setAccountStore('update', false);
-        setAccountStore('subbed', false);
-        setAccountStore('accountsLoaded', false);
-        setAccountStore('refsLoaded', false);
-        setAccountStore('currentAccount', null);
-        setAccountStore('referralAccount', ss.get("referralAccount", ""));
-        setAccountStore(
-            'passwordAccount',
-            ss.get(_getStorageKey("passwordAccount", {wallet_name}), "")
-        );
-        setAccountStore('myActiveAccounts', Immutable.Set());
-        setAccountStore('myHiddenAccounts', Immutable.Set(
-            ss.get(_getStorageKey("hiddenAccounts", {wallet_name}), [])
-        ));
-        setAccountStore('searchAccounts', Immutable.Map());
-        setAccountStore('searchTerm', "");
-        setAccountStore('wallet_name', wallet_name);
-        setAccountStore('starredAccounts', starredAccounts);
-        setAccountStore('accountContacts', accountContacts);
+        setAccountStore({
+            neverShowBrowsingModeNotice: false,
+            update: false,
+            subbed: false,
+            accountsLoaded: false,
+            refsLoaded: false,
+            currentAccount: null,
+            referralAccount: ss.get("referralAccount", ""),
+            passwordAccount: ss.get(_getStorageKey("passwordAccount", {wallet_name}), ""),
+            myActiveAccounts: Immutable.Set(),
+            myHiddenAccounts: Immutable.Set(
+                ss.get(_getStorageKey("hiddenAccounts", {wallet_name}), [])
+            ),
+            searchAccounts: Immutable.Map(),
+            searchTerm: "",
+            wallet_name: wallet_name,
+            starredAccounts: starredAccounts,
+            accountContacts: accountContacts
+        });
     },
     onSetWallet({wallet_name}) {
         setWallet(wallet_name);
@@ -188,8 +189,10 @@ const [accountStore, setAccountStore] = createStore({
             myHiddenAccounts = myHiddenAccounts.delete(account);
             myActiveAccounts = myActiveAccounts.add(account);
         }
-        setAccountStore('myHiddenAccounts', myHiddenAccounts);
-        setAccountStore('myActiveAccounts', myActiveAccounts);
+        setAccountStore({
+            myHiddenAccounts: myHiddenAccounts,
+            myActiveAccounts: myActiveAccounts
+        })
     },
     loadDbData() {
         let myActiveAccounts = Immutable.Set().asMutable();
@@ -197,9 +200,9 @@ const [accountStore, setAccountStore] = createStore({
         return new Promise((resolve, reject) => {
             iDB.load_data("linked_accounts")
                 .then(data => {
-                    accountStore.linkedAccounts = Immutable.fromJS(
+                    setAccountStore('linkedAccounts', Immutable.fromJS(
                         data || []
-                    ).toSet();
+                    ).toSet());
 
                     /*
                      * If we're in cloud wallet mode, only fetch the currently
@@ -261,7 +264,7 @@ const [accountStore, setAccountStore] = createStore({
                             if (!accountStore.subbed) {
                                 ChainStore.subscribe(accountStore.chainStoreUpdate);
                             }
-                            accountStore.subbed = true;
+                            setAccountStore('subbed', true);
                             accountStore.emitChange();
                             accountStore.chainStoreUpdate();
                             resolve();
@@ -270,7 +273,7 @@ const [accountStore, setAccountStore] = createStore({
                             if (!accountStore.subbed) {
                                 ChainStore.subscribe(accountStore.chainStoreUpdate);
                             }
-                            accountStore.subbed = true;
+                            setAccountStore('subbed', true);
                             accountStore.emitChange();
                             accountStore.chainStoreUpdate();
                             reject(err);
@@ -296,13 +299,13 @@ const [accountStore, setAccountStore] = createStore({
             }
             return;
         }
-        accountStore.account_refs = account_refs;
+        setAccountStore('account_refs', account_refs);
         let pending = false;
 
         if (accountStore.addAccountRefsInProgress) {
             return;
         }
-        accountStore.addAccountRefsInProgress = true;
+        setAccountStore('addAccountRefsInProgress', true);
 
         let myActiveAccounts = accountStore.myActiveAccounts.withMutations(
             accounts => {
@@ -337,8 +340,9 @@ const [accountStore, setAccountStore] = createStore({
                         }
                     );
                     if (!!nameOnlyEntry) {
-                        accountStore.linkedAccounts = accountStore.linkedAccounts.delete(
-                            nameOnlyEntry
+                        setAccountStore(
+                            'linkedAccounts',
+                            accountStore.linkedAccounts.delete(nameOnlyEntry)
                         );
                         _unlinkAccount(account.get("name"));
                         isAlreadyLinked = false;
@@ -373,8 +377,10 @@ const [accountStore, setAccountStore] = createStore({
         if (myActiveAccounts !== accountStore.myActiveAccounts) {
             setAccountStore('myActiveAccounts', myActiveAccounts);
         }
-        setAccountStore('initial_account_refs_load', pending);
-        setAccountStore('addAccountRefsInProgress', false);
+        setAccountStore({
+            initial_account_refs_load: pending,
+            addAccountRefsInProgress: false
+        });
         accountStore.tryToSetCurrentAccount();
     },
 
@@ -391,14 +397,22 @@ const [accountStore, setAccountStore] = createStore({
         let active_authority = account.get("active");
 
         let owner_pubkey_threshold = _pubkeyThreshold(owner_authority);
-        if (owner_pubkey_threshold == "full") return "full";
+        if (owner_pubkey_threshold == "full") {
+            return "full"
+        };
         let active_pubkey_threshold = _pubkeyThreshold(active_authority);
-        if (active_pubkey_threshold == "full") return "full";
+        if (active_pubkey_threshold == "full") {
+            return "full"
+        };
 
         let owner_address_threshold = _addressThreshold(owner_authority);
-        if (owner_address_threshold == "full") return "full";
+        if (owner_address_threshold == "full") {
+            return "full"
+        };
         let active_address_threshold = _addressThreshold(active_authority);
-        if (active_address_threshold == "full") return "full";
+        if (active_address_threshold == "full") {
+            return "full"
+        };
 
         let owner_account_threshold, active_account_threshold;
 
@@ -453,13 +467,18 @@ const [accountStore, setAccountStore] = createStore({
         return authority === "partial" || authority === "full";
     },
     onAccountSearch(payload) {
-        accountStore.searchTerm = payload.searchTerm;
-        accountStore.searchAccounts = accountStore.searchAccounts.clear();
+        setAccountStore({
+            searchTerm: payload.searchTerm,
+            searchAccounts: accountStore.searchAccounts.clear()
+        })
         payload.accounts.forEach(account => {
-            accountStore.searchAccounts = accountStore.searchAccounts.withMutations(
-                map => {
-                    map.set(account[1], account[0]);
-                }
+            setAccountStore(
+                "searchAccounts",
+                accountStore.searchAccounts.withMutations(
+                    map => {
+                        map.set(account[1], account[0]);
+                    }
+                )
             );
         });
     },
@@ -485,7 +504,9 @@ const [accountStore, setAccountStore] = createStore({
         }
     },
     setCurrentAccount(name) {
-        if (accountStore.passwordAccount) name = accountStore.passwordAccount;
+        if (accountStore.passwordAccount) {
+            name = accountStore.passwordAccount
+        };
         const key = _getStorageKey();
         if (!name) {
             name = null;
@@ -527,9 +548,7 @@ const [accountStore, setAccountStore] = createStore({
                     "[AccountStore.js] ----- Added account to store: ----->",
                     account.name
                 );
-                accountStore.myActiveAccounts = accountStore.myActiveAccounts.add(
-                    account.name
-                );
+                setAccountStore("myActiveAccounts", accountStore.myActiveAccounts.add(account.name));
                 if (accountStore.myActiveAccounts.size === 1) {
                     accountStore.setCurrentAccount(account.name);
                 }

@@ -3,11 +3,12 @@ import Immutable from "immutable";
 import {ChainStore, key} from "bitsharesjs";
 import BrainkeyActions from "actions/BrainkeyActions";
 
-/*
-const [accountStore, setAccountStore] = createStore({
+
+const [brainkeyStoreFactory, setBrainkeyStoreFactory] = createStore({
 
 });
-*/
+
+export const useBrainkeyStoreFactory = () => [brainkeyStoreFactory, setBrainkeyStoreFactory];
 
 /** Each instance supports a single brainkey. */
 export default class BrainkeyStoreFactory {

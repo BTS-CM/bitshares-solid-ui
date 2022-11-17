@@ -5,10 +5,12 @@ import {Apis} from "bitsharesjs-ws";
 
 import { createStore } from 'solid-js/store'
 
-// TODO: Uplift privatekeystore to use solid stores
+// TODO: Replace following store references with solid-js store
 import PrivateKeyStore from "stores/PrivateKeyStore";
-
 import chainIds from "chain/chainIds";
+
+// TODO: Replace the following line:
+//this.bindListeners({onAddPrivateKey: PrivateKeyActions.addKey});
 
 const [accountRefsStore, setAccountRefsStore] = createStore({
     chainstore_account_ids_by_key: null,
@@ -27,9 +29,11 @@ const [accountRefsStore, setAccountRefsStore] = createStore({
         }
     },
     loadDbData() {
-        setAccountRefsStore('chainstore_account_ids_by_key', null)
-        setAccountRefsStore('chainstore_account_ids_by_account', null)
-        setAccountRefsStore('no_account_refs', Immutable.Set())
+        setAccountRefsStore({
+            chainstore_account_ids_by_key: null,
+            chainstore_account_ids_by_account: null,
+            no_account_refs: Immutable.Set()
+        })
     
         let account_refs = new Immutable.Map();
         account_refs = account_refs.set(_getChainId(), Immutable.Set());
@@ -50,8 +54,11 @@ const [accountRefsStore, setAccountRefsStore] = createStore({
             return;
         }
 
-        setAccountRefsStore('chainstore_account_ids_by_key', ChainStore.account_ids_by_key);
-        setAccountRefsStore('chainstore_account_ids_by_account', ChainStore.account_ids_by_account);
+        setAccountRefsStore({
+            chainstore_account_ids_by_key: ChainStore.account_ids_by_key,
+            chainstore_account_ids_by_account: ChainStore.account_ids_by_account
+        })
+
         accountRefsStore.checkPrivateKeyStore();
     },
     checkPrivateKeyStore() {
@@ -91,8 +98,12 @@ const [accountRefsStore, setAccountRefsStore] = createStore({
         /* Discover accounts referenced by account name in permissions */
         temp_account_refs.forEach(account => {
             let refs = ChainStore.getAccountRefsOfAccount(account);
-            if (refs === undefined) return;
-            if (!refs.size) return;
+            if (refs === undefined) {
+                return
+            };
+            if (!refs.size) {
+                return
+            };
             temp_account_refs = temp_account_refs.add(refs.valueSeq());
         });
         temp_account_refs = temp_account_refs.flatten();
@@ -109,9 +120,6 @@ const [accountRefsStore, setAccountRefsStore] = createStore({
 
 ChainStore.subscribe(accountRefsStore.chainStoreUpdate);
 export const useAccountRefsStore = () => [accountRefsStore, setAccountRefsStore];
-
-// TODO: Replace the following line:
-//this.bindListeners({onAddPrivateKey: PrivateKeyActions.addKey});
 
 function _getChainId() {
     return Apis.instance().chain_id || chainIds.MAIN_NET;

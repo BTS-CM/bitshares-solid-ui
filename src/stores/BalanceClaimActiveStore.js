@@ -77,8 +77,10 @@ const [balanceClaimActiveStore, setBalanceClaimActiveStore] = createStore({
             .valueSeq()
             .flatten()
             .toSet();
-        setBalanceClaimActiveStore('selected_balances', selected_balances);
-        setBalanceClaimActiveStore('checked', checked);
+        setBalanceClaimActiveStore({
+            checked: checked,
+            selected_balances: selected_balances
+        });
     },
     onClaimAccountChange(claim_account_name) {
         setBalanceClaimActiveStore('claim_account_name', claim_account_name);
@@ -114,14 +116,10 @@ const [balanceClaimActiveStore, setBalanceClaimActiveStore] = createStore({
         for (let address_string of key.addresses(pubkey)) {
             if (!balanceClaimActiveStore.no_balance_address.has(address_string)) {
                 // AddressIndex indexes all addresses .. Here only 1 address is involved
-                setBalanceClaimActiveStore(
-                    'address_to_pubkey',
-                    balanceClaimActiveStore.address_to_pubkey.set(address_string, pubkey)
-                );
-                setBalanceClaimActiveStore(
-                    'addresses',
-                    balanceClaimActiveStore.addresses.add(address_string)
-                );
+                setBalanceClaimActiveStore({
+                    address_to_pubkey: balanceClaimActiveStore.address_to_pubkey.set(address_string, pubkey),
+                    addresses: balanceClaimActiveStore.addresses.add(address_string)
+                });
             }
         }
         setBalanceClaimActiveStore(
@@ -131,11 +129,13 @@ const [balanceClaimActiveStore, setBalanceClaimActiveStore] = createStore({
     },
     refreshBalances() {
         balanceClaimActiveStore.lookupBalanceObjects().then(balances => {
-            setBalanceClaimActiveStore('loading', true);
-            setBalanceClaimActiveStore('balances', balances);
-            setBalanceClaimActiveStore('checked', Immutable.Map());
-            setBalanceClaimActiveStore('selected_balances', Immutable.Seq());
-            setBalanceClaimActiveStore('claim_account_name', undefined);
+            setBalanceClaimActiveStore({
+                loading: true,
+                balances: balances,
+                checked: Immutable.Map(),
+                selected_balances: Immutable.Seq(),
+                claim_account_name: undefined
+            });
             setBalanceClaimActiveStore('loading', false);
         });
     },
@@ -144,7 +144,9 @@ const [balanceClaimActiveStore, setBalanceClaimActiveStore] = createStore({
         var db = Apis.instance().db_api();
         var no_balance_address = new Set(balanceClaimActiveStore.no_balance_address);
         var no_bal_size = no_balance_address.size;
-        for (let addy of balanceClaimActiveStore.addresses) no_balance_address.add(addy);
+        for (let addy of balanceClaimActiveStore.addresses) {
+            no_balance_address.add(addy)
+        };
         // for(let addy of balanceClaimActiveStore.addresses) ChainStore.getBalanceObjects(addy) // Test with ChainStore
         return db
             .exec("get_balance_objects", [Array.from(balanceClaimActiveStore.addresses)])
@@ -159,15 +161,17 @@ const [balanceClaimActiveStore, setBalanceClaimActiveStore] = createStore({
                                 for (let i = 0; i < result.length; i++) {
                                     var balance = result[i];
                                     no_balance_address.delete(balance.owner);
-                                    if (balance.vesting_policy)
-                                        balance.vested_balance =
-                                            vested_balances[i];
+                                    if (balance.vesting_policy) {
+                                        balance.vesting_balance = vested_balances[i];
+                                    }
                                     balance_list.push(balance);
                                 }
-                                if (no_bal_size !== no_balance_address.size)
+
+                                if (no_bal_size !== no_balance_address.size) {
                                     balanceClaimActiveStore.saveNoBalanceAddresses(
                                         no_balance_address
                                     ).catch(error => console.error(error));
+                                }
                             }
                         );
                         return balances;
