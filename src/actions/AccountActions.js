@@ -1,9 +1,12 @@
-import accountUtils from "common/account_utils";
-import AccountApi from "api/accountApi";
-import WalletApi from "api/WalletApi";
-import ApplicationApi from "api/ApplicationApi";
-import WalletDb from "stores/WalletDb";
-import WalletActions from "actions/WalletActions";
+import {getFinalFeeAsset} from "common/account_utils";
+import {lookupAccounts} from "api/accountApi";
+import {new_transaction} from "api/WalletApi";
+import {process_transaction} from "stores/WalletDb";
+import * as ApplicationApi from "api/ApplicationApi";
+import * as WalletActions from "actions/WalletActions";
+
+import useAccountStore from "stores/AccountStore";
+const [accountStore, setAccountStore] = useAccountStore();
 
 let accountSearch = {};
 
@@ -20,39 +23,42 @@ let accountSearch = {};
  */
 function accountSearch(start_symbol, limit = 50) {
     let uid = `${start_symbol}_${limit}}`;
-    return dispatch => {
-        if (!accountSearch[uid]) {
-            accountSearch[uid] = true;
-            return AccountApi.lookupAccounts(start_symbol, limit).then(
-                result => {
-                    accountSearch[uid] = false;
-                    dispatch({accounts: result, searchTerm: start_symbol});
-                }
-            );
-        }
-    };
+    if (!accountSearch[uid]) {
+        accountSearch[uid] = true;
+        return lookupAccounts(start_symbol, limit).then(
+            result => {
+                accountSearch[uid] = false;
+                accountStore.onAccountSearch({accounts: result, searchTerm: start_symbol});
+            }
+        );
+    }
 }
 
 /**
  *  TODO:  The concept of current accounts is deprecated and needs to be removed
  */
 function setCurrentAccount(name) {
+    accountStore.onSetCurrentAccount(name);
     return name;
 }
 
 function tryToSetCurrentAccount() {
+    accountStore.onTryToSetCurrentAccount();
     return true;
 }
 
 function addStarAccount(account) {
+    accountStore.onAddStarAccount(account);
     return account;
 }
 
 function removeStarAccount(account) {
+    accountStore.onRemoveStarAccount(account);
     return account;
 }
 
 function toggleHideAccount(account, hide) {
+    accountStore.onToggleHideAccount(account, hide);
     return {account, hide};
 }
 
@@ -69,28 +75,26 @@ function transfer(
     fee_asset_id = "1.3.0"
 ) {
     // Set the fee asset to use
-    fee_asset_id = accountUtils.getFinalFeeAsset(
+    fee_asset_id = getFinalFeeAsset(
         propose_account || from_account,
         "transfer",
         fee_asset_id
     );
 
     try {
-        return dispatch => {
-            return ApplicationApi.transfer({
-                from_account,
-                to_account,
-                amount,
-                asset,
-                memo,
-                propose_account,
-                fee_asset_id
-            }).then(result => {
-                // console.log( "transfer result: ", result )
+        return ApplicationApi.transfer({
+            from_account,
+            to_account,
+            amount,
+            asset,
+            memo,
+            propose_account,
+            fee_asset_id
+        }).then(result => {
+            // console.log( "transfer result: ", result )
 
-                dispatch(result);
-            });
-        };
+            dispatch(result);
+        });
     } catch (error) {
         console.log(
             "[AccountActions.js:90] ----- transfer error ----->",
@@ -113,18 +117,16 @@ function transfer(
     referrer_percent,
     refcode
 ) {
-    return dispatch => {
-        return WalletActions.createAccount(
-            account_name,
-            registrar,
-            referrer,
-            referrer_percent,
-            refcode
-        ).then(() => {
-            dispatch(account_name);
-            return account_name;
-        });
-    };
+    return WalletActions.createAccount(
+        account_name,
+        registrar,
+        referrer,
+        referrer_percent,
+        refcode
+    ).then(() => {
+        accountStore.onCreateAccount(account_name);
+        return account_name;
+    });
 }
 
 function createAccountWithPassword(
@@ -135,19 +137,17 @@ function createAccountWithPassword(
     referrer_percent,
     refcode
 ) {
-    return dispatch => {
-        return WalletActions.createAccountWithPassword(
-            account_name,
-            password,
-            registrar,
-            referrer,
-            referrer_percent,
-            refcode
-        ).then(() => {
-            dispatch(account_name);
-            return account_name;
-        });
-    };
+    return WalletActions.createAccountWithPassword(
+        account_name,
+        password,
+        registrar,
+        referrer,
+        referrer_percent,
+        refcode
+    ).then(() => {
+        dispatch(account_name);
+        return account_name;
+    });
 }
 
 /**
@@ -156,12 +156,12 @@ function createAccountWithPassword(
  */
     function upgradeAccount(account_id, lifetime) {
     // Set the fee asset to use
-    let fee_asset_id = accountUtils.getFinalFeeAsset(
+    let fee_asset_id = getFinalFeeAsset(
         account_id,
         "account_upgrade"
     );
 
-    var tr = WalletApi.new_transaction();
+    var tr = new_transaction();
     tr.add_type_operation("account_upgrade", {
         fee: {
             amount: 0,
@@ -170,24 +170,27 @@ function createAccountWithPassword(
         account_to_upgrade: account_id,
         upgrade_to_lifetime_member: lifetime
     });
-    return WalletDb.process_transaction(tr, null, true);
+    return process_transaction(tr, null, true);
 }
 
 function addAccountContact(name) {
+    accountStore.onAddAccountContact(name);
     return name;
 }
 
 function removeAccountContact(name) {
+    accountStore.onRemoveAccountContact(name);
     return name;
 }
 
 function setPasswordAccount(account) {
+    accountStore.onSetPasswordAccount(account);
     return account;
 }
 
 function createCommittee({url, account}) {
     const account_id = account.get("id");
-    var tr = WalletApi.new_transaction();
+    var tr = new_transaction();
 
     tr.add_type_operation("committee_member_create", {
         fee: {
@@ -197,24 +200,22 @@ function createCommittee({url, account}) {
         committee_member_account: account_id,
         url: url
     });
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(() => {
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log(
-                    "----- Add Committee member error ----->",
-                    error
-                );
-                dispatch(false);
-            });
-    };
+    return process_transaction(tr, null, true)
+        .then(() => {
+            dispatch(true);
+        })
+        .catch(error => {
+            console.log(
+                "----- Add Committee member error ----->",
+                error
+            );
+            dispatch(false);
+        });
 }
 
 function createWitness({url, account, signingKey}) {
     const account_id = account.get("id");
-    var tr = WalletApi.new_transaction();
+    var tr = new_transaction();
 
     tr.add_type_operation("witness_create", {
         fee: {
@@ -225,16 +226,15 @@ function createWitness({url, account, signingKey}) {
         url: url,
         block_signing_key: signingKey
     });
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(() => {
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log("----- Create witness error ----->", error);
-                dispatch(false);
-            });
-    };
+    
+    return process_transaction(tr, null, true)
+        .then(() => {
+            dispatch(true);
+        })
+        .catch(error => {
+            console.log("----- Create witness error ----->", error);
+            dispatch(false);
+        });
 }
 
 export {

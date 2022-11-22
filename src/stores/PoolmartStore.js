@@ -1,17 +1,5 @@
 import Immutable from "immutable";
 import { createStore } from 'solid-js/store';
-//import {ChainStore} from "bitsharesjs";
-//import PoolmartActions from "actions/PoolmartActions";
-
-/*
-    this.bindListeners({
-        onGetLiquidityPools: PoolmartActions.GET_LIQUIDITY_POOLS,
-        onGetLiquidityPoolsByShareAsset:
-            PoolmartActions.GET_LIQUIDITY_POOLS_BY_SHARE_ASSET,
-        onResetLiquidityPools: PoolmartActions.RESET_LIQUIDITY_POOLS,
-        onGetLiquidityPoolsAccount:PoolmartActions.GET_LIQUIDITY_POOLS_ACCOUNT
-    });
-*/
 
 const [poolmartStore, setPoolmartStore] = createStore({
     liquidityPools: Immutable.Map(),

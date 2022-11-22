@@ -1,5 +1,8 @@
 import {Apis} from "bitsharesjs-ws";
 
+import {useBlockchainStore} from "../stores/BlockchainStore";
+const [blockchainStore, setBlockchainStore] = useBlockchainStore();
+
 let latestBlocks = {};
 let headerQueue = {};
 
@@ -10,7 +13,6 @@ let headerQueue = {};
  */
 function getHeader(height) {
     return new Promise ((resolve, reject) => {
-
         if (headerQueue[height]) {
             return {}
         };
@@ -21,6 +23,13 @@ function getHeader(height) {
             .db_api()
             .exec("get_block_header", [height])
             .then(header => {
+                blockchainStore.onGetHeader({
+                    header: {
+                        timestamp: header.timestamp,
+                        witness: header.witness
+                    },
+                    height
+                });
                 return resolve({
                     header: {
                         timestamp: header.timestamp,
@@ -45,7 +54,6 @@ function getHeader(height) {
  */
 function getLatest(height, maxBlock) {
     return new Promise ((resolve, reject) => {
-
         if (!latestBlocks[height] && maxBlock) {
             latestBlocks[height] = true;
             Apis.instance()
@@ -56,6 +64,7 @@ function getLatest(height, maxBlock) {
                         return reject();
                     }
                     result.id = height; // The returned object for some reason does not include the block height..
+                    blockchainStore.onGetLatest({block: result, maxBlock: maxBlock});
                     return resolve({block: result, maxBlock: maxBlock})
                 })
                 .catch(error => {
@@ -84,6 +93,7 @@ function getBlock(height) {
                     return;
                 }
                 result.id = height; // The returned object for some reason does not include the block height..
+                blockchainStore.onGetBlock(result);
                 resolve(result);
             })
             .catch(error => {
@@ -97,6 +107,7 @@ function getBlock(height) {
 }
 
 function updateRpcConnectionStatus(status) {
+    blockchainStore.onUpdateRpcConnectionStatus(status);
     return status;
 }
 

@@ -8,9 +8,14 @@ import counterpart from "counterpart";
 import iDB from "idb-instance";
 import idb_helper from "idb-helper";
 
-import PrivateKeyStore from "stores/PrivateKeyStore";
-import SettingsStore from "stores/SettingsStore";
-import AddressIndex from "stores/AddressIndex";
+import {usePrivateKeyStore} from './PrivateKeyStore';
+const [privateKeyStore, setPrivateKeyStore] = usePrivateKeyStore();
+
+import { useSettingsStore } from './SettingsStore';
+const [settingsStore, setSettingsStore] = useSettingsStore();
+
+import { useAddressIndex } from './AddressIndex';
+const [addressIndex, setAddressIndex] = useAddressIndex();
 
 import {WalletTcomb} from "./tcomb_structs";
 import TransactionConfirmActions from "actions/TransactionConfirmActions";
@@ -106,14 +111,14 @@ const [walletDb, setWalletDb] = createStore({
         if (public_key.Q) {
             public_key = public_key.toPublicKeyString()
         };
-        let private_key_tcomb = PrivateKeyStore.getTcomb_byPubkey(public_key);
+        let private_key_tcomb = privateKeyStore.getTcomb_byPubkey(public_key);
         if (!private_key_tcomb) {
             return null
         };
         return walletDb.decryptTcomb_PrivateKey(private_key_tcomb);
     },
     process_transaction(tr, signer_pubkeys, broadcast, extra_keys = []) {
-        const passwordLogin = SettingsStore.getState().settings.get(
+        const passwordLogin = settingsStore.settings.get(
             "passwordLogin"
         );
 
@@ -141,7 +146,7 @@ const [walletDb, setWalletDb] = createStore({
                         // Balance claims are by address, only the private
                         // key holder can know about these additional
                         // potential keys.
-                        let pubkeys = PrivateKeyStore.getPubkeys_having_PrivateKey(
+                        let pubkeys = privateKeyStore.getPubkeys_having_PrivateKey(
                             signer_pubkeys
                         );
                         if (!pubkeys.length)
@@ -157,13 +162,13 @@ const [walletDb, setWalletDb] = createStore({
                     return tr
                         .get_potential_signatures()
                         .then(({pubkeys, addys}) => {
-                            let my_pubkeys = PrivateKeyStore.getPubkeys_having_PrivateKey(
+                            let my_pubkeys = privateKeyStore.getPubkeys_having_PrivateKey(
                                 pubkeys.concat(extra_keys),
                                 addys
                             );
 
                             //{//Testing only, don't send All public keys!
-                            //    let pubkeys_all = PrivateKeyStore.getPubkeys() // All public keys
+                            //    let pubkeys_all = privateKeyStore.getPubkeys() // All public keys
                             //    tr.get_required_signatures(pubkeys_all).then( required_pubkey_strings =>
                             //        console.log('get_required_signatures all\t',required_pubkey_strings.sort(), pubkeys_all))
                             //    tr.get_required_signatures(my_pubkeys).then( required_pubkey_strings =>
@@ -390,7 +395,7 @@ const [walletDb, setWalletDb] = createStore({
                 _passwordKey[pub] = priv;
 
                 id++;
-                PrivateKeyStore.setPasswordLoginKey({
+                privateKeyStore.setPasswordLoginKey({
                     pubkey: pub,
                     import_account_names: [account],
                     encrypted_key: null,
@@ -625,7 +630,7 @@ const [walletDb, setWalletDb] = createStore({
             let pubkeys = [];
             for (let private_key_obj of private_key_objs)
                 pubkeys.push(private_key_obj.public_key_string);
-            let addyIndexPromise = AddressIndex.addAll(pubkeys);
+            let addyIndexPromise = addressIndex.addAll(pubkeys);
 
             let private_plainhex_array = [];
             for (let private_key_obj of private_key_objs) {
@@ -686,7 +691,7 @@ const [walletDb, setWalletDb] = createStore({
                         transaction
                     );
                     try {
-                        let duplicate_count = PrivateKeyStore.addPrivateKeys_noindex(
+                        let duplicate_count = privateKeyStore.addPrivateKeys_noindex(
                             enc_private_key_objs,
                             transaction
                         );

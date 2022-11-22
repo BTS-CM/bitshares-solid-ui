@@ -3,26 +3,28 @@ import {compress, decompress} from "lzma";
 import {PrivateKey, PublicKey, Aes, key} from "bitsharesjs";
 import WalletActions from "actions/WalletActions";
 
+import {useBackupStore} from "stores/BackupStore";
+const [backupStore, setBackupStore] = useBackupStore();
+
 function incommingWebFile(file) {
-    return dispatch => {
-        let reader = new FileReader();
-        reader.onload = evt => {
-            let contents = new Buffer(evt.target.result, "binary");
-            let name = file.name;
+    let reader = new FileReader();
+    reader.onload = evt => {
+        let contents = new Buffer(evt.target.result, "binary");
+        let name = file.name;
 
-            let last_modified = new Date(file.lastModified).toString();
-
-            dispatch({name, contents, last_modified});
-        };
-        reader.readAsBinaryString(file);
+        let last_modified = new Date(file.lastModified).toString();
+        backupStore.onIncommingFile({name, contents, last_modified});
     };
+    reader.readAsBinaryString(file);
 }
 
 function incommingBuffer(params) {
+    backupStore.onIncommingBuffer(params);
     return params;
 }
 
 function reset() {
+    backupStore.onReset();
     return true;
 }
 

@@ -1,15 +1,23 @@
-import WalletDb from "stores/WalletDb";
+import {TransactionBuilder, FetchChain} from "bitsharesjs";
+import {Apis} from "bitsharesjs-ws";
+
 import WalletUnlockActions from "actions/WalletUnlockActions";
 import CachedPropertyActions from "actions/CachedPropertyActions";
 import ApplicationApi from "api/ApplicationApi";
-import SettingsStore from "stores/SettingsStore";
 
-import {TransactionBuilder, FetchChain} from "bitsharesjs";
-import {Apis} from "bitsharesjs-ws";
+import { useWalletDb } from "~/stores/WalletDb";
+const [walletDb, setWalletDb] = useWalletDb();
+
+import { useSettingsStore } from "~/stores/SettingsStore";
+const [settingsStore, setSettingsStore] = useSettingsStore();
+
+import { useWalletManagerStore } from "~/stores/WalletManagerStore";
+const [walletManagerStore, setWalletManagerStore] = useWalletManagerStore();
 
 /** Restore and make active a new wallet_object. */
 function restore(wallet_name = "default", wallet_object) {
     wallet_name = wallet_name.toLowerCase();
+    walletManagerStore.onRestore({wallet_name, wallet_object});
     return {wallet_name, wallet_object};
 }
 
@@ -18,29 +26,32 @@ function restore(wallet_name = "default", wallet_object) {
 */
 function setWallet(wallet_name, create_wallet_password, brnkey) {
     WalletUnlockActions.lock();
-    if (!wallet_name) wallet_name = "default";
-    return dispatch => {
-        return new Promise(resolve => {
-            dispatch({
-                wallet_name,
-                create_wallet_password,
-                brnkey,
-                resolve
-            });
-        });
+    if (!wallet_name) {
+        wallet_name = "default"
     };
+    return new Promise(resolve => {
+        walletManagerStore.onSetWallet({
+            wallet_name,
+            create_wallet_password,
+            brnkey,
+            resolve
+        });
+    });
 }
 
 function setBackupDate() {
     CachedPropertyActions.set("backup_recommended", false);
+    walletManagerStore.onSetBackupDate();
     return true;
 }
 
 function setBrainkeyBackupDate() {
+    walletManagerStore.onSetBrainkeyBackupDate();
     return true;
 }
 
 function deleteWallet(name) {
+    walletManagerStore.onDeleteWallet(name);
     return name;
 }
 
@@ -52,17 +63,17 @@ function createAccountWithPassword(
     referrer_percent,
     refcode
 ) {
-    let {privKey: owner_private} = WalletDb.generateKeyFromPassword(
+    let {privKey: owner_private} = walletDb.generateKeyFromPassword(
         account_name,
         "owner",
         password
     );
-    let {privKey: active_private} = WalletDb.generateKeyFromPassword(
+    let {privKey: active_private} = walletDb.generateKeyFromPassword(
         account_name,
         "active",
         password
     );
-    let {privKey: memo_private} = WalletDb.generateKeyFromPassword(
+    let {privKey: memo_private} = walletDb.generateKeyFromPassword(
         account_name,
         "memo",
         password
@@ -103,7 +114,7 @@ function createAccountWithPassword(
         } else {
             // using faucet
 
-            let faucetAddress = SettingsStore.getSetting("faucet_address");
+            let faucetAddress = settingsStore.getSetting("faucet_address");
             if (
                 window &&
                 window.location &&
@@ -175,18 +186,18 @@ function createAccount(
     referrer_percent,
     refcode
 ) {
-    if (WalletDb.isLocked()) {
+    if (walletDb.isLocked()) {
         let error = "wallet locked";
         //this.actions.brainKeyAccountCreateError( error )
         return Promise.reject(error);
     }
-    let owner_private = WalletDb.generateNextKey();
-    let active_private = WalletDb.generateNextKey();
-    let memo_private = WalletDb.generateNextKey();
+    let owner_private = walletDb.generateNextKey();
+    let active_private = walletDb.generateNextKey();
+    let memo_private = walletDb.generateNextKey();
 
     let updateWallet = () => {
-        let transaction = WalletDb.transaction_update_keys();
-        let p = WalletDb.saveKeys(
+        let transaction = walletDb.transaction_update_keys();
+        let p = walletDb.saveKeys(
             [owner_private, active_private, memo_private],
             transaction
         );
@@ -212,7 +223,7 @@ function createAccount(
     } else {
         // using faucet
 
-        let faucetAddress = SettingsStore.getSetting("faucet_address");
+        let faucetAddress = settingsStore.getSetting("faucet_address");
         if (
             window &&
             window.location &&
@@ -263,9 +274,9 @@ function createAccount(
             * sequence used to generate private keys from the brainkey. Three
             * keys were generated, so we decrement three times.
             */
-                WalletDb.decrementBrainKeySequence();
-                WalletDb.decrementBrainKeySequence();
-                WalletDb.decrementBrainKeySequence();
+                walletDb.decrementBrainKeySequence();
+                walletDb.decrementBrainKeySequence();
+                walletDb.decrementBrainKeySequence();
                 throw error;
             });
     }
@@ -349,7 +360,7 @@ function claimVestingBalance(account, vb, forceAll = false) {
         }
     });
 
-    return WalletDb.process_transaction(tr, null, true)
+    return walletDb.process_transaction(tr, null, true)
         .then(result => {})
         .catch(err => {
             console.log("vesting_balance_withdraw err:", err);
@@ -435,7 +446,7 @@ function importBalance(account_name_or_id, balances, broadcast) {
                     // With a lot of balance claims the signing can take so Long
                     // the transaction will expire.  This will increase the timeout...
                     tr.set_expire_seconds(15 * 60 + balance_claims.length);
-                    return WalletDb.process_transaction(
+                    return walletDb.process_transaction(
                         tr,
                         Object.keys(signer_pubkeys),
                         broadcast

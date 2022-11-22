@@ -7,6 +7,9 @@ import utils from "common/utils";
 import WalletApi from "api/WalletApi";
 import WalletDb from "stores/WalletDb";
 
+import {useAssetStore} from "stores/AssetStore";
+const [assetStore, setAssetStore] = useAssetStore();
+
 let inProgress = {};
 
 function publishFeed({publisher, asset_id, mcr, mssr, feedPrice, cer}) {
@@ -517,151 +520,147 @@ async function loadAssets() {
 
 function getAssetList(start, count, includeGateways = false) {
     let id = start + "_" + count;
-    return dispatch => {
-        if (!inProgress[id]) {
-            let assets;
-            inProgress[id] = true;
-            dispatch({loading: true});
+    if (!inProgress[id]) {
+        let assets;
+        inProgress[id] = true;
+        assetStore.onGetAssetList({loading: true});
 
-            assets = Apis.instance()
-                .db_api()
-                .exec("list_assets", [start, count])
-                .then(assets => {
-                    let bitAssetIDS = [];
-                    let dynamicIDS = [];
+        assets = Apis.instance()
+            .db_api()
+            .exec("list_assets", [start, count])
+            .then(assets => {
+                let bitAssetIDS = [];
+                let dynamicIDS = [];
 
-                    assets.forEach(asset => {
-                        ChainStore._updateObject(asset, false);
-                        dynamicIDS.push(asset.dynamic_asset_data_id);
+                assets.forEach(asset => {
+                    ChainStore._updateObject(asset, false);
+                    dynamicIDS.push(asset.dynamic_asset_data_id);
 
-                        if (asset.bitasset_data_id) {
-                            bitAssetIDS.push(asset.bitasset_data_id);
-                        }
-                    });
-
-                    let dynamicPromise = Apis.instance()
-                        .db_api()
-                        .exec("get_objects", [dynamicIDS]);
-
-                    let bitAssetPromise =
-                        bitAssetIDS.length > 0
-                            ? Apis.instance()
-                                    .db_api()
-                                    .exec("get_objects", [bitAssetIDS])
-                            : null;
-
-                    Promise.all([dynamicPromise, bitAssetPromise]).then(
-                        results => {
-                            delete inProgress[id];
-                            dispatch({
-                                assets: assets,
-                                dynamic: results[0],
-                                bitasset_data: results[1],
-                                loading: false
-                            });
-                            return assets && assets.length;
-                        }
-                    );
-                })
-                .catch(error => {
-                    console.log(
-                        "Error in AssetActions.getAssetList: ",
-                        error
-                    );
-                    dispatch({loading: false});
-                    delete inProgress[id];
+                    if (asset.bitasset_data_id) {
+                        bitAssetIDS.push(asset.bitasset_data_id);
+                    }
                 });
 
-            // Fetch next 10 assets for each gateAsset on request
-            if (includeGateways) {
-                gatewayPrefixes.forEach(a => {
-                    this.getAssetList(a + "." + start, 10);
-                });
-            }
+                let dynamicPromise = Apis.instance()
+                    .db_api()
+                    .exec("get_objects", [dynamicIDS]);
 
-            return assets;
+                let bitAssetPromise =
+                    bitAssetIDS.length > 0
+                        ? Apis.instance()
+                                .db_api()
+                                .exec("get_objects", [bitAssetIDS])
+                        : null;
+
+                Promise.all([dynamicPromise, bitAssetPromise]).then(
+                    results => {
+                        delete inProgress[id];
+                        assetStore.onGetAssetList({
+                            assets: assets,
+                            dynamic: results[0],
+                            bitasset_data: results[1],
+                            loading: false
+                        });
+                        return assets && assets.length;
+                    }
+                );
+            })
+            .catch(error => {
+                console.log(
+                    "Error in AssetActions.getAssetList: ",
+                    error
+                );
+                assetStore.onGetAssetList({loading: false});
+                delete inProgress[id];
+            });
+
+        // Fetch next 10 assets for each gateAsset on request
+        if (includeGateways) {
+            gatewayPrefixes.forEach(a => {
+                this.getAssetList(a + "." + start, 10);
+            });
         }
-    };
+
+        return assets;
+    }
 }
 
 function getAssetsByIssuer(issuer, count, start, includeGateways = false) {
     let id = issuer + "_" + count;
     console.log("getAssetsByIssuer id = ", id);
-    return dispatch => {
-        if (!inProgress[id]) {
-            let assets;
-            inProgress[id] = true;
-            dispatch({loading: true});
+    if (!inProgress[id]) {
+        let assets;
+        inProgress[id] = true;
+        assetStore.onGetAssetsByIssuer({loading: true});
 
-            assets = Apis.instance()
-                .db_api()
-                .exec("get_assets_by_issuer", [issuer, start, count])
-                .then(assets => {
-                    let bitAssetIDS = [];
-                    let dynamicIDS = [];
+        assets = Apis.instance()
+            .db_api()
+            .exec("get_assets_by_issuer", [issuer, start, count])
+            .then(assets => {
+                let dynamicIDS = [];
 
-                    assets.forEach(asset => {
-                        ChainStore._updateObject(asset, false);
-                        dynamicIDS.push(asset.dynamic_asset_data_id);
+                assets.forEach(asset => {
+                    ChainStore._updateObject(asset, false);
+                    dynamicIDS.push(asset.dynamic_asset_data_id);
+                    });
+                let dynamicPromise = Apis.instance()
+                    .db_api()
+                    .exec("get_objects", [dynamicIDS]);
+                Promise.all([dynamicPromise]).then(
+                    results => {
+                        delete inProgress[id];
+                        assetStore.onGetAssetsByIssuer({
+                            assets: assets,
+                            dynamic: results[0],
+                            loading: false
                         });
-                    let dynamicPromise = Apis.instance()
-                        .db_api()
-                        .exec("get_objects", [dynamicIDS]);
-                    Promise.all([dynamicPromise]).then(
-                        results => {
-                            delete inProgress[id];
-                            dispatch({
-                                assets: assets,
-                                dynamic: results[0],
-                                loading: false
-                            });
-                            return assets && assets.length;
-                        }
-                    );
-                })
-                .catch(error => {
-                    console.log(
-                        "Error in AssetActions.getAssetList: ",
-                        error
-                    );
-                    dispatch({loading: false});
-                    delete inProgress[id];
-                });
+                        return assets && assets.length;
+                    }
+                );
+            })
+            .catch(error => {
+                console.log(
+                    "Error in AssetActions.getAssetList: ",
+                    error
+                );
+                assetStore.onGetAssetsByIssuer({loading: false});
+                delete inProgress[id];
+            });
 
-            // Fetch next 10 assets for each gateAsset on request
-            if (includeGateways) {
-                gatewayPrefixes.forEach(a => {
-                    this.getAssetList(a + "." + start, 10);
-                });
-            }
-
-            return assets;
+        // Fetch next 10 assets for each gateAsset on request
+        if (includeGateways) {
+            gatewayPrefixes.forEach(a => {
+                this.getAssetList(a + "." + start, 10);
+            });
         }
-    };
+
+        return assets;
+    }
 }
 
 function lookupAsset(symbol, searchID) {
     let asset = ChainStore.getAsset(symbol);
     if (asset) {
-        return {
+        let assetResponse = {
             assets: [asset],
             searchID: searchID,
             symbol: symbol
         };
+
+        assetStore.onLookupAsset(assetResponse);
+        return assetResponse;
     } else {
-        return dispatch => {
-            // Hack to retry once until we replace this method with a new api call to lookup multiple assets
-            setTimeout(() => {
-                let asset = ChainStore.getAsset(symbol);
-                if (asset) {
-                    dispatch({
-                        assets: [asset],
-                        searchID: searchID,
-                        symbol: symbol
-                    });
-                }
-            }, 200);
-        };
+        // Hack to retry once until we replace this method with a new api call to lookup multiple assets
+        setTimeout(() => {
+            let asset = ChainStore.getAsset(symbol);
+            if (asset) {
+                assetStore.onLookupAsset({
+                    assets: [asset],
+                    searchID: searchID,
+                    symbol: symbol
+                });
+            }
+        }, 200);
     }
 }
 

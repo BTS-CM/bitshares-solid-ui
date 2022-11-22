@@ -1,21 +1,10 @@
 import Immutable from "immutable";
 import { createStore } from 'solid-js/store'
-import GatewayActions from "actions/GatewayActions";
 import ls from "common/localStorage";
 import {allowedGateway} from "../branding";
 
 const STORAGE_KEY = "__graphene__";
 let ss = ls(STORAGE_KEY);
-
-/*
-    gatewayStore.bindListeners({
-        onFetchCoins: GatewayActions.fetchCoins,
-        onFetchCoinsSimple: GatewayActions.fetchCoinsSimple,
-        onFetchPairs: GatewayActions.fetchPairs,
-        onTemporarilyDisable: GatewayActions.temporarilyDisable,
-        onLoadOnChainGatewayConfig: GatewayActions.loadOnChainGatewayConfig
-    });
-*/
 
 const [gatewayStore, setGatewayStore] = createStore({
     backedCoins: Immutable.Map(ss.get("backedCoins", {})),

@@ -3,7 +3,7 @@ import Immutable from "immutable";
 import {ChainStore, key} from "bitsharesjs";
 import BrainkeyActions from "actions/BrainkeyActions";
 
-
+// TODO: Complete porting the brainkey store to solid-js
 const [brainkeyStoreFactory, setBrainkeyStoreFactory] = createStore({
 
 });
@@ -52,6 +52,7 @@ export default class BrainkeyStoreFactory {
 */
 var DERIVIED_BRAINKEY_POOL_SIZE = 10;
 
+// TODO: Port to solid-js
 class BrainkeyStoreImpl extends BaseStore {
     constructor() {
         super();

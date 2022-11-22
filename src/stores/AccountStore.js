@@ -11,13 +11,24 @@ import WalletActions from "actions/WalletActions";
 */
 
 import iDB from "idb-instance";
-import PrivateKeyStore from "./PrivateKeyStore";
+import { usePrivateKeyStore } from '~/stores/PrivateKeyStore';
+const [privateKeyStore, setPrivateKeyStore] = usePrivateKeyStore();
 
-import AccountRefsStore from "stores/AccountRefsStore";
+import { useAccountRefsStore } from "./AccountRefsStore";
+const [accountRefsStore, setAccountRefsStore] = useAccountRefsStore();
+
 import AddressIndex from "stores/AddressIndex";
 import ls from "common/localStorage";
 
 let ss = ls("__graphene__");
+
+/*
+    this.bindListeners({
+        onChangeSetting: SettingsActions.changeSetting,
+        onSetWallet: WalletActions.setWallet,
+        // onNewPrivateKeys: [ PrivateKeyActions.loadDbData, PrivateKeyActions.addKey ]
+    });
+*/
 
 /**
  *  This Store holds information about accounts in this wallet
@@ -289,7 +300,7 @@ const [accountStore, setAccountStore] = createStore({
     },
     addAccountRefs() {
         //  Simply add them to the myActiveAccounts list (no need to persist them)
-        let account_refs = AccountRefsStore.getAccountRefs();
+        let account_refs = accountRefsStore.getAccountRefs();
         if (
             !accountStore.initial_account_refs_load &&
             accountStore.account_refs === account_refs
@@ -580,7 +591,7 @@ const [accountStore, setAccountStore] = createStore({
         }
     },
     isMyKey(key) {
-        return PrivateKeyStore.hasKey(key);
+        return privateKeyStore.hasKey(key);
     },
     onChangeSetting(payload) {
         if (payload.setting === "passwordLogin") {
@@ -595,24 +606,6 @@ const [accountStore, setAccountStore] = createStore({
         }
     }
 });
-
-/*
-    this.bindListeners({
-        onSetCurrentAccount: AccountActions.setCurrentAccount,
-        onCreateAccount: AccountActions.createAccount,
-        onAccountSearch: AccountActions.accountSearch,
-        tryToSetCurrentAccount: AccountActions.tryToSetCurrentAccount,
-        onSetPasswordAccount: AccountActions.setPasswordAccount,
-        onChangeSetting: SettingsActions.changeSetting,
-        onSetWallet: WalletActions.setWallet,
-        onAddStarAccount: AccountActions.addStarAccount,
-        onRemoveStarAccount: AccountActions.removeStarAccount,
-        onAddAccountContact: AccountActions.addAccountContact,
-        onRemoveAccountContact: AccountActions.removeAccountContact,
-        onToggleHideAccount: AccountActions.toggleHideAccount
-        // onNewPrivateKeys: [ PrivateKeyActions.loadDbData, PrivateKeyActions.addKey ]
-    });
-*/
 
 export const useAccountStore = () => [accountStore, setAccountStore];
 
@@ -768,7 +761,7 @@ function _pubkeyThreshold(authority) {
     let required = authority.get("weight_threshold");
     let key_auths = authority.get("key_auths");
     for (let k of key_auths) {
-        if (PrivateKeyStore.hasKey(k.get(0))) {
+        if (privateKeyStore.hasKey(k.get(0))) {
             available += k.get(1);
         }
         if (available >= required) break;
@@ -782,11 +775,11 @@ function _addressThreshold(authority) {
     let required = authority.get("weight_threshold");
     let address_auths = authority.get("address_auths");
     if (!address_auths.size) return "none";
-    let addresses = AddressIndex.getState().addresses;
+    let addresses = addressIndex.addresses;
     for (let k of address_auths) {
         let address = k.get(0);
         let pubkey = addresses.get(address);
-        if (PrivateKeyStore.hasKey(pubkey)) {
+        if (privateKeyStore.hasKey(pubkey)) {
             available += k.get(1);
         }
         if (available >= required) break;

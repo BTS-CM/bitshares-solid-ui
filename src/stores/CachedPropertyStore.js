@@ -1,14 +1,6 @@
 import { createStore } from 'solid-js/store'
 import Immutable from "immutable";
 import iDB from "idb-instance";
-//import CachedPropertyActions from "actions/CachedPropertyActions";
-
-/*
-this.bindListeners({
-    onSet: CachedPropertyActions.set,
-    onGet: CachedPropertyActions.get
-});
-*/
 
 const [cachedPropertyStore, setCachedPropertyStore] = createStore({
     props: Immutable.Map(),
@@ -17,7 +9,7 @@ const [cachedPropertyStore, setCachedPropertyStore] = createStore({
     },
     onSet({name, value}) {
         if (cachedPropertyStore.props.get(name) === value) {
-            return
+            return;
         };
         var props = cachedPropertyStore.props.set(name, value);
         setCachedPropertyStore('props', props);
@@ -28,7 +20,7 @@ const [cachedPropertyStore, setCachedPropertyStore] = createStore({
     onGet({name}) {
         var value = cachedPropertyStore.props.get(name);
         if (value !== undefined) {
-            return value
+            return value;
         };
         try {
             iDB.getCachedProperty(name, null).then(value => {

@@ -1,14 +1,6 @@
 import { createStore } from 'solid-js/store'
 import {hash, PublicKey} from "bitsharesjs";
 
-/*
-    this.bindListeners({
-        onIncommingFile: BackupActions.incommingWebFile,
-        onIncommingBuffer: BackupActions.incommingBuffer,
-        onReset: BackupActions.reset
-    });
-*/
-
 const [backupStore, setBackupStore] = createStore({
     name: null,
     contents: null,

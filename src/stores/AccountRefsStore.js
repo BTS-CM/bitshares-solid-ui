@@ -2,15 +2,12 @@ import iDB from "idb-instance";
 import Immutable from "immutable";
 import {ChainStore} from "bitsharesjs";
 import {Apis} from "bitsharesjs-ws";
-
 import { createStore } from 'solid-js/store'
 
-// TODO: Replace following store references with solid-js store
-import PrivateKeyStore from "stores/PrivateKeyStore";
-import chainIds from "chain/chainIds";
+import { usePrivateKeyStore } from '~/stores/PrivateKeyStore';
+const [privateKeyStore, setPrivateKeyStore] = usePrivateKeyStore();
 
-// TODO: Replace the following line:
-//this.bindListeners({onAddPrivateKey: PrivateKeyActions.addKey});
+import chainIds from "chain/chainIds";
 
 const [accountRefsStore, setAccountRefsStore] = createStore({
     chainstore_account_ids_by_key: null,
@@ -64,12 +61,15 @@ const [accountRefsStore, setAccountRefsStore] = createStore({
     checkPrivateKeyStore() {
         let no_account_refs = accountRefsStore.no_account_refs;
         let temp_account_refs = Immutable.Set();
-        PrivateKeyStore.getState()
-            .keys.keySeq()
+        privateKeyStore.keys.keySeq()
             .forEach(pubkey => {
-                if (no_account_refs.has(pubkey)) return;
+                if (no_account_refs.has(pubkey)) {
+                    return
+                };
                 let refs = ChainStore.getAccountRefsOfKey(pubkey);
-                if (refs === undefined) return;
+                if (refs === undefined) {
+                    return
+                };
                 if (!refs.size) {
                     // Performance optimization...
                     // There are no references for this public key, this is going
@@ -78,7 +78,7 @@ const [accountRefsStore, setAccountRefsStore] = createStore({
                     {
                         // Do Not block brainkey generated keys.. Those are new and
                         // account references may be pending.
-                        let private_key_object = PrivateKeyStore.getState().keys.get(
+                        let private_key_object = privateKeyStore.keys.get(
                             pubkey
                         );
                         if (
@@ -108,7 +108,10 @@ const [accountRefsStore, setAccountRefsStore] = createStore({
         });
         temp_account_refs = temp_account_refs.flatten();
         if (!accountRefsStore.getAccountRefs().equals(temp_account_refs)) {
-            setAccountRefsStore('account_refs', accountRefsStore.account_refs.set(_getChainId(), temp_account_refs));
+            setAccountRefsStore(
+                'account_refs',
+                accountRefsStore.account_refs.set(_getChainId(), temp_account_refs)
+            );
             // console.log("AccountRefsStore account_refs", accountRefsStore.account_refs.size);
         }
         if (!accountRefsStore.no_account_refs.equals(no_account_refs)) {

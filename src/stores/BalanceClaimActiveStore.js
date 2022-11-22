@@ -10,10 +10,6 @@ import BalanceClaimActiveActions from "actions/BalanceClaimActiveActions";
 import TransactionConfirmActions from "actions/TransactionConfirmActions";
 
 this.bindListeners({
-    onSetPubkeys: BalanceClaimActiveActions.setPubkeys,
-    onSetSelectedBalanceClaims:
-        BalanceClaimActiveActions.setSelectedBalanceClaims,
-    onClaimAccountChange: BalanceClaimActiveActions.claimAccountChange,
     onTransactionBroadcasted: TransactionConfirmActions.wasBroadcast
 });
 */

@@ -1,6 +1,6 @@
-import alt from "alt-instance";
-
 import localeCodes from "assets/locales";
+import { useIntlStore } from "~/stores/IntlStore";
+const [intlStore, setIntlStore] = useIntlStore();
 
 var locales = {};
 if (__ELECTRON__) {
@@ -19,27 +19,24 @@ function switchLocale(locale) {
             localeData: locales[locale]
         };
     } else {
-        return dispatch => {
-            fetch(`${__BASE_URL__}locale-${locale}.json`)
-                .then(reply => {
-                    return reply.json().then(result => {
-                        dispatch({
-                            locale,
-                            localeData: result
-                        });
+        fetch(`${__BASE_URL__}locale-${locale}.json`)
+            .then(reply => {
+                return reply.json().then(result => {
+                    intlStore.onSwitchLocale({
+                        locale,
+                        localeData: result
                     });
-                })
-                .catch(err => {
-                    console.log("fetch locale error:", err);
-                    return dispatch => {
-                        dispatch({locale: "en"});
-                    };
                 });
-        };
+            })
+            .catch(err => {
+                console.log("fetch locale error:", err);
+                intlStore.onSwitchLocale({locale: "en"});
+            });
     }
 }
 
 function getLocale(locale) {
+    intlStore.onGetLocale(locale);
     return locale;
 }
 

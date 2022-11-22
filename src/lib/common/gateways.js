@@ -12,7 +12,9 @@ import {
 } from "api/apiConfig";
 import {allowedGateway} from "branding";
 import {isGatewayTemporarilyDisabled} from "../chain/onChainConfig";
-import SettingsStore from "stores/SettingsStore";
+
+import { useSettingsStore } from './SettingsStore';
+const [settingsStore, setSettingsStore] = useSettingsStore();
 
 const _isEnabled = gatewayKey => {
     return async function(options = {}) {
@@ -54,7 +56,7 @@ const _isEnabled = gatewayKey => {
             }
         }
         // has the user filtered it out?
-        let filteredServiceProviders = SettingsStore.getState().settings.get(
+        let filteredServiceProviders = settingsStore.settings.get(
             "filteredServiceProviders",
             []
         );

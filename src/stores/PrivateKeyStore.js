@@ -1,20 +1,16 @@
 import Immutable from "immutable";
 import { createStore } from 'solid-js/store';
-import idb_helper from "idb-helper";
-import WalletDb from "./WalletDb";
-
-import {PrivateKeyTcomb} from "./tcomb_structs";
-import PrivateKeyActions from "actions/PrivateKeyActions";
-import CachedPropertyActions from "actions/CachedPropertyActions";
-import AddressIndex from "stores/AddressIndex";
 import {PublicKey, ChainStore, Aes} from "bitsharesjs";
 
-/*
-    privateKeyStore.bindListeners({
-        onLoadDbData: PrivateKeyActions.loadDbData,
-        onAddKey: PrivateKeyActions.addKey
-    });
-*/
+import { useWalletDb } from "./WalletDb";
+const [walletDb, setWalletDb] = useWalletDb();
+
+import { useAddressIndex } from "./AddressIndex";
+const [addressIndex, setAddressIndex] = useAddressIndex();
+
+import idb_helper from "idb-helper";
+import {PrivateKeyTcomb} from "./tcomb_structs";
+import CachedPropertyActions from "actions/CachedPropertyActions";
 
 /** No need to wait on the promises returned by this store as long as
     privateKeyStore.privateKeyStorage_error == false and
@@ -54,7 +50,7 @@ const [privateKeyStore, setPrivateKeyStore] = createStore({
                 }
                 let private_key_tcomb = PrivateKeyTcomb(cursor.value);
                 keys.set(private_key_tcomb.pubkey, private_key_tcomb);
-                AddressIndex.add(private_key_tcomb.pubkey);
+                addressIndex.add(private_key_tcomb.pubkey);
                 cursor.continue();
             })
             .then(() => {
@@ -83,7 +79,7 @@ const [privateKeyStore, setPrivateKeyStore] = createStore({
             }
         }
         if (addys) {
-            let addresses = AddressIndex.getState().addresses;
+            let addresses = addressIndex.addresses;
             for (let addy of addys) {
                 let pubkey = addresses.get(addy);
                 return_pubkeys.push(pubkey);
@@ -115,7 +111,7 @@ const [privateKeyStore, setPrivateKeyStore] = createStore({
             PrivateKeyTcomb(private_key_object)
         );
         setPrivateKeyStore("keys", privateKeyStore.keys);
-        AddressIndex.add(private_key_object.pubkey);
+        addressIndex.add(private_key_object.pubkey);
         let p = new Promise((resolve, reject) => {
             PrivateKeyTcomb(private_key_object);
             let duplicate = false;
@@ -207,7 +203,7 @@ const [privateKeyStore, setPrivateKeyStore] = createStore({
         public_key = PublicKey.fromPublicKeyString(public_key);
 
         try {
-            private_key = WalletDb.decryptTcomb_PrivateKey(private_key);
+            private_key = walletDb.decryptTcomb_PrivateKey(private_key);
         } catch (e) {
             // Failed because wallet is locked
             lockedWallet = true;

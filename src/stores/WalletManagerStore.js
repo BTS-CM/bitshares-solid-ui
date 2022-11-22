@@ -1,24 +1,20 @@
 import { createStore } from 'solid-js/store';
-import WalletDb from "stores/WalletDb";
-import AccountRefsStore from "stores/AccountRefsStore";
-import walletManagerStore from "stores/walletManagerStore";
-import BalanceClaimActiveStore from "stores/BalanceClaimActiveStore";
-import CachedPropertyStore from "stores/CachedPropertyStore";
-import PrivateKeyActions from "actions/PrivateKeyActions";
-import WalletActions from "actions/WalletActions";
 import {ChainStore} from "bitsharesjs";
-import iDB from "idb-instance";
 import Immutable from "immutable";
 
-/*
-    walletManagerStore.bindListeners({
-        onRestore: WalletActions.restore,
-        onSetWallet: WalletActions.setWallet,
-        onSetBackupDate: WalletActions.setBackupDate,
-        onSetBrainkeyBackupDate: WalletActions.setBrainkeyBackupDate,
-        onDeleteWallet: WalletActions.deleteWallet
-    });
-*/
+import iDB from "idb-instance";
+import PrivateKeyActions from "actions/PrivateKeyActions";
+import WalletActions from "actions/WalletActions";
+
+import { useWalletDb } from './WalletDb';
+import { useAccountRefsStore } from './AccountRefsStore';
+import { useBalanceClaimActiveStore } from './BalanceClaimActiveStore';
+import { useCachedPropertyStore } from './CachedPropertyStore';
+
+const [walletDb, setWalletDb] = useWalletDb();
+const [accountRefsStore, setAccountRefsStore] = useAccountRefsStore();
+const [balanceClaimActiveStore, setBalanceClaimActiveStore] = useBalanceClaimActiveStore();
+const [cachedPropertyStore, setCachedPropertyStore] = useCachedPropertyStore();
 
 /**  High-level container for managing multiple wallets.
  */
@@ -71,17 +67,17 @@ const [walletManagerStore, setWalletManagerStore] = createStore({
                     // application code can initialize its new state.
                     iDB.close();
                     ChainStore.clearCache();
-                    BalanceClaimActiveStore.reset();
+                    balanceClaimActiveStore.reset();
                     // Stores may reset when loadDbData is called
                     return iDB.init_instance().init_promise.then(() => {
-                        // Make sure the database is ready when calling CachedPropertyStore.reset()
-                        CachedPropertyStore.reset();
+                        // Make sure the database is ready when calling cachedPropertyStore.reset()
+                        cachedPropertyStore.reset();
                         return Promise.all([
-                            WalletDb.loadDbData().then(() =>
+                            walletDb.loadDbData().then(() =>
                                 walletManagerStore.loadDbData()
                             ),
                             PrivateKeyActions.loadDbData().then(() =>
-                                AccountRefsStore.loadDbData()
+                                accountRefsStore.loadDbData()
                             )
                         ]).then(() => {
                             // Update state here again to make sure listeners re-render
@@ -91,7 +87,7 @@ const [walletManagerStore, setWalletManagerStore] = createStore({
                                 return;
                             }
 
-                            return WalletDb.onCreateWallet(
+                            return walletDb.onCreateWallet(
                                 create_wallet_password,
                                 brnkey, //brainkey,
                                 true, //unlock
@@ -159,10 +155,10 @@ const [walletManagerStore, setWalletManagerStore] = createStore({
         });
     },
     onSetBackupDate() {
-        WalletDb.setBackupDate();
+        walletDb.setBackupDate();
     },
     onSetBrainkeyBackupDate() {
-        WalletDb.setBrainkeyBackupDate();
+        walletDb.setBrainkeyBackupDate();
     }
 });
 

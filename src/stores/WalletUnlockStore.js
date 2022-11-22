@@ -1,12 +1,14 @@
 import { createStore } from 'solid-js/store';
 import WalletUnlockActions from "actions/WalletUnlockActions";
 import SettingsActions from "actions/SettingsActions";
-import WalletDb from "stores/WalletDb";
 import ls from "common/localStorage";
 import {
     setLocalStorageType,
     isPersistantType
 } from "../lib/common/localStorage";
+
+import { useWalletDb } from './WalletDb';
+const [walletDb, setWalletDb] = useWalletDb();
 
 const STORAGE_KEY = "__graphene__";
 let ss = ls(STORAGE_KEY);
@@ -34,10 +36,10 @@ const [walletUnlockStore, setWalletUnlockStore] = createStore({
                     ? true
                     : storedSettings.rememberMe,
     onUnlock({resolve, reject}) {
-        //DEBUG console.log('... onUnlock setState', WalletDb.isLocked())
+        //DEBUG console.log('... onUnlock setState', walletDb.isLocked())
         //
         _setLockTimeout();
-        if (!WalletDb.isLocked()) {
+        if (!walletDb.isLocked()) {
             setWalletUnlockStore({locked: false});
             resolve();
             return;
@@ -46,20 +48,20 @@ const [walletUnlockStore, setWalletUnlockStore] = createStore({
         setWalletUnlockStore({
             resolve: resolve,
             reject: reject,
-            locked: WalletDb.isLocked()
+            locked: walletDb.isLocked()
         })
     },
     onLock({resolve}) {
-        //DEBUG console.log('... WalletUnlockStore\tprogramatic lock', WalletDb.isLocked())
-        if (WalletDb.isLocked()) {
+        //DEBUG console.log('... WalletUnlockStore\tprogramatic lock', walletDb.isLocked())
+        if (walletDb.isLocked()) {
             resolve();
             return;
         }
-        WalletDb.onLock();
+        walletDb.onLock();
         setWalletUnlockStore({
             resolve: null,
             reject: null,
-            locked: WalletDb.isLocked()
+            locked: walletDb.isLocked()
         })
         if (!walletUnlockStore.rememberMe && !isPersistantType()) {
             setLocalStorageType("persistant");
@@ -76,7 +78,7 @@ const [walletUnlockStore, setWalletUnlockStore] = createStore({
         })
     },
     onChange() {
-        setWalletUnlockStore({locked: WalletDb.isLocked()});
+        setWalletUnlockStore({locked: walletDb.isLocked()});
     },
     onChangeSetting(payload) {
         if (payload.setting === "walletLockTimeout") {
@@ -90,7 +92,7 @@ const [walletUnlockStore, setWalletUnlockStore] = createStore({
         }
     },
     onCheckLock() {
-        setWalletUnlockStore({locked: WalletDb.isLocked()});
+        setWalletUnlockStore({locked: walletDb.isLocked()});
     }
 });
 
@@ -101,13 +103,13 @@ function _setLockTimeout() {
     /* If the timeout is different from zero, auto unlock the wallet using a timeout */
     if (!!walletUnlockStore.walletLockTimeout) {
         setWalletUnlockStore({timeout: setTimeout(() => {
-            if (!WalletDb.isLocked()) {
+            if (!walletDb.isLocked()) {
                 console.log(
                     "auto locking after",
                     walletUnlockStore.walletLockTimeout,
                     "s"
                 );
-                WalletDb.onLock();
+                walletDb.onLock();
                 setWalletUnlockStore({locked: true});
             }
         }, walletUnlockStore.walletLockTimeout * 1000)});

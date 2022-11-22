@@ -18,8 +18,6 @@ for (let localeCode of localeCodes) {
 
 /*
     intlStore.bindListeners({
-        onSwitchLocale: IntlActions.switchLocale,
-        onGetLocale: IntlActions.getLocale,
         onClearSettings: SettingsActions.clearSettings
     });
 */

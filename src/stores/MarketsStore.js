@@ -35,26 +35,6 @@ const nullPrice = {
 
 let marketStorage = ls("__graphene__");
 
-/*
-    marketsStore.bindListeners({
-        onSubscribeMarket: MarketsActions.subscribeMarket,
-        onUnSubscribeMarket: MarketsActions.unSubscribeMarket,
-        onChangeBase: MarketsActions.changeBase,
-        onChangeBucketSize: MarketsActions.changeBucketSize,
-        onCancelLimitOrderSuccess: MarketsActions.cancelLimitOrderSuccess,
-        onCloseCallOrderSuccess: MarketsActions.closeCallOrderSuccess,
-        onCallOrderUpdate: MarketsActions.callOrderUpdate,
-        // onClearMarket: MarketsActions.clearMarket,
-        onGetMarketStats: MarketsActions.getMarketStats,
-        onSettleOrderUpdate: MarketsActions.settleOrderUpdate,
-        onSwitchMarket: MarketsActions.switchMarket,
-        onFeedUpdate: MarketsActions.feedUpdate,
-        onToggleStars: MarketsActions.toggleStars,
-        onGetTrackedGroupsConfig: MarketsActions.getTrackedGroupsConfig,
-        onChangeCurrentGroupLimit: MarketsActions.changeCurrentGroupLimit
-    });
-*/
-
 const [marketsStore, setMarketsStore] = createStore({
     markets: Immutable.Map(),
     asset_symbol_to_id: {},

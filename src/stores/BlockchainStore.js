@@ -1,18 +1,6 @@
 import Immutable from "immutable";
-import { createStore } from 'solid-js/store'
-import BlockchainActions from "actions/BlockchainActions";
+import { createStore } from 'solid-js/store';
 import {ChainStore} from "bitsharesjs";
-// import {Block} from "./tcomb_structs";
-
-/*
-this.bindListeners({
-    onGetBlock: BlockchainActions.getBlock,
-    onGetLatest: BlockchainActions.getLatest,
-    onGetHeader: BlockchainActions.getHeader,
-    onUpdateRpcConnectionStatus:
-        BlockchainActions.updateRpcConnectionStatus
-});
-*/
 
 const [blockchainStore, setBlockchainStore] = createStore({
     blocks: Immutable.Map(),

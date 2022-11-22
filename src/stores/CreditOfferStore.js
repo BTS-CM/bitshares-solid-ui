@@ -1,23 +1,6 @@
 import { createStore } from 'solid-js/store'
 import * as CreditOfferActions from "../actions/CreditOfferActions";
 
-/*
-    this.bindListeners({
-        onGetCreditOffersByOwner: CreditOfferActions.getCreditOffersByOwner,
-        onGetCreditDealsByBorrower:
-            CreditOfferActions.getCreditDealsByBorrower,
-        onGetCreditDealsByOfferOwner:
-            CreditOfferActions.getCreditDealsByOfferOwner,
-        onGetAll: CreditOfferActions.getAll,
-        onCreate: CreditOfferActions.create,
-        onDelete: CreditOfferActions.delete,
-        onUpdate: CreditOfferActions.update,
-        onDisabled: CreditOfferActions.disabled,
-        onAccept: CreditOfferActions.accept,
-        onRepay: CreditOfferActions.repay
-    });
-*/
-
 const [creditOfferStore, setCreditOfferStore] = createStore({
     allList: [],
     listByOwner: [],

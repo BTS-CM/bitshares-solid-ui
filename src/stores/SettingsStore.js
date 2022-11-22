@@ -1,6 +1,4 @@
 import { createStore } from 'solid-js/store';
-//import SettingsActions from "actions/SettingsActions";
-//import IntlActions from "actions/IntlActions";
 import Immutable, {fromJS} from "immutable";
 import ls from "common/localStorage";
 import {Apis} from "bitsharesjs-ws";
@@ -14,13 +12,14 @@ import {
 } from "branding";
 
 /*
+    //import SettingsActions from "actions/SettingsActions";
+    //import IntlActions from "actions/IntlActions";
+
     // bind actions to store
     settingsStore.bindListeners({
         onSetPriceAlert: SettingsActions.setPriceAlert,
-        onSetExchangeLastExpiration:
-            SettingsActions.setExchangeLastExpiration,
-        onSetExchangeTutorialShown:
-            SettingsActions.setExchangeTutorialShown,
+        onSetExchangeLastExpiration: SettingsActions.setExchangeLastExpiration,
+        onSetExchangeTutorialShown: SettingsActions.setExchangeTutorialShown,
         onChangeSetting: SettingsActions.changeSetting,
         onChangeViewSetting: SettingsActions.changeViewSetting,
         onChangeMarketDirection: SettingsActions.changeMarketDirection,

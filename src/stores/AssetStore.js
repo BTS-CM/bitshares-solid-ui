@@ -1,14 +1,5 @@
 import { createStore } from 'solid-js/store'
 import Immutable from "immutable";
-//import AssetActions from "actions/AssetActions";
-
-/*
-this.bindListeners({
-    onGetAssetList: AssetActions.getAssetList,
-    onLookupAsset: AssetActions.lookupAsset,
-    onGetAssetsByIssuer: AssetActions.getAssetsByIssuer
-});
-*/
 
 const [assetStore, setAssetStore] = createStore({
     // contents of assetstore constructor

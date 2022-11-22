@@ -3,8 +3,13 @@ import {Apis} from "bitsharesjs-ws";
 import humanizeDuration from "humanize-duration";
 
 import {Asset} from "../lib/common/MarketClasses";
-import WalletDb from "../stores/WalletDb";
-import WalletApi from "api/WalletApi";
+import {new_transaction} from "api/WalletApi";
+
+import { useWalletDb } from "../stores/WalletDb";
+const [walletDb, setWalletDb] = useWalletDb();
+
+import { useCreditOfferStore } from "~/stores/CreditOfferStore";
+const [creditOfferStore, setCreditOfferStore] = useCreditOfferStore();
 
 const FEE_RATE_DENOM = 1000000; // Denominator for SameT Fund fee calculation
 const listRepayPeriod = [43200, 86400, 259200, 604800, 2592000, 7776000, 31536000, 63072000, 157680000];
@@ -42,7 +47,7 @@ function create({
     if (auto_disable_time instanceof moment) {
         auto_disable_time = auto_disable_time.toDate();
     }
-    const tr = WalletApi.new_transaction();
+    const tr = new_transaction();
     tr.add_type_operation("credit_offer_create", {
         fee: {
             amount: 0,
@@ -59,16 +64,15 @@ function create({
         acceptable_collateral,
         acceptable_borrowers
     });
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(res => {
-                dispatch({transaction: res});
-            })
-            .catch(error => {
-                console.log("CreditOfferActions create ----->", error);
-                dispatch({transaction: null});
-            });
-    };
+
+    return walletDb.process_transaction(tr, null, true)
+        .then(res => {
+            creditOfferStore.onCreate({transaction: res});
+        })
+        .catch(error => {
+            console.log("CreditOfferActions create ----->", error);
+            creditOfferStore.onCreate({transaction: null});
+        });
 }
 
 function update({
@@ -92,7 +96,7 @@ function update({
     if (auto_disable_time instanceof moment) {
         auto_disable_time = auto_disable_time.toDate();
     }
-    const tr = WalletApi.new_transaction();
+    const tr = new_transaction();
     tr.add_type_operation("credit_offer_update", {
         fee: {
             amount: 0,
@@ -109,23 +113,22 @@ function update({
         acceptable_collateral,
         acceptable_borrowers
     });
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(res => {
-                dispatch({transaction: res});
-            })
-            .catch(error => {
-                console.log("CreditOfferActions update ----->", error);
-                dispatch({transaction: null});
-            });
-    };
+
+    return walletDb.process_transaction(tr, null, true)
+        .then(res => {
+            creditOfferStore.onUpdate({transaction: res});
+        })
+        .catch(error => {
+            console.log("CreditOfferActions update ----->", error);
+            creditOfferStore.onUpdate({transaction: null});
+        });
 }
 
 function disabled({owner_account, offer_id, enabled = false, fee_asset = "1.3.0"}) {
     if (typeof owner_account !== "string") {
         owner_account = owner_account.get("id");
     }
-    const tr = WalletApi.new_transaction();
+    const tr = new_transaction();
     tr.add_type_operation("credit_offer_update", {
         fee: {
             amount: 0,
@@ -135,16 +138,15 @@ function disabled({owner_account, offer_id, enabled = false, fee_asset = "1.3.0"
         offer_id,
         enabled
     });
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(res => {
-                dispatch({transaction: res});
-            })
-            .catch(error => {
-                console.log("CreditOfferActions disabled ----->", error);
-                dispatch({transaction: null});
-            });
-    };
+
+    return walletDb.process_transaction(tr, null, true)
+        .then(res => {
+            creditOfferStore.onDisabled({transaction: res});
+        })
+        .catch(error => {
+            console.log("CreditOfferActions disabled ----->", error);
+            creditOfferStore.onDisabled({transaction: null});
+        });
 }
 
 /**
@@ -162,7 +164,7 @@ function deleteCreditOffer({owner_account, offer_id, fee_asset = "1.3.0"}) {
     } else if (typeof fee_asset !== "string") {
         fee_asset = fee_asset.get("id");
     }
-    const tr = WalletApi.new_transaction();
+    const tr = new_transaction();
     tr.add_type_operation("credit_offer_delete", {
         fee: {
             amount: 0,
@@ -171,16 +173,14 @@ function deleteCreditOffer({owner_account, offer_id, fee_asset = "1.3.0"}) {
         owner_account,
         offer_id
     });
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(res => {
-                dispatch({transaction: res});
-            })
-            .catch(error => {
-                console.log("CreditOfferActions delete ----->", error);
-                dispatch({transaction: null});
-            });
-    };
+    return walletDb.process_transaction(tr, null, true)
+        .then(res => {
+            creditOfferStore.onDelete({transaction: res});
+        })
+        .catch(error => {
+            console.log("CreditOfferActions delete ----->", error);
+            creditOfferStore.onDelete({transaction: null});
+        });
 }
 
 function accept({
@@ -200,7 +200,7 @@ function accept({
     } else if (typeof fee_asset !== "string") {
         fee_asset = fee_asset.get("id");
     }
-    const tr = WalletApi.new_transaction();
+    const tr = new_transaction();
     tr.add_type_operation("credit_offer_accept", {
         fee: {
             amount: 0,
@@ -213,16 +213,15 @@ function accept({
         max_fee_rate,
         min_duration_seconds
     });
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(res => {
-                dispatch({transaction: res});
-            })
-            .catch(error => {
-                console.log("CreditOfferActions delete ----->", error);
-                dispatch({transaction: null});
-            });
-    };
+
+    return walletDb.process_transaction(tr, null, true)
+        .then(res => {
+            creditOfferStore.onAccept({transaction: res});
+        })
+        .catch(error => {
+            console.log("CreditOfferActions delete ----->", error);
+            creditOfferStore.onAccept({transaction: null});
+        });
 }
 
 function repay({account, deal_id, repay_amount, credit_fee, fee_asset = "1.3.0"}) {
@@ -234,7 +233,7 @@ function repay({account, deal_id, repay_amount, credit_fee, fee_asset = "1.3.0"}
     } else if (typeof fee_asset !== "string") {
         fee_asset = fee_asset.get("id");
     }
-    const tr = WalletApi.new_transaction();
+    const tr = new_transaction();
     tr.add_type_operation("credit_deal_repay", {
         fee: {
             amount: 0,
@@ -245,16 +244,15 @@ function repay({account, deal_id, repay_amount, credit_fee, fee_asset = "1.3.0"}
         repay_amount: repay_amount.toObject(),
         credit_fee: credit_fee.toObject()
     });
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(res => {
-                dispatch({transaction: res});
-            })
-            .catch(error => {
-                console.log("CreditOfferActions create ----->", error);
-                dispatch({transaction: null});
-            });
-    };
+
+    return walletDb.process_transaction(tr, null, true)
+        .then(res => {
+            creditOfferStore.onRepay({transaction: res});
+        })
+        .catch(error => {
+            console.log("CreditOfferActions create ----->", error);
+            creditOfferStore.onRepay({transaction: null});
+        });
 }
 
 function getCreditOffersByOwner({
@@ -264,31 +262,37 @@ function getCreditOffersByOwner({
     flag = false
 }) {
     let pars = [name_or_id, limit, start_id];
-    return dispatch => {
-        Apis.instance()
-            .db_api()
-            .exec("get_credit_offers_by_owner", pars)
-            .then(result => {
-                // console.log("result: ", result);
-                if (result && result.length == limit) {
-                    dispatch({
-                        list: result,
-                        end:
-                            flag === false || flag === "first"
-                                ? false
-                                : true,
-                        flag,
-                        pars: {name_or_id, limit, start_id}
-                    });
-                } else {
-                    dispatch({list: result, end: true, flag});
-                }
+    Apis.instance()
+        .db_api()
+        .exec("get_credit_offers_by_owner", pars)
+        .then(result => {
+            // console.log("result: ", result);
+            if (result && result.length == limit) {
+                creditOfferStore.onGetCreditOffersByOwner({
+                    list: result,
+                    end:
+                        flag === false || flag === "first"
+                            ? false
+                            : true,
+                    flag,
+                    pars: {name_or_id, limit, start_id}
+                })
+            } else {
+                creditOfferStore.onGetCreditOffersByOwner({
+                    list: result,
+                    end: true,
+                    flag
+                })
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            creditOfferStore.onGetCreditOffersByOwner({
+                list: [],
+                end: true,
+                flag
             })
-            .catch(err => {
-                console.error(err);
-                dispatch({list: [], end: true, flag});
-            });
-    };
+        });
 }
 
 function getCreditDealsByBorrower({
@@ -298,36 +302,38 @@ function getCreditDealsByBorrower({
     flag = false
 }) {
     let pars = [name_or_id, limit, start_id];
-    return dispatch => {
-        Apis.instance()
-            .db_api()
-            .exec("get_credit_deals_by_borrower", pars)
-            .then(result => {
-                // console.log("result: ", result);
-                if (result && result.length == limit) {
-                    dispatch({
-                        list: result,
-                        end:
-                            flag === false || flag === "first"
-                                ? false
-                                : true,
-                        flag,
-                        pars: {name_or_id, limit, start_id}
-                    });
-                } else {
-                    dispatch({
-                        list: result,
-                        end: true,
-                        flag,
-                        pars: {name_or_id, limit, start_id}
-                    });
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                dispatch({list: [], end: true, flag});
+    Apis.instance()
+        .db_api()
+        .exec("get_credit_deals_by_borrower", pars)
+        .then(result => {
+            // console.log("result: ", result);
+            if (result && result.length == limit) {
+                creditOfferStore.onGetCreditDealsByBorrower({
+                    list: result,
+                    end:
+                        flag === false || flag === "first"
+                            ? false
+                            : true,
+                    flag,
+                    pars: {name_or_id, limit, start_id}
+                });
+            } else {
+                creditOfferStore.onGetCreditDealsByBorrower({
+                    list: result,
+                    end: true,
+                    flag,
+                    pars: {name_or_id, limit, start_id}
+                });
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            creditOfferStore.onGetCreditDealsByBorrower({
+                list: [],
+                end: true,
+                flag
             });
-    };
+        });
 }
 
 function getCreditDealsByOfferOwner({
@@ -337,60 +343,72 @@ function getCreditDealsByOfferOwner({
     flag = false
 }) {
     let pars = [name_or_id, limit, start_id];
-    return dispatch => {
-        Apis.instance()
-            .db_api()
-            .exec("get_credit_deals_by_offer_owner", pars)
-            .then(result => {
-                // console.log("result: ", result);
-                if (result && result.length == limit) {
-                    dispatch({
-                        list: result,
-                        end:
-                            flag === false || flag === "first"
-                                ? false
-                                : true,
-                        flag,
-                        pars: {name_or_id, limit, start_id}
-                    });
-                } else {
-                    dispatch({list: result, end: true, flag});
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                dispatch({list: [], end: true, flag});
+    Apis.instance()
+        .db_api()
+        .exec("get_credit_deals_by_offer_owner", pars)
+        .then(result => {
+            // console.log("result: ", result);
+            if (result && result.length == limit) {
+                creditOfferStore.onGetCreditDealsByOfferOwner({
+                    list: result,
+                    end:
+                        flag === false || flag === "first"
+                            ? false
+                            : true,
+                    flag,
+                    pars: {name_or_id, limit, start_id}
+                });
+            } else {
+                creditOfferStore.onGetCreditDealsByOfferOwner({
+                    list: result,
+                    end: true,
+                    flag
+                });
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            creditOfferStore.onGetCreditDealsByOfferOwner({
+                list: [],
+                end: true,
+                flag
             });
-    };
+        });
 }
 
 function getAll({limit = 100, start_id = null, flag = false}) {
     let pars = [limit, start_id];
-    return dispatch => {
-        Apis.instance()
-            .db_api()
-            .exec("list_credit_offers", pars)
-            .then(result => {
-                // console.log("result: ", result);
-                if (result && result.length == limit) {
-                    dispatch({
-                        list: result,
-                        end:
-                            flag === false || flag === "first"
-                                ? false
-                                : true,
-                        flag,
-                        pars: {limit, start_id}
-                    });
-                } else {
-                    dispatch({list: result, end: true, flag});
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                dispatch({list: [], end: true, flag});
+    Apis.instance()
+        .db_api()
+        .exec("list_credit_offers", pars)
+        .then(result => {
+            // console.log("result: ", result);
+            if (result && result.length == limit) {
+                creditOfferStore.onGetAll({
+                    list: result,
+                    end:
+                        flag === false || flag === "first"
+                            ? false
+                            : true,
+                    flag,
+                    pars: {limit, start_id}
+                });
+            } else {
+                creditOfferStore.onGetAll({
+                    list: result,
+                    end: true,
+                    flag
+                });
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            creditOfferStore.onGetAll({
+                list: [],
+                end: true,
+                flag
             });
-    };
+        });
 }
 
 export {
@@ -400,7 +418,7 @@ export {
     create,
     update,
     disabled,
-    delete,
+    deleteCreditOffer,
     accept,
     repay,
     getCreditOffersByOwner,
