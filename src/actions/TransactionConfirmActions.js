@@ -2,6 +2,9 @@ import {ChainConfig} from "bitsharesjs-ws";
 import counterpart from "counterpart";
 import ZfApi from "react-foundation-apps/src/utils/foundation-api";
 
+import {useBalanceClaimActiveStore} from "stores/AccountStore";
+const [balanceClaimActiveStore, setBalanceClaimActiveStore] = useBalanceClaimActiveStore();
+
 function confirm(transaction, resolve, reject) {
     return {transaction, resolve, reject};
 }
@@ -105,6 +108,7 @@ function broadcast(transaction, resolve, reject) {
 }
 
 function wasBroadcast(res) {
+    balanceClaimActiveStore.onTransactionBroadcasted();
     return res;
 }
 

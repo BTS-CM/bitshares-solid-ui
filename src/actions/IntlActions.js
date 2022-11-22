@@ -2,6 +2,9 @@ import localeCodes from "assets/locales";
 import { useIntlStore } from "~/stores/IntlStore";
 const [intlStore, setIntlStore] = useIntlStore();
 
+import { useSettingsStore } from "~/stores/SettingsStore";
+const [settingsStore, setSettingsStore] = useSettingsStore();
+
 var locales = {};
 if (__ELECTRON__) {
     localeCodes.forEach(locale => {
@@ -26,11 +29,16 @@ function switchLocale(locale) {
                         locale,
                         localeData: result
                     });
+                    settingsStore.onSwitchLocale({
+                        locale,
+                        localeData: result
+                    });
                 });
             })
             .catch(err => {
                 console.log("fetch locale error:", err);
                 intlStore.onSwitchLocale({locale: "en"});
+                settingsStore.onSwitchLocale({locale: "en"});
             });
     }
 }

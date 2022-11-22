@@ -1,34 +1,17 @@
-
 import Immutable from "immutable";
 import { createStore } from 'solid-js/store'
 import {ChainStore, ChainValidation, FetchChain} from "bitsharesjs";
 import {Apis} from "bitsharesjs-ws";
 
-/*
-import AccountActions from "actions/AccountActions";
-import SettingsActions from "actions/SettingsActions";
-import WalletActions from "actions/WalletActions";
-*/
-
 import iDB from "idb-instance";
-import { usePrivateKeyStore } from '~/stores/PrivateKeyStore';
+import { usePrivateKeyStore } from './PrivateKeyStore';
 const [privateKeyStore, setPrivateKeyStore] = usePrivateKeyStore();
 
 import { useAccountRefsStore } from "./AccountRefsStore";
 const [accountRefsStore, setAccountRefsStore] = useAccountRefsStore();
 
-import AddressIndex from "stores/AddressIndex";
 import ls from "common/localStorage";
-
 let ss = ls("__graphene__");
-
-/*
-    this.bindListeners({
-        onChangeSetting: SettingsActions.changeSetting,
-        onSetWallet: WalletActions.setWallet,
-        // onNewPrivateKeys: [ PrivateKeyActions.loadDbData, PrivateKeyActions.addKey ]
-    });
-*/
 
 /**
  *  This Store holds information about accounts in this wallet

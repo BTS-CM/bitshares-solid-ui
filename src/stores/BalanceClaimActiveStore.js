@@ -3,16 +3,7 @@ import Immutable from "immutable";
 import {key} from "bitsharesjs";
 import {Apis} from "bitsharesjs-ws";
 import iDB from "idb-instance";
-import { set } from '~/actions/CachedPropertyActions';
-
-/*
-import BalanceClaimActiveActions from "actions/BalanceClaimActiveActions";
-import TransactionConfirmActions from "actions/TransactionConfirmActions";
-
-this.bindListeners({
-    onTransactionBroadcasted: TransactionConfirmActions.wasBroadcast
-});
-*/
+//import { set } from '~/actions/CachedPropertyActions';
 
 const [balanceClaimActiveStore, setBalanceClaimActiveStore] = createStore({
     no_balance_address: new Set(), // per chain

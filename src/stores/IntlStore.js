@@ -16,12 +16,6 @@ for (let localeCode of localeCodes) {
     addLocaleData(require(`react-intl/locale-data/${localeCode}`));
 }
 
-/*
-    intlStore.bindListeners({
-        onClearSettings: SettingsActions.clearSettings
-    });
-*/
-
 const [intlStore, setIntlStore] = createStore({
     locales: ["en"],
     localesObject: {en: locale_en},

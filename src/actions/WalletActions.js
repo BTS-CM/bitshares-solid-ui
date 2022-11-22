@@ -5,6 +5,9 @@ import WalletUnlockActions from "actions/WalletUnlockActions";
 import CachedPropertyActions from "actions/CachedPropertyActions";
 import ApplicationApi from "api/ApplicationApi";
 
+import { useAccountStore } from "~/stores/AccountStore";
+const [accountStore, setAccountStore] = useAccountStore();
+
 import { useWalletDb } from "~/stores/WalletDb";
 const [walletDb, setWalletDb] = useWalletDb();
 
@@ -36,6 +39,7 @@ function setWallet(wallet_name, create_wallet_password, brnkey) {
             brnkey,
             resolve
         });
+        accountStore.onSetWallet({wallet_name});
     });
 }
 

@@ -1,6 +1,4 @@
 import { createStore } from 'solid-js/store';
-import WalletUnlockActions from "actions/WalletUnlockActions";
-import SettingsActions from "actions/SettingsActions";
 import ls from "common/localStorage";
 import {
     setLocalStorageType,
@@ -17,14 +15,6 @@ const storedSettings = ss.get("settings_v4", {});
 if (storedSettings.passwordLogin === undefined) {
     storedSettings.passwordLogin = true;
 }
-
-/*
-    walletUnlockStore.bindActions(WalletUnlockActions);
-
-    walletUnlockStore.bindListeners({
-        onChangeSetting: SettingsActions.changeSetting
-    });
-*/
 
 const [walletUnlockStore, setWalletUnlockStore] = createStore({
     // TODO: init state
@@ -96,7 +86,7 @@ const [walletUnlockStore, setWalletUnlockStore] = createStore({
     }
 });
 
-export const useSettingsuseWalletUnlockStore = () => [walletUnlockStore, setWalletUnlockStore];
+export const useWalletUnlockStore = () => [walletUnlockStore, setWalletUnlockStore];
 
 function _setLockTimeout() {
     _clearLockTimeout();

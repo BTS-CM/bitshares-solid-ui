@@ -11,39 +11,6 @@ import {
     getUnits
 } from "branding";
 
-/*
-    //import SettingsActions from "actions/SettingsActions";
-    //import IntlActions from "actions/IntlActions";
-
-    // bind actions to store
-    settingsStore.bindListeners({
-        onSetPriceAlert: SettingsActions.setPriceAlert,
-        onSetExchangeLastExpiration: SettingsActions.setExchangeLastExpiration,
-        onSetExchangeTutorialShown: SettingsActions.setExchangeTutorialShown,
-        onChangeSetting: SettingsActions.changeSetting,
-        onChangeViewSetting: SettingsActions.changeViewSetting,
-        onChangeMarketDirection: SettingsActions.changeMarketDirection,
-        onAddStarMarket: SettingsActions.addStarMarket,
-        onRemoveStarMarket: SettingsActions.removeStarMarket,
-        onClearStarredMarkets: SettingsActions.clearStarredMarkets,
-        onAddWS: SettingsActions.addWS,
-        onRemoveWS: SettingsActions.removeWS,
-        onShowWS: SettingsActions.showWS,
-        onHideWS: SettingsActions.hideWS,
-        onHideAsset: SettingsActions.hideAsset,
-        onHideMarket: SettingsActions.hideMarket,
-        onClearSettings: SettingsActions.clearSettings,
-        onSwitchLocale: IntlActions.switchLocale,
-        onSetUserMarket: SettingsActions.setUserMarket,
-        onUpdateLatencies: SettingsActions.updateLatencies,
-        onModifyPreferedBases: SettingsActions.modifyPreferedBases,
-        onUpdateUnits: SettingsActions.updateUnits,
-        onHideNewsHeadline: SettingsActions.hideNewsHeadline,
-        onAddChartLayout: SettingsActions.addChartLayout,
-        onDeleteChartLayout: SettingsActions.deleteChartLayout
-    });
-*/
-
 const CORE_ASSET = "BTS"; // Setting this to BTS to prevent loading issues when used with BTS chain which is the most usual case currently
 
 const STORAGE_KEY = "__graphene__";
