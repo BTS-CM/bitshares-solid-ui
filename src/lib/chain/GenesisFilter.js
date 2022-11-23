@@ -25,7 +25,9 @@ try {
 export default class GenesisFilter {
     /** or call this.init */
     constructor(bloom_buffer) {
-        if (!bloom_buffer) return;
+        if (!bloom_buffer) {
+            return;
+        }
         this.bloom_buffer = bloom_buffer;
         this.bits_in_filter = bloom_buffer.length * 8; // 8388608 (test data)
     }
@@ -40,19 +42,23 @@ export default class GenesisFilter {
             done();
             return;
         }
-        if (!this.isAvailable())
+        if (!this.isAvailable()) {
             throw new Error("Genesis bloom file was not deployed");
+        }
 
         var xhr = new XMLHttpRequest();
         // firefox 40 did not allow the blob url but ff 41.0.2 did
         xhr.responseType = "blob";
         xhr.onload = () => {
-            if (xhr.status === 404) return;
+            if (xhr.status === 404) {
+                return;
+            }
             var reader = new FileReader();
             reader.onload = evt => {
                 var contents = new Buffer(evt.target.result, "binary");
-                if (contents.length !== 1048576)
+                if (contents.length !== 1048576) {
                     throw new Error("Wrong length");
+                }
                 this.bits_in_filter = contents.length * 8; // 8388608 (test data)
                 this.bloom_buffer = contents;
                 done();
@@ -67,7 +73,9 @@ export default class GenesisFilter {
     }
 
     inGenesis(pubkey_or_address) {
-        if (!this.bloom_buffer) throw new Error("Call init() first");
+        if (!this.bloom_buffer) {
+            throw new Error("Call init() first");
+        }
         for (var hashes = 0; hashes < 3; hashes++) {
             var hex = hash.sha256(hashes + ":" + pubkey_or_address);
             var bit_address =
@@ -81,7 +89,9 @@ export default class GenesisFilter {
             var byte = this.bloom_buffer[byte_address];
             // console.error("byte", byte.toString(16))
             // console.error("byte & mask", byte & mask, (byte & mask) === 0, '\n')
-            if ((byte & mask) === 0) return false;
+            if ((byte & mask) === 0) {
+                return false;
+            }
         }
         return true;
     }
@@ -131,9 +141,12 @@ export default class GenesisFilter {
                             return;
                         }
                         var currentKey = keys.public_keys[k];
-                        if (/^GPH/.test(currentKey))
+                        if (/^GPH/.test(currentKey)) {
                             currentKey = "BTS" + currentKey.substring(3);
-                        if (this.inGenesis(currentKey)) continue;
+                        }
+                        if (this.inGenesis(currentKey)) {
+                            continue
+                        };
                         var addresses = key.addresses(currentKey, "BTS");
                         var addy_found = false;
                         for (var i = 0; i < addresses.length; i++) {
@@ -142,7 +155,9 @@ export default class GenesisFilter {
                                 break;
                             }
                         }
-                        if (addy_found) continue;
+                        if (addy_found) {
+                            continue;
+                        }
                         delete keys.encrypted_private_keys[k];
                         delete keys.public_keys[k];
                         removed_count++;
@@ -154,7 +169,9 @@ export default class GenesisFilter {
                         k >= 0;
                         k--
                     ) {
-                        if (!keys.encrypted_private_keys[k]) continue;
+                        if (!keys.encrypted_private_keys[k]) {
+                            continue;
+                        }
                         encrypted_private_keys.push(
                             keys.encrypted_private_keys[k]
                         );

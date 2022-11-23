@@ -30,7 +30,9 @@ class PiratecashDepositAddressCache {
         output_coin_type
     ) {
         let wallet = WalletDb.getWallet();
-        if (!wallet) return null;
+        if (!wallet) {
+            return null;
+        }
         wallet.deposit_keys = wallet.deposit_keys || {};
         wallet.deposit_keys[exchange_name] =
             wallet.deposit_keys[exchange_name] || {};
@@ -43,10 +45,12 @@ class PiratecashDepositAddressCache {
             wallet.deposit_keys[exchange_name][index] || [];
 
         let number_of_keys = wallet.deposit_keys[exchange_name][index].length;
-        if (number_of_keys)
+        if (number_of_keys) {
             return wallet.deposit_keys[exchange_name][index][
                 number_of_keys - 1
             ];
+        }
+
         return null;
     }
 
@@ -59,7 +63,9 @@ class PiratecashDepositAddressCache {
         memo
     ) {
         let wallet = WalletDb.getWallet();
-        if (!wallet) return null;
+        if (!wallet) {
+            return null;
+        }
         wallet.deposit_keys = wallet.deposit_keys || {};
         wallet.deposit_keys[exchange_name] =
             wallet.deposit_keys[exchange_name] || {};

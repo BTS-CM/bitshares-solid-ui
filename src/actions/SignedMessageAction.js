@@ -122,7 +122,7 @@ function parseMessage(message) {
  *
  * @returns parsed message, see parseMessage
  */
-    function verifyMemo(message) {
+function verifyMemo(message) {
     let message_signed;
     if (typeof message === "string" || message instanceof String) {
         message_signed = this.parseMessage(message);
@@ -166,7 +166,7 @@ function parseMessage(message) {
  * @param messageText String text of the message
  * @returns {Promise}
  */
-    function signMessage(account, messageText) {
+function signMessage(account, messageText) {
     return new Promise((resolve, reject) => {
         // make sure wallet is unlocked (we need private key)
         WalletUnlockActions.unlock()

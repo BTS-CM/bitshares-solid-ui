@@ -28,8 +28,12 @@ function checkMarginStatus(account) {
                 call_orders.forEach(a => {
                     let baseId = a.getIn(["call_price", "base", "asset_id"]);
                     let quoteId = a.getIn(["call_price", "quote", "asset_id"]);
-                    if (assets.indexOf(baseId) === -1) assets.push(baseId);
-                    if (assets.indexOf(quoteId) === -1) assets.push(quoteId);
+                    if (assets.indexOf(baseId) === -1) {
+                        assets.push(baseId);
+                    }
+                    if (assets.indexOf(quoteId) === -1) {
+                        assets.push(quoteId);
+                    }
                 });
                 FetchChain("getAsset", assets, 6000).then(assets => {
                     let assetsMap = {};
@@ -84,7 +88,9 @@ function checkMarginStatus(account) {
                                     (debt.getAmount({real: true}) /
                                         price.toReal())
                             };
-                            if (isNaN(current.ratio)) return null;
+                            if (isNaN(current.ratio)) {
+                                return null;
+                            }
                             if (current.ratio < mr) {
                                 current.statusClass = "danger";
                             } else if (current.ratio < mr + 0.5) {

@@ -4,7 +4,9 @@ import {BigNumber} from "bignumber.js";
 const GRAPHENE_100_PERCENT = 10000;
 
 function limitByPrecision(value, p = 8) {
-    if (typeof p !== "number") throw new Error("Input must be a number");
+    if (typeof p !== "number") {
+        throw new Error("Input must be a number");
+    }
     let valueString = value.toString();
     let splitString = valueString.split(".");
     if (
@@ -18,13 +20,17 @@ function limitByPrecision(value, p = 8) {
 }
 
 function precisionToRatio(p) {
-    if (typeof p !== "number") throw new Error("Input must be a number");
+    if (typeof p !== "number") {
+        throw new Error("Input must be a number");
+    }
     return Math.pow(10, p);
 }
 
 function didOrdersChange(newOrders, oldOrders) {
     let changed = oldOrders && oldOrders.size !== newOrders.size;
-    if (changed) return changed;
+    if (changed) {
+        return changed;
+    }
 
     newOrders.forEach((a, key) => {
         let oldOrder = oldOrders.get(key);
@@ -63,8 +69,12 @@ class Asset {
     }
 
     setAmount({sats, real}) {
-        if (typeof sats === "string") sats = parseInt(sats, 10);
-        if (typeof real === "string") real = parseFloat(real);
+        if (typeof sats === "string") {
+            sats = parseInt(sats, 10);
+        }
+        if (typeof real === "string") {
+            real = parseFloat(real);
+        }
 
         if (typeof sats !== "number" && typeof real !== "number") {
             throw new Error("Invalid arguments for setAmount");
@@ -86,7 +96,9 @@ class Asset {
 
     getAmount({real = false} = {}) {
         if (real) {
-            if (this._real_amount) return this._real_amount;
+            if (this._real_amount) {
+                return this._real_amount;
+            }
             return (this._real_amount = limitByPrecision(
                 this.amount / this.toSats(),
                 this.precision
@@ -104,8 +116,9 @@ class Asset {
     }
 
     minus(asset) {
-        if (asset.asset_id !== this.asset_id)
+        if (asset.asset_id !== this.asset_id) {
             throw new Error("Assets are not the same type");
+        }
         this.amount -= asset.amount;
         this.amount = Math.max(0, this.amount);
         this._clearCache();
@@ -144,7 +157,9 @@ class Asset {
             if (isBid && temp !== amount) {
                 amount += 1;
             }
-            if (amount === 0) amount = 1;
+            if (amount === 0) {
+                amount = 1;
+            }
             return new Asset({
                 asset_id: p.quote.asset_id,
                 amount,
@@ -161,7 +176,9 @@ class Asset {
             if (isBid && temp !== amount) {
                 amount += 1;
             }
-            if (amount === 0) amount = 1;
+            if (amount === 0) {
+                amount = 1;
+            }
             return new Asset({
                 asset_id: p.base.asset_id,
                 amount,
@@ -594,7 +611,9 @@ class LimitOrder {
     }
 
     totalToReceive({noCache = false} = {}) {
-        if (!noCache && this._total_to_receive) return this._total_to_receive;
+        if (!noCache && this._total_to_receive) {
+            return this._total_to_receive;
+        }
         this._total_to_receive = (
             this.total_to_receive || this.amountToReceive()
         ).clone();
@@ -602,7 +621,9 @@ class LimitOrder {
     }
 
     totalForSale({noCache = false} = {}) {
-        if (!noCache && this._total_for_sale) return this._total_for_sale;
+        if (!noCache && this._total_for_sale) {
+            return this._total_for_sale;
+        }
         return (this._total_for_sale = (
             this.total_for_sale || this.amountForSale()
         ).clone());
@@ -669,7 +690,9 @@ class CallOrder {
             quote
         });
 
-        if (this.inverted) this.call_price = this.call_price.invert();
+        if (this.inverted) {
+            this.call_price = this.call_price.invert();
+        }
 
         if (feed.base.asset_id !== this.call_price.base.asset_id) {
             throw new Error(
@@ -729,7 +752,9 @@ class CallOrder {
     }
 
     isMarginCalled() {
-        if (this.is_prediction_market) return false;
+        if (this.is_prediction_market) {
+            return false;
+        }
         return this.isBid()
             ? this.call_price.lt(this.feed_price)
             : this.call_price.gt(this.feed_price);
@@ -810,7 +835,9 @@ class CallOrder {
     }
 
     assignMaxDebtAndCollateral() {
-        if (!this.target_collateral_ratio) return;
+        if (!this.target_collateral_ratio) {
+            return;
+        }
         let match_price = this._getMatchPrice();
         let max_debt_to_cover = this._getMaxDebtToCover(),
             max_debt_to_cover_int;
@@ -905,25 +932,25 @@ class CallOrder {
         let orderDebt = order.iSum
             ? order.debt
             : orderUseCR
-            ? order.max_debt_to_cover.getAmount()
-            : order.amountToReceive().getAmount();
+                ? order.max_debt_to_cover.getAmount()
+                : order.amountToReceive().getAmount();
         let newOrderDebt = newOrder.iSum
             ? newOrder.debt
             : newOrderUseCR
-            ? newOrder.max_debt_to_cover.getAmount()
-            : newOrder.amountToReceive().getAmount();
+                ? newOrder.max_debt_to_cover.getAmount()
+                : newOrder.amountToReceive().getAmount();
 
         /* Determine which collateral values to use */
         let orderCollateral = order.iSum
             ? order.collateral
             : orderUseCR
-            ? order.max_collateral_to_sell.getAmount()
-            : order.amountForSale().getAmount();
+                ? order.max_collateral_to_sell.getAmount()
+                : order.amountForSale().getAmount();
         let newOrderCollateral = newOrder.iSum
             ? newOrder.collateral
             : newOrderUseCR
-            ? newOrder.max_collateral_to_sell.getAmount()
-            : newOrder.amountForSale().getAmount();
+                ? newOrder.max_collateral_to_sell.getAmount()
+                : newOrder.amountForSale().getAmount();
 
         newOrder.debt = newOrderDebt + orderDebt;
         newOrder.collateral = newOrderCollateral + orderCollateral;
@@ -978,7 +1005,9 @@ class CallOrder {
     }
 
     totalToReceive({noCache = false} = {}) {
-        if (!noCache && this._total_to_receive) return this._total_to_receive;
+        if (!noCache && this._total_to_receive) {
+            return this._total_to_receive;
+        }
         this._total_to_receive = (
             this.total_to_receive || this.amountToReceive()
         ).clone();
@@ -986,7 +1015,9 @@ class CallOrder {
     }
 
     totalForSale({noCache = false} = {}) {
-        if (!noCache && this._total_for_sale) return this._total_for_sale;
+        if (!noCache && this._total_for_sale) {
+            return this._total_for_sale;
+        }
         return (this._total_for_sale = (
             this.total_for_sale || this.amountForSale()
         ).clone());
@@ -1006,7 +1037,9 @@ class CallOrder {
                 .maintenance_collateral_ratio / 1000;
         const cr = this.getRatio();
 
-        if (isNaN(cr)) return null;
+        if (isNaN(cr)) {
+            return null;
+        }
         if (cr < mr) {
             return "danger";
         } else if (cr < mr + 0.5) {
@@ -1088,26 +1121,26 @@ class GroupedOrder {
 
         const base = this.is_bid
             ? new Asset({
-                  asset_id: order.min_price.base.asset_id,
-                  amount: parseInt(order.min_price.base.amount, 10),
-                  precision: assets[order.min_price.base.asset_id].precision
-              })
+                asset_id: order.min_price.base.asset_id,
+                amount: parseInt(order.min_price.base.amount, 10),
+                precision: assets[order.min_price.base.asset_id].precision
+            })
             : new Asset({
-                  asset_id: order.max_price.base.asset_id,
-                  amount: parseInt(order.max_price.base.amount, 10),
-                  precision: assets[order.max_price.base.asset_id].precision
-              });
+                asset_id: order.max_price.base.asset_id,
+                amount: parseInt(order.max_price.base.amount, 10),
+                precision: assets[order.max_price.base.asset_id].precision
+            });
         const quote = this.is_bid
             ? new Asset({
-                  asset_id: order.min_price.quote.asset_id,
-                  amount: parseInt(order.min_price.quote.amount, 10),
-                  precision: assets[order.min_price.quote.asset_id].precision
-              })
+                asset_id: order.min_price.quote.asset_id,
+                amount: parseInt(order.min_price.quote.amount, 10),
+                precision: assets[order.min_price.quote.asset_id].precision
+            })
             : new Asset({
-                  asset_id: order.max_price.quote.asset_id,
-                  amount: parseInt(order.max_price.quote.amount, 10),
-                  precision: assets[order.max_price.quote.asset_id].precision
-              });
+                asset_id: order.max_price.quote.asset_id,
+                amount: parseInt(order.max_price.quote.amount, 10),
+                precision: assets[order.max_price.quote.asset_id].precision
+            });
 
         this.sell_price = new Price({
             base,
@@ -1145,7 +1178,9 @@ class GroupedOrder {
     }
 
     amountForSale() {
-        if (this._for_sale) return this._for_sale;
+        if (this._for_sale) {
+            return this._for_sale;
+        }
         return (this._for_sale = new Asset({
             asset_id: this.sell_price.base.asset_id,
             amount: this.for_sale,
@@ -1154,7 +1189,9 @@ class GroupedOrder {
     }
 
     amountToReceive(isBid = this.isBid()) {
-        if (this._to_receive) return this._to_receive;
+        if (this._to_receive) {
+            return this._to_receive;
+        }
         this._to_receive = this.amountForSale().times(this.sell_price, isBid);
         return this._to_receive;
     }
@@ -1195,7 +1232,9 @@ class GroupedOrder {
     }
 
     totalToReceive({noCache = false} = {}) {
-        if (!noCache && this._total_to_receive) return this._total_to_receive;
+        if (!noCache && this._total_to_receive) {
+            return this._total_to_receive;
+        }
         this._total_to_receive = (
             this.total_to_receive || this.amountToReceive()
         ).clone();
@@ -1203,7 +1242,9 @@ class GroupedOrder {
     }
 
     totalForSale({noCache = false} = {}) {
-        if (!noCache && this._total_for_sale) return this._total_for_sale;
+        if (!noCache && this._total_for_sale) {
+            return this._total_for_sale;
+        }
         this._total_for_sale = (
             this.total_for_sale || this.amountForSale()
         ).clone();
@@ -1238,8 +1279,8 @@ class FillOrder {
         this.className = this.isCall
             ? "orderHistoryCall"
             : this.isBid
-            ? "orderHistoryBid"
-            : "orderHistoryAsk";
+                ? "orderHistoryBid"
+                : "orderHistoryAsk";
         this.time = fill.time && new Date(utils.makeISODateString(fill.time));
         this.block = fill.block;
         this.account = fill.op.account || fill.op.account_id;
@@ -1356,7 +1397,9 @@ class CollateralBid {
                 assets[order.inv_swan_price.quote.asset_id].precision
             );
 
-        if (this.inverted) this.bid = this.bid.invert();
+        if (this.inverted) {
+            this.bid = this.bid.invert();
+        }
         this.feed_price = feed;
     }
 

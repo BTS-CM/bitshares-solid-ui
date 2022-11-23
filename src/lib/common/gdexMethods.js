@@ -23,9 +23,15 @@ export function userAgreement(reqBody, timeout = -1) {
 }
 
 export function fetchAssets(reqBody, timeout = -1) {
-    if (!reqBody.requestType) reqBody.requestType = 0;
-    if (!reqBody.assetType) reqBody.assetType = 0;
-    if (!reqBody.version) reqBody.version = "1.1";
+    if (!reqBody.requestType) {
+        reqBody.requestType = 0;
+    }
+    if (!reqBody.assetType) {
+        reqBody.assetType = 0;
+    }
+    if (!reqBody.version) {
+        reqBody.version = "1.1";
+    }
     return requestSimple(reqBody, gdexAPIs.BASE + gdexAPIs.ASSET_LIST, timeout);
 }
 
@@ -39,7 +45,9 @@ export function fetchUserInfo(reqBody, timeout = -1) {
 }
 
 export function validateAddress(reqBody, timeout = -1) {
-    if (!reqBody.address) return new Promise(res => res());
+    if (!reqBody.address) {
+        return new Promise(res => res());
+    }
     return requestSimple(
         reqBody,
         gdexAPIs.BASE + gdexAPIs.CHECK_WITHDRAY_ADDRESS,
@@ -56,9 +64,13 @@ export function requestDepositAddress(reqBody, timeout = -1) {
 }
 
 export function getTransactionRecordList(reqBody, type, timeout = -1) {
-    if (type == 1) return getDepositRecordList(reqBody, timeout);
-    else if (type == 2) return getWithdrawRecordList(reqBody, timeout);
-    else return new Promise(res => res());
+    if (type == 1) {
+        return getDepositRecordList(reqBody, timeout);
+    } else if (type == 2) {
+        return getWithdrawRecordList(reqBody, timeout);
+    } else {
+        return new Promise(res => res());
+    }
 }
 
 export function getDepositRecordList(reqBody, timeout = -1) {
@@ -88,12 +100,22 @@ function requestSimple(reqBody, reqUrl, timeout = -1) {
 }
 
 function requestWithTimeout(reqBody, reqUrl, timeout) {
-    if (!reqBody.requestChannel) reqBody.requestChannel = 0;
-    if (!reqBody.version) reqBody.version = "1.0";
-    if (!reqBody.timestamp) reqBody.timestamp = new Date().getTime();
-    if (!reqBody.outerChannel) reqBody.outerChannel = "Bitshares";
+    if (!reqBody.requestChannel) {
+        reqBody.requestChannel = 0;
+    }
+    if (!reqBody.version) {
+        reqBody.version = "1.0";
+    }
+    if (!reqBody.timestamp) {
+        reqBody.timestamp = new Date().getTime();
+    }
+    if (!reqBody.outerChannel) {
+        reqBody.outerChannel = "Bitshares";
+    }
     let body_string = JSON.stringify(reqBody);
-    if (assetsRequest[body_string]) return;
+    if (assetsRequest[body_string]) {
+        return;
+    }
     assetsRequest[body_string] = true;
     return Promise.race([
         new Promise((resolve, reject) => {
@@ -131,12 +153,22 @@ function requestWithTimeout(reqBody, reqUrl, timeout) {
 }
 
 function requestWithoutTimeout(reqBody, reqUrl) {
-    if (!reqBody.requestChannel) reqBody.requestChannel = 0;
-    if (!reqBody.version) reqBody.version = "1.0";
-    if (!reqBody.timestamp) reqBody.timestamp = new Date().getTime();
-    if (!reqBody.outerChannel) reqBody.outerChannel = "Bitshares";
+    if (!reqBody.requestChannel) {
+        reqBody.requestChannel = 0;
+    }
+    if (!reqBody.version) {
+        reqBody.version = "1.0";
+    }
+    if (!reqBody.timestamp) {
+        reqBody.timestamp = new Date().getTime();
+    }
+    if (!reqBody.outerChannel) {
+        reqBody.outerChannel = "Bitshares";
+    }
     let body_string = JSON.stringify(reqBody);
-    if (assetsRequest[body_string]) return;
+    if (assetsRequest[body_string]) {
+        return;
+    }
     assetsRequest[body_string] = true;
     new Promise((resolve, reject) => {
         fetch(reqUrl, {

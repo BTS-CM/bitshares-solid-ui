@@ -108,8 +108,9 @@ function createWalletBackup(
 
 function decryptWalletBackup(backup_wif, backup_buffer) {
     return new Promise((resolve, reject) => {
-        if (!Buffer.isBuffer(backup_buffer))
+        if (!Buffer.isBuffer(backup_buffer)) {
             backup_buffer = new Buffer(backup_buffer, "binary");
+        }
 
         let private_key = PrivateKey.fromWif(backup_wif);
         let public_key;
@@ -140,7 +141,9 @@ function decryptWalletBackup(backup_wif, backup_buffer) {
                     let wallet_object = JSON.parse(wallet_string);
                     resolve(wallet_object);
                 } catch (error) {
-                    if (!wallet_string) wallet_string = "";
+                    if (!wallet_string) {
+                        wallet_string = "";
+                    }
                     console.error(
                         "Error parsing wallet json",
                         wallet_string.substring(0, 10) + "..."

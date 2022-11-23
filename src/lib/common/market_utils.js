@@ -113,10 +113,11 @@ const MarketUtils = {
 
         const directStats = marketStats.get(directMarket);
         if (directStats && directStats.price && directStats.volumeBase !== 0) {
-            if (real)
+            if (real) {
                 return directStats.price.toReal(
                     toAsset.get("id") !== directStats.price.base.asset_id
                 );
+            }
             return directStats.price;
         }
 
@@ -124,8 +125,9 @@ const MarketUtils = {
 
         const fromStats = marketStats.get(fromMarket);
         if (fromStats && fromStats.price) {
-            if (fromStats.volumeBase === 0 && fromStats.volumeQuote === 0)
+            if (fromStats.volumeBase === 0 && fromStats.volumeQuote === 0) {
                 return null;
+            }
             fromPrice = fromStats.price.clone();
         }
         const toStats = marketStats.get(toMarket);
@@ -135,15 +137,18 @@ const MarketUtils = {
 
         let finalPrice;
         if (toPrice && fromPrice) {
-            if (fromPrice.base.amount == 0 || toPrice.base.amount == 0)
+            if (fromPrice.base.amount == 0 || toPrice.base.amount == 0) {
                 return null;
+            }
             finalPrice = toPrice.times(fromPrice);
         } else if (toPrice) {
             finalPrice = toPrice;
         } else if (fromPrice) {
             finalPrice = fromPrice;
         }
-        if (!finalPrice) return null;
+        if (!finalPrice) {
+            return null;
+        }
         const finalId = [finalPrice.base.asset_id, finalPrice.quote.asset_id];
         if (
             finalId.indexOf(toAsset.get("id")) === -1 ||
@@ -154,10 +159,11 @@ const MarketUtils = {
 
         priceCache[directMarket] = finalPrice;
         cacheClearTimer();
-        if (real)
+        if (real) {
             return finalPrice.toReal(
                 toAsset.get("id") !== finalPrice.base.asset_id
             );
+        }
         return finalPrice;
     },
 
@@ -171,17 +177,19 @@ const MarketUtils = {
     ) {
         let fromAmount = !fullPrecision
             ? new Asset({
-                  real: amount,
-                  asset_id: fromAsset.get("id"),
-                  precision: fromAsset.get("precision")
-              })
+                real: amount,
+                asset_id: fromAsset.get("id"),
+                precision: fromAsset.get("precision")
+            })
             : new Asset({
-                  amount,
-                  asset_id: fromAsset.get("id"),
-                  precision: fromAsset.get("precision")
-              });
+                amount,
+                asset_id: fromAsset.get("id"),
+                precision: fromAsset.get("precision")
+            });
 
-        if (!toAsset) return;
+        if (!toAsset) {
+            return;
+        }
 
         let price = this.getFinalPrice(
             coreAsset,
@@ -191,7 +199,9 @@ const MarketUtils = {
             false
         );
 
-        if (price === 1) return fromAmount.getAmount({real: !fullPrecision});
+        if (price === 1) {
+            return fromAmount.getAmount({real: !fullPrecision});
+        }
         let eqValue =
             price && price.toReal
                 ? fromAmount.times(price).getAmount({real: !fullPrecision})
@@ -208,6 +218,8 @@ const MarketUtils = {
         let basePrecision = utils.get_asset_precision(
             base.toJS ? base.get("precision") : base.precision
         );
+
+        /*
         let pricePrecision = order.call_price
             ? quote.toJS
                 ? quote.get("precision")
@@ -215,6 +227,7 @@ const MarketUtils = {
             : base.toJS
                 ? base.get("precision")
                 : base.precision;
+        */
 
         let buy, sell;
         let callPrice;
@@ -310,85 +323,6 @@ const MarketUtils = {
         let dec = price_split[1];
         return {int: int, dec: dec};
     },
-
-    // flatten_orderbookchart(array, sumBoolean, inverse, precision) {
-    //     inverse = inverse === undefined ? false : inverse;
-    //     let orderBookArray = [];
-    //     let maxStep, arrayLength = array.length;
-
-    //     // Sum orders at same price
-    //     // if (arrayLength > 1) {
-    //     //     for (var i = arrayLength - 2; i >= 0; i--) {
-    //     //         if (array[i].x === array[i + 1].x) {
-    //     //             console.log("found order to sum");
-    //     //             array[i].y += array[i + 1].y;
-    //     //             array.splice(i + 1, 1);
-    //     //         }
-    //     //     }
-    //     // }
-    //     // arrayLength = array.length;
-
-    //     if (inverse) {
-
-    //         if (array && arrayLength) {
-    //             arrayLength = arrayLength - 1;
-    //             orderBookArray.unshift({
-    //                 x: array[arrayLength].x,
-    //                 y: array[arrayLength].y
-    //             });
-    //             if (array.length > 1) {
-    //                 for (let i = array.length - 2; i >= 0; i--) {
-    //                     // maxStep = Math.min((array[i + 1].x - array[i].x) / 2, 0.1 / precision);
-    //                     orderBookArray.unshift({
-    //                         x: array[i].x + maxStep,
-    //                         y: array[i + 1].y
-    //                     });
-    //                     if (sumBoolean) {
-    //                         array[i].y += array[i + 1].y;
-    //                     }
-    //                     orderBookArray.unshift({
-    //                         x: array[i].x,
-    //                         y: array[i].y
-    //                     });
-    //                 }
-    //             } else {
-    //                 orderBookArray.unshift({
-    //                     x: 0,
-    //                     y: array[arrayLength].y
-    //                 });
-    //             }
-    //         }
-    //     } else {
-    //         if (array && arrayLength) {
-    //             orderBookArray.push({
-    //                 x: array[0].x,
-    //                 y: array[0].y
-    //             });
-    //             if (array.length > 1) {
-    //                 for (let i = 1; i < array.length; i++) {
-    //                     // maxStep = Math.min((array[i].x - array[i - 1].x) / 2, 0.1 / precision);
-    //                     orderBookArray.push({
-    //                         x: array[i].x - maxStep,
-    //                         y: array[i - 1].y
-    //                     });
-    //                     if (sumBoolean) {
-    //                         array[i].y += array[i - 1].y;
-    //                     }
-    //                     orderBookArray.push({
-    //                         x: array[i].x,
-    //                         y: array[i].y
-    //                     });
-    //                 }
-    //             } else {
-    //                 orderBookArray.push({
-    //                     x: array[0].x * 1.5,
-    //                     y: array[0].y
-    //                 });
-    //             }
-    //         }
-    //     }
-    //     return orderBookArray;
-    // }
 
     flatten_orderbookchart_highcharts(array, sumBoolean, inverse, precision) {
         inverse = inverse === undefined ? false : inverse;
@@ -488,7 +422,9 @@ const MarketUtils = {
     },
 
     getMarketName(base, quote) {
-        if (!base || !quote) return {marketName: "_"};
+        if (!base || !quote) {
+            return {marketName: "_"};
+        }
         let baseID = parseInt(base.get("id").split(".")[2], 10);
         let quoteID = parseInt(quote.get("id").split(".")[2], 10);
 

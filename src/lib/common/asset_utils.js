@@ -107,26 +107,26 @@ export default class AssetUtils {
          *  - Settlement Price: feed price * force settlement offset factor
          *
          */
-        if (!!asset.bitasset) {
+        if (asset.bitasset) {
             return asset.bitasset.current_feed.settlement_price;
         }
-        if (!!asset.current_feed) {
+        if (asset.current_feed) {
             return asset.current_feed.settlement_price;
         }
-        if (!!asset.settlement_price) {
+        if (asset.settlement_price) {
             return asset.settlement_price;
         }
-        if (!!asset.get("bitasset")) {
+        if (asset.get("bitasset")) {
             return asset.getIn([
                 "bitasset",
                 "current_feed",
                 "settlement_price"
             ]);
         }
-        if (!!asset.get("settlement_price")) {
+        if (asset.get("settlement_price")) {
             return asset.getIn(["settlement_price"]);
         }
-        if (!!asset.get("current_feed")) {
+        if (asset.get("current_feed")) {
             return asset.getIn(["current_feed", "settlement_price"]);
         }
         throw "Feed price not found!";

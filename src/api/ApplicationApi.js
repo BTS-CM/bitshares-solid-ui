@@ -175,14 +175,14 @@ const ApplicationApi = {
                             nonce,
                             message: encrypt_memo
                                 ? Aes.encrypt_with_checksum(
-                                      memo_sender.private_key,
-                                      memo_to.public_key,
-                                      nonce,
-                                      memo
-                                  )
+                                    memo_sender.private_key,
+                                    memo_to.public_key,
+                                    nonce,
+                                    memo
+                                )
                                 : Buffer.isBuffer(memo)
-                                ? memo.toString("utf-8")
-                                : memo
+                                    ? memo.toString("utf-8")
+                                    : memo
                         };
                     }
                 }
@@ -410,14 +410,14 @@ const ApplicationApi = {
                     nonce,
                     message: encrypt_memo
                         ? Aes.encrypt_with_checksum(
-                              memo_from_privkey,
-                              memo_to_public,
-                              nonce,
-                              memo
-                          )
+                            memo_from_privkey,
+                            memo_to_public,
+                            nonce,
+                            memo
+                        )
                         : Buffer.isBuffer(memo)
-                        ? memo.toString("utf-8")
-                        : memo
+                            ? memo.toString("utf-8")
+                            : memo
                 };
             }
 
@@ -447,15 +447,17 @@ const ApplicationApi = {
         return new Promise((resolve, reject) => {
             let tr = new TransactionBuilder();
             const core = ChainStore.getAsset("1.3.0");
-            if (!core)
+            if (!core) {
                 reject(new Error("Can't find core asset, please try again"));
+            }
             let precision = Math.pow(10, core.get("precision"));
 
             const owner = ChainStore.getAccount(account).get("id");
-            if (!owner)
+            if (!owner) {
                 reject(
                     new Error("Can't find the owner account, please try again")
                 );
+            }
 
             try {
                 tr.add_type_operation("worker_create", {
@@ -737,14 +739,14 @@ const ApplicationApi = {
                     nonce,
                     message: encrypt_memo
                         ? Aes.encrypt_with_checksum(
-                              memo_sender.private_key,
-                              memo_to.public_key,
-                              nonce,
-                              memo
-                          )
+                            memo_sender.private_key,
+                            memo_to.public_key,
+                            nonce,
+                            memo
+                        )
                         : Buffer.isBuffer(memo)
-                        ? memo.toString("utf-8")
-                        : memo
+                            ? memo.toString("utf-8")
+                            : memo
                 };
             }
         }

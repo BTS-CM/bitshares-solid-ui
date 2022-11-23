@@ -1,5 +1,5 @@
-import { useAccountRefsStore } from '../stores/AccountRefsStore';
-import { usePrivateKeyStore } from '~/stores/PrivateKeyStore';
+import { useAccountRefsStore } from "../stores/AccountRefsStore";
+import { usePrivateKeyStore } from "~/stores/PrivateKeyStore";
 const [accountRefsStore, setAccountRefsStore] = useAccountRefsStore();
 const [privateKeyStore, setPrivateKeyStore] = usePrivateKeyStore();
 

@@ -1,11 +1,11 @@
-import { createStore } from 'solid-js/store';
+import { createStore } from "solid-js/store";
 import ls from "common/localStorage";
 import {
     setLocalStorageType,
     isPersistantType
 } from "../lib/common/localStorage";
 
-import { useWalletDb } from './WalletDb';
+import { useWalletDb } from "./WalletDb";
 const [walletDb, setWalletDb] = useWalletDb();
 
 const STORAGE_KEY = "__graphene__";
@@ -23,8 +23,8 @@ const [walletUnlockStore, setWalletUnlockStore] = createStore({
     locked: true,
     passwordLogin: storedSettings.passwordLogin,
     rememberMe: storedSettings.rememberMe === undefined
-                    ? true
-                    : storedSettings.rememberMe,
+        ? true
+        : storedSettings.rememberMe,
     onUnlock({resolve, reject}) {
         //DEBUG console.log('... onUnlock setState', walletDb.isLocked())
         //
@@ -39,7 +39,7 @@ const [walletUnlockStore, setWalletUnlockStore] = createStore({
             resolve: resolve,
             reject: reject,
             locked: walletDb.isLocked()
-        })
+        });
     },
     onLock({resolve}) {
         //DEBUG console.log('... WalletUnlockStore\tprogramatic lock', walletDb.isLocked())
@@ -52,7 +52,7 @@ const [walletUnlockStore, setWalletUnlockStore] = createStore({
             resolve: null,
             reject: null,
             locked: walletDb.isLocked()
-        })
+        });
         if (!walletUnlockStore.rememberMe && !isPersistantType()) {
             setLocalStorageType("persistant");
         }
@@ -65,7 +65,7 @@ const [walletUnlockStore, setWalletUnlockStore] = createStore({
         setWalletUnlockStore({
             resolve: null,
             reject: null
-        })
+        });
     },
     onChange() {
         setWalletUnlockStore({locked: walletDb.isLocked()});
@@ -91,7 +91,7 @@ export const useWalletUnlockStore = () => [walletUnlockStore, setWalletUnlockSto
 function _setLockTimeout() {
     _clearLockTimeout();
     /* If the timeout is different from zero, auto unlock the wallet using a timeout */
-    if (!!walletUnlockStore.walletLockTimeout) {
+    if (walletUnlockStore.walletLockTimeout) {
         setWalletUnlockStore({timeout: setTimeout(() => {
             if (!walletDb.isLocked()) {
                 console.log(

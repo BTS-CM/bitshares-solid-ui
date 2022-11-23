@@ -1,5 +1,5 @@
 import Immutable from "immutable";
-import { createStore } from 'solid-js/store';
+import { createStore } from "solid-js/store";
 import {PublicKey, ChainStore, Aes} from "bitsharesjs";
 
 import { useWalletDb } from "./WalletDb";
@@ -89,8 +89,8 @@ const [privateKeyStore, setPrivateKeyStore] = createStore({
     },
     getTcomb_byPubkey(public_key) {
         if (!public_key) {
-            return null
-        };
+            return null;
+        }
         if (public_key.Q) {
             public_key = public_key.toPublicKeyString();
         }
@@ -216,11 +216,11 @@ const [privateKeyStore, setPrivateKeyStore] = createStore({
             try {
                 memo_text = private_key
                     ? Aes.decrypt_with_checksum(
-                          private_key,
-                          public_key,
-                          memo.nonce,
-                          memo.message
-                      ).toString("utf-8")
+                        private_key,
+                        public_key,
+                        memo.nonce,
+                        memo.message
+                    ).toString("utf-8")
                     : null;
 
                 if (private_key && !memo_text) {

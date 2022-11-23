@@ -49,8 +49,9 @@ class BlockTradesDepositAddressCache {
             deposit_keys[exchange_name][index] =
                 deposit_keys[exchange_name][index] || [];
             let number_of_keys = deposit_keys[exchange_name][index].length;
-            if (number_of_keys)
+            if (number_of_keys) {
                 return deposit_keys[exchange_name][index][number_of_keys - 1];
+            }
             return null;
         } else {
             wallet.deposit_keys = wallet.deposit_keys || {};
@@ -61,10 +62,11 @@ class BlockTradesDepositAddressCache {
 
             let number_of_keys =
                 wallet.deposit_keys[exchange_name][index].length;
-            if (number_of_keys)
+            if (number_of_keys) {
                 return wallet.deposit_keys[exchange_name][index][
                     number_of_keys - 1
                 ];
+            }
             return null;
         }
     }
@@ -77,7 +79,9 @@ class BlockTradesDepositAddressCache {
         address,
         memo
     ) {
-        if (!address) return;
+        if (!address) {
+            return;
+        }
         let wallet = WalletDb.getWallet();
 
         const index = this.getIndexForDepositKeyInExchange(

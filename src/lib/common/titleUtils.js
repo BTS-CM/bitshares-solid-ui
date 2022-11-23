@@ -12,24 +12,29 @@ export default class TitleUtils {
         let prefix = " - ";
 
         path.split("/").forEach(part => {
-            if (part == "") return;
+            if (part == "") {
+                return;
+            }
 
             title += prefix;
 
-            if (lastPart === "account") title += part;
-            else if (lastPart === "market" && part.match(/_/))
+            if (lastPart === "account") {
+                title += part;
+            } else if (lastPart === "market" && part.match(/_/)) {
                 title += part.replace("_", " / ");
-            else if (this.GetLocaleKey(part) != null)
+            } else if (this.GetLocaleKey(part) != null) {
                 title += counterpart.translate(this.GetLocaleKey(part));
-            else {
-                if (part.match(/-|_/) !== -1)
+            } else {
+                if (part.match(/-|_/) !== -1) {
                     part.split(/-|_/).forEach(piece => {
                         title +=
                             piece.charAt(0).toUpperCase() +
                             piece.substring(1) +
                             " ";
                     });
-                else title += part.charAt(0).toUpperCase() + part.substring(1);
+                } else {
+                    title += part.charAt(0).toUpperCase() + part.substring(1);
+                }
             }
 
             lastPart = part;

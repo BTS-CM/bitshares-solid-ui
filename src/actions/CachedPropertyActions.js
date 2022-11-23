@@ -1,4 +1,4 @@
-import {useCachedPropertyStore} from '../stores/CachedPropertyStore';
+import {useCachedPropertyStore} from "../stores/CachedPropertyStore";
 const [cachedPropertyStore, setCachedPropertyStore] = useCachedPropertyStore();
 
 function set(name, value) {

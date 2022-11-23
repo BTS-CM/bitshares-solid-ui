@@ -18,7 +18,7 @@ const _fetchOnChainConfig = async function() {
             let notification = asset_utils.parseDescription(
                 asset.options.description
             );
-            if (!!notification.main) {
+            if (notification.main) {
                 notification = notification.main.split(config.explanation);
                 if (notification.length > 1 && !!notification[1]) {
                     let _onChainConfig = JSON.parse(notification[1]);
@@ -61,11 +61,17 @@ const isGatewayTemporarilyDisabled = async function(gatewayKey) {
     // e.g. {OPEN: {enabled: true}}
     const onChainConfig = await _fetchOnChainConfig();
 
-    if (!onChainConfig.gateways) return false;
+    if (!onChainConfig.gateways) {
+        return false;
+    }
 
-    if (!onChainConfig.gateways[gatewayKey]) return false;
+    if (!onChainConfig.gateways[gatewayKey]) {
+        return false;
+    }
 
-    if (onChainConfig.gateways[gatewayKey].enabled === false) return true;
+    if (onChainConfig.gateways[gatewayKey].enabled === false) {
+        return true;
+    }
 
     return false;
 };
@@ -75,11 +81,17 @@ const getGatewayComment = async function(gatewayKey) {
     // e.g. {OPEN: {enabled: true}}
     const onChainConfig = await _fetchOnChainConfig();
 
-    if (!onChainConfig.gateways) return null;
+    if (!onChainConfig.gateways) {
+        return null;
+    }
 
-    if (!onChainConfig.gateways[gatewayKey]) return null;
+    if (!onChainConfig.gateways[gatewayKey]) {
+        return null;
+    }
 
-    if (!onChainConfig.gateways[gatewayKey].comment) return null;
+    if (!onChainConfig.gateways[gatewayKey].comment) {
+        return null;
+    }
 
     return onChainConfig.gateways[gatewayKey].comment;
 };
@@ -89,13 +101,17 @@ const getGatewayConfig = async function(gatewayKey) {
     // e.g. {OPEN: {enabled: true}}
     const onChainConfig = await _fetchOnChainConfig();
 
-    if (!onChainConfig.gateways) return null;
+    if (!onChainConfig.gateways) {
+        return null;
+    }
 
     if (!gatewayKey) {
         return onChainConfig.gateways;
     }
 
-    if (!onChainConfig.gateways[gatewayKey]) return null;
+    if (!onChainConfig.gateways[gatewayKey]) {
+        return null;
+    }
 
     return onChainConfig.gateways[gatewayKey];
 };
@@ -103,7 +119,9 @@ const getGatewayConfig = async function(gatewayKey) {
 const getBlacklists = async function() {
     const onChainConfig = await _fetchOnChainConfig();
 
-    if (!onChainConfig.blacklists) return {};
+    if (!onChainConfig.blacklists) {
+        return {};
+    }
 
     return onChainConfig.blacklists;
 };
@@ -111,7 +129,9 @@ const getBlacklists = async function() {
 const getOnChainConfig = async function() {
     const onChainConfig = await _fetchOnChainConfig();
 
-    if (!onChainConfig) return {};
+    if (!onChainConfig) {
+        return {};
+    }
 
     return onChainConfig;
 };

@@ -64,8 +64,8 @@ function getMarketStats(base, quote, refresh = false, errorCallback = null) {
     );
 
     if (base === quote) {
-        return
-    };
+        return;
+    }
     let now = new Date();
 
     if (marketStats[marketName] && !refresh) {
@@ -298,45 +298,45 @@ function subscribeMarket(base, quote, bucketSize, groupedOrderLimit) {
                     !hasFill
                         ? null
                         : Apis.instance()
-                                .history_api()
-                                .exec("get_market_history", [
-                                    base.get("id"),
-                                    quote.get("id"),
-                                    bucketSize,
-                                    startDate.toISOString().slice(0, -5),
-                                    endDate.toISOString().slice(0, -5)
-                                ]),
+                            .history_api()
+                            .exec("get_market_history", [
+                                base.get("id"),
+                                quote.get("id"),
+                                bucketSize,
+                                startDate.toISOString().slice(0, -5),
+                                endDate.toISOString().slice(0, -5)
+                            ]),
                     !hasFill
                         ? null
                         : Apis.instance()
-                                .history_api()
-                                .exec("get_fill_order_history", [
-                                    base.get("id"),
-                                    quote.get("id"),
-                                    200
-                                ]),
+                            .history_api()
+                            .exec("get_fill_order_history", [
+                                base.get("id"),
+                                quote.get("id"),
+                                200
+                            ]),
                     !hasFill
                         ? null
                         : Apis.instance()
-                                .history_api()
-                                .exec("get_market_history", [
-                                    base.get("id"),
-                                    quote.get("id"),
-                                    bucketSize,
-                                    startDate2.toISOString().slice(0, -5),
-                                    startDate.toISOString().slice(0, -5)
-                                ]),
+                            .history_api()
+                            .exec("get_market_history", [
+                                base.get("id"),
+                                quote.get("id"),
+                                bucketSize,
+                                startDate2.toISOString().slice(0, -5),
+                                startDate.toISOString().slice(0, -5)
+                            ]),
                     !hasFill
                         ? null
                         : Apis.instance()
-                                .history_api()
-                                .exec("get_market_history", [
-                                    base.get("id"),
-                                    quote.get("id"),
-                                    bucketSize,
-                                    startDate3.toISOString().slice(0, -5),
-                                    startDate2.toISOString().slice(0, -5)
-                                ]),
+                            .history_api()
+                            .exec("get_market_history", [
+                                base.get("id"),
+                                quote.get("id"),
+                                bucketSize,
+                                startDate3.toISOString().slice(0, -5),
+                                startDate2.toISOString().slice(0, -5)
+                            ]),
                     Apis.instance()
                         .db_api()
                         .exec("get_ticker", [
@@ -435,7 +435,9 @@ function subscribeMarket(base, quote, bucketSize, groupedOrderLimit) {
             startDate3.getTime() - bucketSize * bucketCount * 3000
         );
         endDate.setDate(endDate.getDate() + 1);
-        if (__DEV__) console.time("Fetch market data");
+        if (__DEV__) {
+            console.time("Fetch market data");
+        };
 
         return new Promise((resolve, reject) => {
             Promise.all([
@@ -508,7 +510,9 @@ function subscribeMarket(base, quote, bucketSize, groupedOrderLimit) {
                     const data1 = results[8] || [];
                     const data2 = results[7] || [];
                     subs[subID] = subscription;
-                    if (__DEV__) console.timeEnd("Fetch market data");
+                    if (__DEV__) {
+                        console.timeEnd("Fetch market data");
+                    }
                     marketsStore.onSubscribeMarket({
                         limits: results[1],
                         calls: results[2],
@@ -534,9 +538,9 @@ function subscribeMarket(base, quote, bucketSize, groupedOrderLimit) {
                     );
                     reject(error);
                 });
-            });
-        }
-        return Promise.resolve(true);   
+        });
+    }
+    return Promise.resolve(true);   
 }
 
 function unSubscribeMarket(quote, base) {
@@ -617,29 +621,19 @@ function createLimitOrder(
         fill_or_kill: isFillOrKill
     });
 
-    return dispatch => {
-        return walletDb.process_transaction(tr, null, true)
-            .then(result => {
-                dispatch(true);
-                return true;
-            })
-            .catch(error => {
-                console.log("order error:", error);
-                dispatch({error});
-                return {error};
-            });
-    };
+    return walletDb.process_transaction(tr, null, true)
+        .then(() => {
+            return true;
+        })
+        .catch(error => {
+            console.log("order error:", error);
+            return {error};
+        });
 }
 
 function createLimitOrder2(orderOrOrders) {
     var tr = WalletApi.new_transaction();
-
     let orders = [];
-
-    // let feeAsset = ChainStore.getAsset(fee_asset_id);
-    // if( feeAsset.getIn(["options", "core_exchange_rate", "base", "asset_id"]) === "1.3.0" && feeAsset.getIn(["options", "core_exchange_rate", "quote", "asset_id"]) === "1.3.0" ) {
-    //     fee_asset_id = "1.3.0";
-    // }
 
     if (Array.isArray(orderOrOrders)) {
         orders = orderOrOrders.map(order => order.toObject());
@@ -652,7 +646,7 @@ function createLimitOrder2(orderOrOrders) {
     });
 
     return walletDb.process_transaction(tr, null, true)
-        .then(result => {
+        .then(() => {
             return true;
         })
         .catch(error => {
@@ -699,7 +693,7 @@ function createPredictionShort(
     tr.add_type_operation("limit_order_create", order.toObject());
 
     return walletDb.process_transaction(tr, null, true)
-        .then(result => {
+        .then(() => {
             return true;
         })
         .catch(error => {
@@ -755,7 +749,9 @@ function cancelLimitOrders(accountID, orderIDs, fallbackFeeAssets = "1.3.0") {
         balances[fee_asset_id] -= fees[fee_asset_id];
         // check balance
         Object.keys(balances).forEach(key => {
-            if (balances[key] < 0) throw "Insufficient balance: " + key;
+            if (balances[key] < 0) {
+                throw "Insufficient balance: " + key;
+            }
         });
         tr.add_type_operation("limit_order_cancel", {
             fee: {
@@ -856,7 +852,7 @@ function getMarketStatsInterval(
     quote,
     refresh = false
 ) {
-    actions.getMarketStats(base, quote, refresh);
+    getMarketStats(base, quote, refresh);
     const {marketName} = marketUtils.getMarketName(base, quote);
     if (marketStatsIntervals[marketName]) {
         return actions.clearMarketStatsInInterval.bind(this, marketName);

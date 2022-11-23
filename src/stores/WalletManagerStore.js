@@ -1,4 +1,4 @@
-import { createStore } from 'solid-js/store';
+import { createStore } from "solid-js/store";
 import {ChainStore} from "bitsharesjs";
 import Immutable from "immutable";
 
@@ -6,10 +6,10 @@ import iDB from "idb-instance";
 import PrivateKeyActions from "actions/PrivateKeyActions";
 import WalletActions from "actions/WalletActions";
 
-import { useWalletDb } from './WalletDb';
-import { useAccountRefsStore } from './AccountRefsStore';
-import { useBalanceClaimActiveStore } from './BalanceClaimActiveStore';
-import { useCachedPropertyStore } from './CachedPropertyStore';
+import { useWalletDb } from "./WalletDb";
+import { useAccountRefsStore } from "./AccountRefsStore";
+import { useBalanceClaimActiveStore } from "./BalanceClaimActiveStore";
+import { useCachedPropertyStore } from "./CachedPropertyStore";
 
 const [walletDb, setWalletDb] = useWalletDb();
 const [accountRefsStore, setAccountRefsStore] = useAccountRefsStore();
@@ -105,8 +105,8 @@ const [walletManagerStore, setWalletManagerStore] = createStore({
         });
 
         if (resolve) {
-            resolve(p)
-        };
+            resolve(p);
+        }
     },
     /** Used by the components during a pending wallet create. */
     setNewWallet(new_wallet) {
@@ -144,8 +144,8 @@ const [walletManagerStore, setWalletManagerStore] = createStore({
                     : undefined;
                 iDB.root.setProperty("current_wallet", current_wallet);
                 if (current_wallet) {
-                    WalletActions.setWallet(current_wallet)
-                };
+                    WalletActions.setWallet(current_wallet);
+                }
             }
             setWalletManagerStore("current_wallet", current_wallet);
             setWalletManagerStore("wallet_names", wallet_names);

@@ -1,4 +1,4 @@
-import { createStore } from 'solid-js/store'
+import { createStore } from "solid-js/store";
 import Immutable from "immutable";
 import {ChainStore, key} from "bitsharesjs";
 import BrainkeyActions from "actions/BrainkeyActions";
@@ -111,7 +111,7 @@ class BrainkeyStoreImpl extends BaseStore {
     deriveKeys(brnkey = this.state.brnkey) {
         var sequence = this.derived_keys.length; // next sequence (starting with 0)
         var private_key = key.get_brainPrivateKey(brnkey, sequence);
-        var derived_key = derivedKeyStruct(private_key);
+        var derived_key = _derivedKeyStruct(private_key);
         this.derived_keys.push(derived_key);
         if (this.derived_keys.length < DERIVIED_BRAINKEY_POOL_SIZE)
             this.deriveKeys(brnkey);
@@ -139,7 +139,7 @@ class BrainkeyStoreImpl extends BaseStore {
     }
 }
 
-function derivedKeyStruct(private_key) {
+function _derivedKeyStruct(private_key) {
     var public_string = private_key.toPublicKey().toPublicKeyString();
     var derived_key = {private_key, public_string};
     return derived_key;

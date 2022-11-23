@@ -2,9 +2,9 @@ import iDB from "idb-instance";
 import Immutable from "immutable";
 import {ChainStore} from "bitsharesjs";
 import {Apis} from "bitsharesjs-ws";
-import { createStore } from 'solid-js/store'
+import { createStore } from "solid-js/store";
 
-import { usePrivateKeyStore } from '~/stores/PrivateKeyStore';
+import { usePrivateKeyStore } from "~/stores/PrivateKeyStore";
 const [privateKeyStore, setPrivateKeyStore] = usePrivateKeyStore();
 
 import chainIds from "chain/chainIds";
@@ -30,16 +30,16 @@ const [accountRefsStore, setAccountRefsStore] = createStore({
             chainstore_account_ids_by_key: null,
             chainstore_account_ids_by_account: null,
             no_account_refs: Immutable.Set()
-        })
+        });
     
         let account_refs = new Immutable.Map();
         account_refs = account_refs.set(_getChainId(), Immutable.Set());
-        setAccountRefsStore('account_refs', account_refs)
+        setAccountRefsStore("account_refs", account_refs);
         
 
         return _loadNoAccountRefs()
             .then(no_account_refs => {
-                setAccountRefsStore('no_account_refs', no_account_refs)
+                setAccountRefsStore("no_account_refs", no_account_refs);
             })
             .then(() => accountRefsStore.chainStoreUpdate());
     },
@@ -54,7 +54,7 @@ const [accountRefsStore, setAccountRefsStore] = createStore({
         setAccountRefsStore({
             chainstore_account_ids_by_key: ChainStore.account_ids_by_key,
             chainstore_account_ids_by_account: ChainStore.account_ids_by_account
-        })
+        });
 
         accountRefsStore.checkPrivateKeyStore();
     },
@@ -64,12 +64,12 @@ const [accountRefsStore, setAccountRefsStore] = createStore({
         privateKeyStore.keys.keySeq()
             .forEach(pubkey => {
                 if (no_account_refs.has(pubkey)) {
-                    return
-                };
+                    return;
+                }
                 let refs = ChainStore.getAccountRefsOfKey(pubkey);
                 if (refs === undefined) {
-                    return
-                };
+                    return;
+                }
                 if (!refs.size) {
                     // Performance optimization...
                     // There are no references for this public key, this is going
@@ -99,23 +99,23 @@ const [accountRefsStore, setAccountRefsStore] = createStore({
         temp_account_refs.forEach(account => {
             let refs = ChainStore.getAccountRefsOfAccount(account);
             if (refs === undefined) {
-                return
-            };
+                return;
+            }
             if (!refs.size) {
-                return
-            };
+                return;
+            }
             temp_account_refs = temp_account_refs.add(refs.valueSeq());
         });
         temp_account_refs = temp_account_refs.flatten();
         if (!accountRefsStore.getAccountRefs().equals(temp_account_refs)) {
             setAccountRefsStore(
-                'account_refs',
+                "account_refs",
                 accountRefsStore.account_refs.set(_getChainId(), temp_account_refs)
             );
             // console.log("AccountRefsStore account_refs", accountRefsStore.account_refs.size);
         }
         if (!accountRefsStore.no_account_refs.equals(no_account_refs)) {
-            setAccountRefsStore('no_account_refs', no_account_refs);
+            setAccountRefsStore("no_account_refs", no_account_refs);
             _saveNoAccountRefs(no_account_refs);
         }
     }
@@ -136,7 +136,7 @@ function _getChainId() {
 function _loadNoAccountRefs() {
     let chain_id = Apis.instance().chain_id;
     let refKey = `no_account_refs${
-        !!chain_id ? "_" + chain_id.substr(0, 8) : ""
+        chain_id ? "_" + chain_id.substr(0, 8) : ""
     }`;
     return iDB.root.getProperty(refKey, []).then(array => Immutable.Set(array));
 }
@@ -145,7 +145,7 @@ function _saveNoAccountRefs(no_account_refs) {
     let array = [];
     let chain_id = Apis.instance().chain_id;
     let refKey = `no_account_refs${
-        !!chain_id ? "_" + chain_id.substr(0, 8) : ""
+        chain_id ? "_" + chain_id.substr(0, 8) : ""
     }`;
     for (let pubkey of no_account_refs) array.push(pubkey);
     iDB.root.setProperty(refKey, array);

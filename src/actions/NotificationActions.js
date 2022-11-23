@@ -2,8 +2,12 @@ import { useNotificationStore } from "~/stores/NotificationStore";
 const [notificationStore, setNotificationStore] = useNotificationStore();
 
 var normalize = (notification, level) => {
-    if (typeof notification == "string") notification = {message: notification};
-    if (level) notification.level = level;
+    if (typeof notification == "string") {
+        notification = {message: notification};
+    }
+    if (level) {
+        notification.level = level;
+    }
     // Adjust the css position for notices.. bottom messages can't be seen
     //if(notification.level === "success" && ! notification.position)
     //    notification.position = 'br' //bottom right

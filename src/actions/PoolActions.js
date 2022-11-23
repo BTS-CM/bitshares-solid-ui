@@ -85,32 +85,16 @@ function createPool(
         operationJSON.bitasset_opts = bitasset_opts;
     }
     tr.add_type_operation("asset_create", operationJSON);
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(result => {
-                // console.log("pool create result:", result);
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log("----- createAsset error ----->", error);
-                dispatch(false);
-            });
-    };
-}
-
-function create_liquidity_pool(
-    my_username,
-    asset_a,
-    asset_b,
-    share_asset,
-    taker_fee_percent,
-    withdrawal_fee_percent
-){
-
-
+    return WalletDb.process_transaction(tr, null, true)
+        .then(() => {
+            // console.log("pool create result:", result);
+            console.log("pool create success");
+        })
+        .catch(error => {
+            console.log("----- createAsset error ----->", error);
+        });
 }
 
 export {
-    createPool,
-    create_liquidity_pool
+    createPool
 };

@@ -1,5 +1,5 @@
 import Immutable from "immutable";
-import { createStore } from 'solid-js/store'
+import { createStore } from "solid-js/store";
 import ls from "common/localStorage";
 import {allowedGateway} from "../branding";
 
@@ -130,8 +130,8 @@ const [gatewayStore, setGatewayStore] = createStore({
         const onChainConfig = gatewayStore.onChainGatewayConfig;
 
         if (!onChainConfig || !onChainConfig.gateways) {
-            return undefined
-        };
+            return undefined;
+        }
 
         return onChainConfig.gateways[gatewayKey];
     },

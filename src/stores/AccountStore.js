@@ -377,7 +377,6 @@ const [accountStore, setAccountStore] = createStore({
         });
         accountStore.tryToSetCurrentAccount();
     },
-
     /**
         @todo "partial"
         @return string "none", "full", "partial" or undefined (pending a chain store lookup)
@@ -523,10 +522,13 @@ const [accountStore, setAccountStore] = createStore({
             };
         }
 
-        if (account["toJS"]) account = account.toJS();
+        if (account["toJS"]) {
+            account = account.toJS()
+        };
 
-        if (account.name == "" || accountStore.myActiveAccounts.get(account.name))
+        if (account.name == "" || accountStore.myActiveAccounts.get(account.name)) {
             return Promise.resolve();
+        }
 
         if (!ChainValidation.is_account_name(account.name)) {
             throw new Error("Invalid account name: " + account.name);

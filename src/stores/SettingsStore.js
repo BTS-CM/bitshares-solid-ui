@@ -1,4 +1,4 @@
-import { createStore } from 'solid-js/store';
+import { createStore } from "solid-js/store";
 import Immutable, {fromJS} from "immutable";
 import ls from "common/localStorage";
 import {Apis} from "bitsharesjs-ws";
@@ -18,7 +18,6 @@ let ss = ls(STORAGE_KEY);
 
 const [settingsStore, setSettingsStore] = createStore({
     initDone: false,
-    defaultSettings: Immutable.Map({_getDefaultSetting()}),
     settings: Immutable.Map(_getSetting()),
     // deprecated to support existing code
     defaultSettings: Immutable.Map(_getDefaultSetting()),
@@ -645,7 +644,7 @@ function _getSetting() {
     if (!ss.has("settings_v4") && new Date() < support_v3_until) {
         // ensure backwards compatibility of settings version
         let settings_v3 = ss.get("settings_v3");
-        if (!!settings_v3) {
+        if (settings_v3) {
             if (settings_v3["themes"] === "olDarkTheme") {
                 settings_v3["themes"] = "midnightTheme";
             }
@@ -731,7 +730,7 @@ function _getApiServerChoices(choices, savedChoices) {
     // add any apis that the user added and update changes
     savedChoices.apiServer.forEach(api => {
         let found = apiServer.find(a => a.url == api.url);
-        if (!!found) {
+        if (found) {
             _injectApiConfiguration(found, api);
         } else {
             if (!api.default) {

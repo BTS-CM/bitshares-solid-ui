@@ -10,7 +10,9 @@ class GdexCache {
 
     getUserInfo(user_account) {
         let user_info = session.get(user_account, null);
-        if (!user_info) return null;
+        if (!user_info) {
+            return null;
+        }
         let cur_time = Math.floor(new Date().getTime() / 1000);
         // User info expire time set to 1 day
         if (Math.abs(user_info.ctime - cur_time) > this.day) {
@@ -33,7 +35,9 @@ class GdexCache {
     }
 
     delUserInfo(user_account) {
-        if (session.has(user_account)) session.del(user_account);
+        if (session.has(user_account)) {
+            session.del(user_account);
+        }
     }
 
     getIndexForDepositKey(account_name, input_coin_type, output_coin_type) {
@@ -56,7 +60,9 @@ class GdexCache {
         );
         let deposit_keys = session.get("deposit_keys", {});
         let result = deposit_keys[index] || null;
-        if (!result) return;
+        if (!result) {
+            return;
+        }
         if (result.address) {
             // cache deposit address for 1 week
             let cur_time = Math.floor(new Date().getTime() / 1000);
@@ -101,7 +107,9 @@ class GdexCache {
             output_coin_type
         );
         let deposit_keys = session.get("deposit_keys", null);
-        if (!deposit_keys) return;
+        if (!deposit_keys) {
+            return;
+        }
         if (!deposit_keys[index]) {
             // Deposit key is empty, no need to clear
             return;

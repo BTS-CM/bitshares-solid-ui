@@ -1,4 +1,4 @@
-import { createStore } from 'solid-js/store'
+import { createStore } from "solid-js/store";
 import * as CreditOfferActions from "../actions/CreditOfferActions";
 
 const [creditOfferStore, setCreditOfferStore] = createStore({
@@ -101,7 +101,7 @@ const [creditOfferStore, setCreditOfferStore] = createStore({
                     break;
                 case "create":
                 default:
-                    setCreditOfferStore('listByOwner', creditOfferStore.listByOwner.concat(result.list));
+                    setCreditOfferStore("listByOwner", creditOfferStore.listByOwner.concat(result.list));
                     break;
             }
 
@@ -140,7 +140,7 @@ const [creditOfferStore, setCreditOfferStore] = createStore({
                     setCreditOfferStore(
                         "dealsByBorrower",
                         creditOfferStore.dealsByBorrower.concat(result.list)
-                    )
+                    );
                     break;
             }
             if (result.end === false) {

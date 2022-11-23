@@ -42,7 +42,9 @@ export function fetchTradingPairs(
                 fetchCache[key] = result;
                 res(result);
                 delete fetchInProgess[key];
-                if (!clearIntervals[key]) setCacheClearTimer(key);
+                if (!clearIntervals[key]) {
+                    setCacheClearTimer(key);
+                }
             })
             .catch(rej);
     });
@@ -146,7 +148,7 @@ export function getBackedCoins({allCoins, tradingPairs, backer}) {
     let coins_by_type = {};
 
     // Backer has no coinType == backingCoinType but uses single wallet style
-    if (!!gatewayStatus.singleWallet) {
+    if (gatewayStatus.singleWallet) {
         allCoins.forEach(
             coin_type => (coins_by_type[coin_type.backingCoinType] = coin_type)
         );
@@ -158,8 +160,9 @@ export function getBackedCoins({allCoins, tradingPairs, backer}) {
 
     let allowed_outputs_by_input = {};
     tradingPairs.forEach(pair => {
-        if (!allowed_outputs_by_input[pair.inputCoinType])
+        if (!allowed_outputs_by_input[pair.inputCoinType]) {
             allowed_outputs_by_input[pair.inputCoinType] = {};
+        }
         allowed_outputs_by_input[pair.inputCoinType][
             pair.outputCoinType
         ] = true;
@@ -186,12 +189,12 @@ export function getBackedCoins({allCoins, tradingPairs, backer}) {
 
             backedCoins.push({
                 name: outputCoin.name,
-                intermediateAccount: !!gatewayStatus.intermediateAccount
+                intermediateAccount: gatewayStatus.intermediateAccount
                     ? gatewayStatus.intermediateAccount
                     : outputCoin.intermediateAccount,
                 gateFee: outputCoin.gateFee || outputCoin.transactionFee,
                 walletType: outputCoin.walletType,
-                backingCoinType: !!gatewayStatus.singleWallet
+                backingCoinType: gatewayStatus.singleWallet
                     ? inputCoin.backingCoinType.toUpperCase()
                     : outputCoin.walletSymbol,
                 minAmount: outputCoin.minAmount || 0,
@@ -213,7 +216,9 @@ export function validateAddress({
     output_coin_type = null,
     method = null
 }) {
-    if (!newAddress) return new Promise(res => res());
+    if (!newAddress) {
+        return new Promise(res => res());
+    }
 
     if (!method || method == "GET") {
         url +=
@@ -254,7 +259,9 @@ export function validateAddress({
 let _conversionCache = {};
 export function getConversionJson(inputs) {
     const {input_coin_type, output_coin_type, url, account_name} = inputs;
-    if (!input_coin_type || !output_coin_type) return Promise.reject();
+    if (!input_coin_type || !output_coin_type) {
+        return Promise.reject();
+    }
     const body = JSON.stringify({
         inputCoinType: input_coin_type,
         outputCoinType: output_coin_type,
@@ -266,8 +273,9 @@ export function getConversionJson(inputs) {
     const _cacheString =
         url + input_coin_type + output_coin_type + account_name;
     return new Promise((resolve, reject) => {
-        if (_conversionCache[_cacheString])
+        if (_conversionCache[_cacheString]) {
             return resolve(_conversionCache[_cacheString]);
+        }
         fetch(url + "/simple-api/initiate-trade", {
             method: "post",
             headers: new Headers({

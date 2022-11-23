@@ -8,7 +8,7 @@ import * as WalletActions from "actions/WalletActions";
 import useAccountStore from "stores/AccountStore";
 const [accountStore, setAccountStore] = useAccountStore();
 
-let accountSearch = {};
+let accountSearchCache = {};
 
 /**
  *  @brief  Actions that modify linked accounts
@@ -23,11 +23,11 @@ let accountSearch = {};
  */
 function accountSearch(start_symbol, limit = 50) {
     let uid = `${start_symbol}_${limit}}`;
-    if (!accountSearch[uid]) {
-        accountSearch[uid] = true;
+    if (!accountSearchCache[uid]) {
+        accountSearchCache[uid] = true;
         return lookupAccounts(start_symbol, limit).then(
             result => {
-                accountSearch[uid] = false;
+                accountSearchCache[uid] = false;
                 accountStore.onAccountSearch({accounts: result, searchTerm: start_symbol});
             }
         );
@@ -90,10 +90,8 @@ function transfer(
             memo,
             propose_account,
             fee_asset_id
-        }).then(result => {
-            // console.log( "transfer result: ", result )
-
-            dispatch(result);
+        }).then(() => {
+            console.log("transfer success");
         });
     } catch (error) {
         console.log(
@@ -110,7 +108,7 @@ function transfer(
  *  This method exists ont he AccountActions because after creating the account via the wallet, the account needs
  *  to be linked and added to the local database.
  */
-    function createAccount(
+function createAccount(
     account_name,
     registrar,
     referrer,
@@ -145,7 +143,7 @@ function createAccountWithPassword(
         referrer_percent,
         refcode
     ).then(() => {
-        dispatch(account_name);
+        accountStore.onCreateAccount(account_name);
         return account_name;
     });
 }
@@ -154,7 +152,7 @@ function createAccountWithPassword(
  *  TODO:  This is a function of the WalletApi and has no business being part of AccountActions, the account should already
  *  be linked.
  */
-    function upgradeAccount(account_id, lifetime) {
+function upgradeAccount(account_id, lifetime) {
     // Set the fee asset to use
     let fee_asset_id = getFinalFeeAsset(
         account_id,
@@ -202,14 +200,13 @@ function createCommittee({url, account}) {
     });
     return process_transaction(tr, null, true)
         .then(() => {
-            dispatch(true);
+            console.log("createCommittee success");
         })
         .catch(error => {
             console.log(
                 "----- Add Committee member error ----->",
                 error
             );
-            dispatch(false);
         });
 }
 
@@ -229,11 +226,10 @@ function createWitness({url, account, signingKey}) {
     
     return process_transaction(tr, null, true)
         .then(() => {
-            dispatch(true);
+            console.log("createWitness success");
         })
         .catch(error => {
             console.log("----- Create witness error ----->", error);
-            dispatch(false);
         });
 }
 

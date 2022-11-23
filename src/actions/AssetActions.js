@@ -5,7 +5,9 @@ import big from "bignumber.js";
 import {gatewayPrefixes} from "common/gateways";
 import utils from "common/utils";
 import WalletApi from "api/WalletApi";
-import WalletDb from "stores/WalletDb";
+
+import { useWalletDb } from "~/stores/WalletDb";
+const [walletDb, setWalletDb] = useWalletDb();
 
 import {useAssetStore} from "stores/AssetStore";
 const [assetStore, setAssetStore] = useAssetStore();
@@ -35,16 +37,13 @@ function publishFeed({publisher, asset_id, mcr, mssr, feedPrice, cer}) {
         }
     });
 
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(() => {
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log("----- fundPool error ----->", error);
-                dispatch(false);
-            });
-    };
+    return walletDb.process_transaction(tr, null, true)
+        .then(() => {
+            console.log("----- publishFeed success ----->");
+        })
+        .catch(error => {
+            console.log("----- fundPool error ----->", error);
+        });
 }
 
 function fundPool(account_id, core, asset, amount) {
@@ -60,16 +59,13 @@ function fundPool(account_id, core, asset, amount) {
         amount: amount * precision
     });
 
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(() => {
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log("----- fundPool error ----->", error);
-                dispatch(false);
-            });
-    };
+    return walletDb.process_transaction(tr, null, true)
+        .then(() => {
+            console.log("----- fundPool success ----->");
+        })
+        .catch(error => {
+            console.log("----- fundPool error ----->", error);
+        });
 }
 
 function claimPool(asset, amount) {
@@ -83,16 +79,14 @@ function claimPool(asset, amount) {
         asset_id: asset.get("id"),
         amount_to_claim: amount.toObject()
     });
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(() => {
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log("----- claimPool error ----->", error);
-                dispatch(false);
-            });
-    };
+    
+    return walletDb.process_transaction(tr, null, true)
+        .then(() => {
+            console.log("----- claimPool success ----->");
+        })
+        .catch(error => {
+            console.log("----- claimPool error ----->", error);
+        });
 }
 
 function bidCollateral(account_id, core, asset, coll, debt) {
@@ -117,16 +111,13 @@ function bidCollateral(account_id, core, asset, coll, debt) {
         extensions: []
     });
 
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(() => {
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log("----- collateralBid error ----->", error);
-                dispatch(false);
-            });
-    };
+    return walletDb.process_transaction(tr, null, true)
+        .then(() => {
+            console.log("----- bidCollateral success ----->");
+        })
+        .catch(error => {
+            console.log("----- collateralBid error ----->", error);
+        });
 }
 
 function updateOwner(asset, new_issuer_id) {
@@ -140,16 +131,14 @@ function updateOwner(asset, new_issuer_id) {
         asset_to_update: asset.id,
         new_issuer: new_issuer_id
     });
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(() => {
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log("----- updateOwner error ----->", error);
-                dispatch(false);
-            });
-    };
+
+    return walletDb.process_transaction(tr, null, true)
+        .then(() => {
+            console.log("----- updateOwner success ----->");
+        })
+        .catch(error => {
+            console.log("----- updateOwner error ----->", error);
+        });
 }
 
 function updateFeedProducers(account, asset, producers) {
@@ -164,19 +153,16 @@ function updateFeedProducers(account, asset, producers) {
         new_feed_producers: producers
     });
 
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(() => {
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log(
-                    "----- updateFeedProducers error ----->",
-                    error
-                );
-                dispatch(false);
-            });
-    };
+    return walletDb.process_transaction(tr, null, true)
+        .then(() => {
+            console.log("----- updateFeedProducers success ----->");
+        })
+        .catch(error => {
+            console.log(
+                "----- updateFeedProducers error ----->",
+                error
+            );
+        });
 }
 
 function claimPoolFees(account_id, asset, amount) {
@@ -193,16 +179,14 @@ function claimPoolFees(account_id, asset, amount) {
             amount: amount.getAmount()
         }
     });
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(() => {
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log("----- claimFees error ----->", error);
-                dispatch(false);
-            });
-    };
+
+    return walletDb.process_transaction(tr, null, true)
+        .then(() => {
+            console.log("----- claimPoolFees success ----->");
+        })
+        .catch(error => {
+            console.log("----- claimFees error ----->", error);
+        });
 }
 
 function assetGlobalSettle(asset, account_id, price) {
@@ -217,19 +201,17 @@ function assetGlobalSettle(asset, account_id, price) {
         asset_to_settle: asset.id,
         settle_price: price
     });
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(() => {
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log(
-                    "[AssetActions.js:223] ----- assetGlobalSettle error ----->",
-                    error
-                );
-                dispatch(false);
-            });
-    };
+
+    return walletDb.process_transaction(tr, null, true)
+        .then(() => {
+            console.log("----- assetGlobalSettle success ----->");
+        })
+        .catch(error => {
+            console.log(
+                "[AssetActions.js:223] ----- assetGlobalSettle error ----->",
+                error
+            );
+        });
 }
 
 function createAsset(
@@ -312,18 +294,13 @@ function createAsset(
         operationJSON.bitasset_opts = bitasset_opts;
     }
     tr.add_type_operation("asset_create", operationJSON);
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(result => {
-                // console.log("asset create result:", result);
-                // this.dispatch(account_id);
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log("----- createAsset error ----->", error);
-                dispatch(false);
-            });
-    };
+    return walletDb.process_transaction(tr, null, true)
+        .then(() => {
+            console.log("asset created");
+        })
+        .catch(error => {
+            console.log("----- createAsset error ----->", error);
+        });
 }
 
 function updateAsset(
@@ -486,10 +463,9 @@ function updateAsset(
         });
     }
 
-    return WalletDb.process_transaction(tr, null, true)
+    return walletDb.process_transaction(tr, null, true)
         .then(result => {
             console.log("asset create result:", result);
-            // this.dispatch(account_id);
             return true;
         })
         .catch(error => {
@@ -548,8 +524,8 @@ function getAssetList(start, count, includeGateways = false) {
                 let bitAssetPromise =
                     bitAssetIDS.length > 0
                         ? Apis.instance()
-                                .db_api()
-                                .exec("get_objects", [bitAssetIDS])
+                            .db_api()
+                            .exec("get_objects", [bitAssetIDS])
                         : null;
 
                 Promise.all([dynamicPromise, bitAssetPromise]).then(
@@ -602,7 +578,7 @@ function getAssetsByIssuer(issuer, count, start, includeGateways = false) {
                 assets.forEach(asset => {
                     ChainStore._updateObject(asset, false);
                     dynamicIDS.push(asset.dynamic_asset_data_id);
-                    });
+                });
                 let dynamicPromise = Apis.instance()
                     .db_api()
                     .exec("get_objects", [dynamicIDS]);
@@ -678,18 +654,15 @@ function reserveAsset(amount, assetId, payer) {
         payer,
         extensions: []
     });
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(() => {
-                dispatch(true);
-                return true;
-            })
-            .catch(error => {
-                dispatch(false);
-                console.log("----- reserveAsset error ----->", error);
-                return false;
-            });
-    };
+
+    return walletDb.process_transaction(tr, null, true)
+        .then(() => {
+            return true;
+        })
+        .catch(error => {
+            console.log("----- reserveAsset error ----->", error);
+            return false;
+        });
 }
 
 export {

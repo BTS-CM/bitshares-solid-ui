@@ -46,7 +46,7 @@ const _createPaperWalletAsPDF = function(
         let privateKey = null;
         if (!locked) {
             privateKey = WalletDb.getPrivateKey(publicKey);
-            if (!!privateKey) {
+            if (privateKey) {
                 privateKey = privateKey.toWif();
             }
         }
@@ -59,7 +59,7 @@ const _createPaperWalletAsPDF = function(
         pdf.rect(textMarginLeft - 1, rowHeight + 24, textWidth, textHeight);
         if (!locked) {
             pdf.text("PrivateKey", textMarginLeft, rowHeight + 40);
-            if (!!privateKey) {
+            if (privateKey) {
                 pdf.text(privateKey, textMarginLeft, rowHeight + 50);
             } else {
                 pdf.text("Not found.", textMarginLeft, rowHeight + 50);

@@ -97,7 +97,9 @@ function checkFeeStatusAsync({
                     feeAsset
                 ] = result;
                 let hasBalance = false;
-                if (feeID === "1.3.0") feeAsset = coreAsset;
+                if (feeID === "1.3.0") {
+                    feeAsset = coreAsset;
+                }
                 let coreBalanceID = account.getIn(["balances", "1.3.0"]),
                     feeBalanceID = account.getIn(["balances", feeID]);
 
@@ -179,8 +181,9 @@ function checkFeeStatusAsync({
                     if (
                         feeBalance &&
                         feeBalance.get("balance") >= fee.getAmount()
-                    )
+                    ) {
                         hasBalance = true;
+                    }
 
                     asyncCache[key].queue.forEach(promise => {
                         promise.res({
@@ -218,9 +221,12 @@ function estimateFee(op_type, options, globalObject, data = {}) {
      * The actual content doesn't matter, only the length of it, so we use a
      * string of equal length to improve caching
      */
-    if (!!data.content)
+    if (data.content) {
         data.content = new Array(data.content.length + 1).join("a");
-    if (!globalObject) return 0;
+    }
+    if (!globalObject) {
+        return 0;
+    }
     const cacheKey = op_type + JSON.stringify(options) + JSON.stringify(data);
     if (_feeCache[cacheKey]) {
         // console.timeEnd("estimateFee");
@@ -264,7 +270,9 @@ function estimateFee(op_type, options, globalObject, data = {}) {
                 if (data.type === "memo" && !!data.content) {
                     /* Dummy priv key */
                     let pKey = _privKey || PrivateKey.fromWif(privKey);
-                    if (_privKey) _privKey = pKey;
+                    if (_privKey) {
+                        _privKey = pKey;
+                    }
                     let memoFromKey =
                         "BTS6B1taKXkDojuC1qECjvC7g186d8AdeGtz8wnqWAsoRGC6RY8Rp";
 
@@ -318,11 +326,16 @@ function estimateFee(op_type, options, globalObject, data = {}) {
 }
 
 function checkBalance(amount, sendAsset, feeAmount, balance) {
-    if (!amount) return null;
-    if (typeof amount === "string")
+    if (!amount) {
+        return null;
+    }
+    if (typeof amount === "string") {
         amount = parseFloat(String.prototype.replace.call(amount, /,/g, ""));
+    }
 
-    if (!balance || balance.get("balance") === 0) return false;
+    if (!balance || balance.get("balance") === 0) {
+        return false;
+    }
 
     let sendAmount = new Asset({
         asset_id: sendAsset.get("id"),

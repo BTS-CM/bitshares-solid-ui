@@ -1,3 +1,4 @@
+import { For } from "solid-js";
 import Translate from "react-translate-component";
 import counterpart from "counterpart";
 import {Link} from "react-router-dom";
@@ -14,14 +15,16 @@ function _getCoinToGatewayMapping(boolCheck = "depositAllowed") {
             // let symbol = coin.backingCoinType || coin.symbol;
             let symbolOnly = coin.symbol.split(".").pop();
 
-            if (!coinToGatewayMapping[symbolOnly])
+            if (!coinToGatewayMapping[symbolOnly]) {
                 coinToGatewayMapping[symbolOnly] = [];
+            }
 
             if (
                 coin[boolCheck] &&
                 (gateway == "OPEN" ? coin.isAvailable : true)
-            )
+            ) {
                 coinToGatewayMapping[symbolOnly].push(gatewayName);
+            }
         });
     });
 
@@ -74,8 +77,10 @@ function _onAssetSelected(
                         let symbol = symbolSplit[1];
                         let gateway = symbolSplit[0];
 
-                        if (!balancesByAssetAndGateway[symbol])
+                        if (!balancesByAssetAndGateway[symbol]) {
                             balancesByAssetAndGateway[symbol] = {};
+                        }
+
                         balancesByAssetAndGateway[symbol][
                             gateway
                         ] = balance.get("balance");
@@ -101,9 +106,12 @@ function _onAssetSelected(
                     let balance =
                         balancesByAssetAndGateway[selectedAsset][gateway];
 
-                    if (!greatestBalance) greatestBalance = balance;
-                    if (!greatestBalanceGateway)
+                    if (!greatestBalance) {
+                        greatestBalance = balance;
+                    }
+                    if (!greatestBalanceGateway) {
                         greatestBalanceGateway = gateway;
+                    }
                 }
 
                 selectedGateway =
@@ -120,6 +128,7 @@ function _onAssetSelected(
         }
     }
 
+    // TODO: Replace the following with solidjs store equivalent
     this.setState({
         selectedAsset,
         selectedGateway,
@@ -183,16 +192,20 @@ function gatewaySelector(args) {
     });
 
     gateways.sort((a, b) => {
-        if (a.name > b.name) return 1;
-        else if (a.name < b.name) return -1;
-        else return 0;
+        if (a.name > b.name) {
+            return 1;
+        } else if (a.name < b.name) {
+            return -1;
+        } else {
+            return 0;
+        }
     });
 
     return (
         <div>
-            <div className="no-margin no-padding">
-                <section className="block-list">
-                    <label className="left-label">
+            <div class="no-margin no-padding">
+                <section class="block-list">
+                    <label class="left-label">
                         <Translate content="modal.deposit_withdraw.gateway" />
                         {selectedGateway ? (
                             <Link to={supportLink} style={{cursor: "pointer"}}>
@@ -200,19 +213,19 @@ function gatewaySelector(args) {
                                 <Icon type="question-circle" />
                             </Link>
                         ) : null}
-                        <span className="floatRight error-msg">
+                        <span class="floatRight error-msg">
                             {!error &&
                             selectedGateway &&
                             gatewayStatus[selectedGateway] &&
                             !gatewayStatus[selectedGateway].options.enabled ? (
-                                <Translate
-                                    content="modal.deposit_withdraw.disabled"
-                                    with={{
-                                        gateway:
+                                    <Translate
+                                        content="modal.deposit_withdraw.disabled"
+                                        with={{
+                                            gateway:
                                             gatewayStatus[selectedGateway].name
-                                    }}
-                                />
-                            ) : null}
+                                        }}
+                                    />
+                                ) : null}
                             {error ? (
                                 <Translate content="modal.deposit_withdraw.wallet_error" />
                             ) : null}
@@ -222,7 +235,7 @@ function gatewaySelector(args) {
                         </span>
                     </label>
 
-                    <div className="inline-label input-wrapper">
+                    <div class="inline-label input-wrapper">
                         <Select
                             optionLabelProp={"value"}
                             onChange={onGatewayChanged}
@@ -232,7 +245,7 @@ function gatewaySelector(args) {
                             value={selectedGateway}
                             style={{width: "100%"}}
                         >
-                            {gateways.map(g => {
+                            <For each={gateways}>{g => {
                                 if (g.options.enabled) {
                                     return (
                                         <Select.Option
@@ -247,21 +260,21 @@ function gatewaySelector(args) {
                                             balancesByAssetAndGateway[
                                                 selectedAsset
                                             ][g.id] ? (
-                                                <span style={{float: "right"}}>
-                                                    {utils.format_asset(
-                                                        balancesByAssetAndGateway[
-                                                            selectedAsset
-                                                        ][g.id][0],
-                                                        balancesByAssetAndGateway[
-                                                            selectedAsset
-                                                        ][g.id][1]
-                                                    )}
-                                                </span>
-                                            ) : null}
+                                                    <span style={{float: "right"}}>
+                                                        {utils.format_asset(
+                                                            balancesByAssetAndGateway[
+                                                                selectedAsset
+                                                            ][g.id][0],
+                                                            balancesByAssetAndGateway[
+                                                                selectedAsset
+                                                            ][g.id][1]
+                                                        )}
+                                                    </span>
+                                                ) : null}
                                         </Select.Option>
                                     );
                                 }
-                            })}
+                            }}</For>
                         </Select>
                     </div>
                 </section>

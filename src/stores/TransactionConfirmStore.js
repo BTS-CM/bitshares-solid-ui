@@ -1,7 +1,4 @@
-import { createStore } from 'solid-js/store';
-//import * as TransactionConfirmActions from "actions/TransactionConfirmActions";
-
-//this.bindActions(TransactionConfirmActions);
+import { createStore } from "solid-js/store";
 
 const [transactionConfirmStore, setTransactionConfirmStore] = createStore({
     transaction: null,
@@ -45,7 +42,7 @@ const [transactionConfirmStore, setTransactionConfirmStore] = createStore({
     },
     onBroadcast(payload) {
         //console.log("-- TransactionConfirmStore.onBroadcast -->", transactionConfirmStore);
-        this.setState(payload);
+        setTransactionConfirmStore({...payload});
         if (payload.broadcasted_transaction) {
             setTransactionConfirmStore(
                 "broadcasted_transaction",
@@ -53,7 +50,7 @@ const [transactionConfirmStore, setTransactionConfirmStore] = createStore({
             );
         }
     },
-    onWasBroadcast(res) {
+    onWasBroadcast() {
         //console.log("-- TransactionConfirmStore.onWasBroadcast -->", transactionConfirmStore);
         setTransactionConfirmStore({
             broadcasting: false,

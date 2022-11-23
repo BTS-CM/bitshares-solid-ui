@@ -1,4 +1,4 @@
-import { createStore } from 'solid-js/store'
+import { createStore } from "solid-js/store";
 import {hash, PublicKey} from "bitsharesjs";
 
 const [backupStore, setBackupStore] = createStore({
@@ -10,7 +10,7 @@ const [backupStore, setBackupStore] = createStore({
     public_key: null,
     wallet_object: null,
     setWalletObjct(wallet_object) {
-        setBackupStore('wallet_object', wallet_object);
+        setBackupStore("wallet_object", wallet_object);
     },
     onReset() {
         setBackupStore({
@@ -41,8 +41,8 @@ const [backupStore, setBackupStore] = createStore({
         var sha1 = hash.sha1(contents).toString("hex");
         var size = contents.length;
         if (!public_key) {
-            public_key = _getBackupPublicKey(contents)
-        };
+            public_key = _getBackupPublicKey(contents);
+        }
         setBackupStore({
             name: name,
             contents: contents,

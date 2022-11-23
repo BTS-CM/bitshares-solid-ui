@@ -1,9 +1,10 @@
-import {ChainStore, hash, FetchChainObjects} from "bitsharesjs";
-//import {Apis} from "bitsharesjs-ws";
+import {hash} from "bitsharesjs";
 import WalletApi from "api/WalletApi";
-import WalletDb from "stores/WalletDb";
 
-const calculateHash = (cipher, preimage) => {
+import { useWalletDb } from "~/stores/WalletDb";
+const [walletDb, setWalletDb] = useWalletDb();
+
+const _calculateHash = (cipher, preimage) => {
     let preimage_hash_calculated = null;
     switch (cipher) {
         case "sha256":
@@ -16,7 +17,6 @@ const calculateHash = (cipher, preimage) => {
             throw new Error(
                 "sha1 is not considered a secure hashing algorithm, plaase use sha256"
             );
-            break;
         default:
             throw new Error("Wrong cipher name provided when creating htlc op");
     }
@@ -65,7 +65,7 @@ function create({
 
     let preimage_hash_cipher = getCipherInt(preimage_cipher);
     if (preimage && !preimage_hash) {
-        preimage_hash = calculateHash(preimage_cipher, preimage);
+        preimage_hash = _calculateHash(preimage_cipher, preimage);
     }
     if (!preimage_size) {
         if (preimage) {
@@ -91,19 +91,16 @@ function create({
         claim_period_seconds: lock_time
     });
 
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(() => {
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log(
-                    "[HtlcActions.js:69] ----- htlc create error ----->",
-                    error
-                );
-                dispatch(false);
-            });
-    };
+    return walletDb.process_transaction(tr, null, true)
+        .then(() => {
+            console.log("htlc create success");
+        })
+        .catch(error => {
+            console.log(
+                "[HtlcActions.js:69] ----- htlc create error ----->",
+                error
+            );
+        });
 }
 
 function redeem({htlc_id, user_id, preimage}) {
@@ -119,19 +116,16 @@ function redeem({htlc_id, user_id, preimage}) {
         redeemer: user_id
     });
 
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(() => {
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log(
-                    "[HtlcActions.js:98] ----- htlc redeem error ----->",
-                    error
-                );
-                dispatch(false);
-            });
-    };
+    return walletDb.process_transaction(tr, null, true)
+        .then(() => {
+            console.log("htlc redeem success");
+        })
+        .catch(error => {
+            console.log(
+                "[HtlcActions.js:98] ----- htlc redeem error ----->",
+                error
+            );
+        });
 }
 
 function extend({htlc_id, user_id, seconds_to_add}) {
@@ -147,23 +141,20 @@ function extend({htlc_id, user_id, seconds_to_add}) {
         seconds_to_add: seconds_to_add
     });
 
-    return dispatch => {
-        return WalletDb.process_transaction(tr, null, true)
-            .then(() => {
-                dispatch(true);
-            })
-            .catch(error => {
-                console.log(
-                    "[HtlcActions.js:127] ----- htlc extend error ----->",
-                    error
-                );
-                dispatch(false);
-            });
-    };
+    return walletDb.process_transaction(tr, null, true)
+        .then(() => {
+            console.log("htlc extend success");
+        })
+        .catch(error => {
+            console.log(
+                "[HtlcActions.js:127] ----- htlc extend error ----->",
+                error
+            );
+        });
 }
 
 function calculateHash(preimage, cipher) {
-    const preimage_hash_calculated = calculateHash(cipher, preimage);
+    const preimage_hash_calculated = _calculateHash(cipher, preimage);
     const size = preimage_hash_calculated.length;
     let hash = new Buffer(preimage_hash_calculated).toString("hex");
     return {hash, size};

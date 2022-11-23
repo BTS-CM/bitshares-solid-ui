@@ -13,7 +13,7 @@ import {
 import {allowedGateway} from "branding";
 import {isGatewayTemporarilyDisabled} from "../chain/onChainConfig";
 
-import { useSettingsStore } from './SettingsStore';
+import { useSettingsStore } from "./SettingsStore";
 const [settingsStore, setSettingsStore] = useSettingsStore();
 
 const _isEnabled = gatewayKey => {
@@ -30,7 +30,7 @@ const _isEnabled = gatewayKey => {
                 }
                 return false;
             } else {
-                if (!!options.onlyBranding) {
+                if (options.onlyBranding) {
                     if (__DEV__) {
                         console.log("  ... may be used!");
                     }
@@ -48,7 +48,7 @@ const _isEnabled = gatewayKey => {
             }
             return false;
         } else {
-            if (!!options.onlyOnChainConfig) {
+            if (options.onlyOnChainConfig) {
                 if (__DEV__) {
                     console.log("  ... may be used!");
                 }

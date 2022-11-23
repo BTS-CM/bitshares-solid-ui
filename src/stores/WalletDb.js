@@ -1,4 +1,4 @@
-import { createStore } from 'solid-js/store';
+import { createStore } from "solid-js/store";
 import {cloneDeep} from "lodash-es";
 import {ChainStore, PrivateKey, key, Aes} from "bitsharesjs";
 import {Apis, ChainConfig} from "bitsharesjs-ws";
@@ -8,13 +8,13 @@ import counterpart from "counterpart";
 import iDB from "idb-instance";
 import idb_helper from "idb-helper";
 
-import {usePrivateKeyStore} from './PrivateKeyStore';
+import {usePrivateKeyStore} from "./PrivateKeyStore";
 const [privateKeyStore, setPrivateKeyStore] = usePrivateKeyStore();
 
-import { useSettingsStore } from './SettingsStore';
+import { useSettingsStore } from "./SettingsStore";
 const [settingsStore, setSettingsStore] = useSettingsStore();
 
-import { useAddressIndex } from './AddressIndex';
+import { useAddressIndex } from "./AddressIndex";
 const [addressIndex, setAddressIndex] = useAddressIndex();
 
 import {WalletTcomb} from "./tcomb_structs";
@@ -57,8 +57,8 @@ const [walletDb, setWalletDb] = createStore({
     /** Discover derived keys that are not in this wallet */
     checkNextGeneratedKey() {
         if (!walletDb.wallet || !aes_private || !walletDb.wallet.encrypted_brainkey) {
-            return
-        };
+            return;
+        }
 
         if (
             walletDb.chainstore_account_ids_by_key === ChainStore.account_ids_by_key
@@ -87,8 +87,8 @@ const [walletDb, setWalletDb] = createStore({
     },
     decryptTcomb_PrivateKey(private_key_tcomb) {
         if (!private_key_tcomb) {
-            return null
-        };
+            return null;
+        }
         if (walletDb.isLocked()) {
             throw new Error("wallet locked");
         }
@@ -103,18 +103,18 @@ const [walletDb, setWalletDb] = createStore({
     /** @return ecc/PrivateKey or null */
     getPrivateKey(public_key) {
         if (_passwordKey) {
-            return _passwordKey[public_key]
-        };
+            return _passwordKey[public_key];
+        }
         if (!public_key) {
-            return null
-        };
+            return null;
+        }
         if (public_key.Q) {
-            public_key = public_key.toPublicKeyString()
-        };
+            public_key = public_key.toPublicKeyString();
+        }
         let private_key_tcomb = privateKeyStore.getTcomb_byPubkey(public_key);
         if (!private_key_tcomb) {
-            return null
-        };
+            return null;
+        }
         return walletDb.decryptTcomb_PrivateKey(private_key_tcomb);
     },
     process_transaction(tr, signer_pubkeys, broadcast, extra_keys = []) {
@@ -126,13 +126,14 @@ const [walletDb, setWalletDb] = createStore({
             !passwordLogin &&
             walletDb.wallet &&
             Apis.instance().chain_id !== walletDb.wallet.chain_id
-        )
+        ) {
             return Promise.reject(
                 "Mismatched chain_id; expecting " +
                     walletDb.wallet.chain_id +
                     ", but got " +
                     Apis.instance().chain_id
             );
+        }
 
         return WalletUnlockActions.unlock()
             .then(() => {
@@ -149,8 +150,9 @@ const [walletDb, setWalletDb] = createStore({
                         let pubkeys = privateKeyStore.getPubkeys_having_PrivateKey(
                             signer_pubkeys
                         );
-                        if (!pubkeys.length)
+                        if (!pubkeys.length) {
                             throw new Error("Missing signing key");
+                        }
 
                         for (let pubkey_string of pubkeys) {
                             let private_key = walletDb.getPrivateKey(pubkey_string);
@@ -178,18 +180,23 @@ const [walletDb, setWalletDb] = createStore({
                                 .get_required_signatures(my_pubkeys)
                                 .then(required_pubkeys => {
                                     for (let pubkey_string of required_pubkeys) {
-                                        if (signer_pubkeys_added[pubkey_string])
+                                        if (signer_pubkeys_added[pubkey_string]) {
                                             continue;
+                                        }
+
                                         let private_key = walletDb.getPrivateKey(
                                             pubkey_string
                                         );
-                                        if (!private_key)
+
+                                        if (!private_key) {
                                             // This should not happen, get_required_signatures will only
                                             // returned keys from my_pubkeys
                                             throw new Error(
                                                 "Missing signing key for " +
                                                     pubkey_string
                                             );
+                                        }
+
                                         tr.add_signer(
                                             private_key,
                                             pubkey_string
@@ -234,11 +241,11 @@ const [walletDb, setWalletDb] = createStore({
     getBrainKey() {
         let wallet = walletDb.wallet;
         if (!wallet.encrypted_brainkey) {
-            throw new Error("missing brainkey")
-        };
+            throw new Error("missing brainkey");
+        }
         if (!aes_private) {
-            throw new Error("wallet locked")
-        };
+            throw new Error("wallet locked");
+        }
         let brainkey_plaintext = aes_private.decryptHexToText(
             wallet.encrypted_brainkey
         );
@@ -246,8 +253,8 @@ const [walletDb, setWalletDb] = createStore({
     },
     getBrainKeyPrivate(brainkey_plaintext = walletDb.getBrainKey()) {
         if (!brainkey_plaintext) {
-            throw new Error("missing brainkey")
-        };
+            throw new Error("missing brainkey");
+        }
         return PrivateKey.fromSeed(key.normalize_brainKey(brainkey_plaintext));
     },
     onCreateWallet(
@@ -291,8 +298,8 @@ const [walletDb, setWalletDb] = createStore({
                 let local_aes_private = Aes.fromSeed(encryption_buffer);
 
                 brainkey_plaintext = !brainkey_plaintext
-                                        ? key.suggest_brain_key(dictionary.en)
-                                        : key.normalize_brainKey(brainkey_plaintext);
+                    ? key.suggest_brain_key(dictionary.en)
+                    : key.normalize_brainKey(brainkey_plaintext);
 
                 if (!brainkey_plaintext) {
                     brainkey_plaintext = key.suggest_brain_key(dictionary.en);
@@ -307,15 +314,15 @@ const [walletDb, setWalletDb] = createStore({
                 );
 
                 let brainkey_pubkey = brainkey_private
-                                        .toPublicKey()
-                                        .toPublicKeyString();
+                    .toPublicKey()
+                    .toPublicKeyString();
 
                 let encrypted_brainkey = local_aes_private.encryptToHex(brainkey_plaintext);
 
                 let password_private = PrivateKey.fromSeed(password_plaintext);
                 let password_pubkey = password_private
-                                        .toPublicKey()
-                                        .toPublicKeyString();
+                    .toPublicKey()
+                    .toPublicKeyString();
 
                 let wallet = {
                     public_name: public_name,
@@ -340,7 +347,7 @@ const [walletDb, setWalletDb] = createStore({
                     .on_transaction_end(transaction)
                     .then(() => {
                         setWalletDb("wallet", wallet);
-                        setWalletDb(wallet) // Not 100% sure this is correct
+                        setWalletDb(wallet); // Not 100% sure this is correct
 
                         if (unlock) {
                             aes_private = local_aes_private;
@@ -391,7 +398,9 @@ const [walletDb, setWalletDb] = createStore({
         if (account) {
             let id = 0;
             function setKey(role, priv, pub) {
-                if (!_passwordKey) _passwordKey = {};
+                if (!_passwordKey) {
+                    _passwordKey = {}
+                };
                 _passwordKey[pub] = priv;
 
                 id++;
@@ -509,8 +518,8 @@ const [walletDb, setWalletDb] = createStore({
             let wallet = walletDb.wallet;
             let {success} = walletDb.validatePassword(old_password);
             if (!success) {
-                throw new Error("wrong password")
-            };
+                throw new Error("wrong password");
+            }
 
             let old_password_aes = Aes.fromSeed(old_password);
             let new_password_aes = Aes.fromSeed(new_password);
@@ -543,8 +552,8 @@ const [walletDb, setWalletDb] = createStore({
     */
     generateNextKey(save = true) {
         if (walletDb.generatingKey) {
-            return
-        };
+            return;
+        }
         setWalletDb("generatingKey", true);
 
         let brainkey = walletDb.getBrainKey();
@@ -568,8 +577,8 @@ const [walletDb, setWalletDb] = createStore({
             let pubkey = walletDb.generateNextKey_pubcache[i]
                 ? walletDb.generateNextKey_pubcache[i]
                 : (walletDb.generateNextKey_pubcache[
-                      i
-                  ] = private_key.toPublicKey().toPublicKeyString());
+                    i
+                ] = private_key.toPublicKey().toPublicKeyString());
 
             let next_key = ChainStore.getAccountRefsOfKey(pubkey);
             // TODO if ( next_key === undefined ) return undefined
@@ -646,7 +655,7 @@ const [walletDb, setWalletDb] = createStore({
                 iv: aes_private.iv
             });
             let _this = this;
-            walletDb.setState({saving_keys: true});
+            setWalletDb("saving_keys", true);
             worker.onmessage = event => {
                 try {
                     console.log("Preparing for private keys save");
@@ -686,7 +695,7 @@ const [walletDb, setWalletDb] = createStore({
                         enc_private_key_objs.push(private_key_object);
                     }
                     console.log("Saving private keys", new Date().toString());
-                    let transaction = _walletDb.transaction_update_keys();
+                    let transaction = walletDb.transaction_update_keys();
                     let insertKeysPromise = idb_helper.on_transaction_end(
                         transaction
                     );
@@ -695,9 +704,10 @@ const [walletDb, setWalletDb] = createStore({
                             enc_private_key_objs,
                             transaction
                         );
-                        if (private_key_objs.length != duplicate_count)
-                            _walletDb.setWalletModified(transaction);
-                        _walletDb.setState({saving_keys: false});
+                        if (private_key_objs.length != duplicate_count) {
+                            walletDb.setWalletModified(transaction);
+                        }
+                        setWalletDb("saving_keys", false);
                         resolve(
                             Promise.all([
                                 insertKeysPromise,
@@ -746,16 +756,17 @@ const [walletDb, setWalletDb] = createStore({
         let private_cipherhex = aes_private.encryptToHex(
             private_key.toBuffer()
         );
-        let wallet = walletDb.wallet;
+        //let wallet = walletDb.wallet;
         if (!public_key_string) {
             //S L O W
             // console.log('WARN: public key was not provided, this may incur slow performance')
             let public_key = private_key.toPublicKey();
             public_key_string = public_key.toPublicKeyString();
-        } else if (public_key_string.indexOf(ChainConfig.address_prefix) != 0)
+        } else if (public_key_string.indexOf(ChainConfig.address_prefix) != 0) {
             throw new Error(
                 "Public Key should start with " + ChainConfig.address_prefix
             );
+        }
 
         let private_key_object = {
             import_account_names,

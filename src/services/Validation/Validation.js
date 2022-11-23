@@ -29,12 +29,12 @@ export const Messages = {
 
     Range: (min, max, name) => {
         if (name)
-            return counterpart.translate(`validation.messages.rangeNamed`, {
+            return counterpart.translate("validation.messages.rangeNamed", {
                 name: name,
                 min: min,
                 max: max
             });
-        return counterpart.translate(`validation.messages.range`, {
+        return counterpart.translate("validation.messages.range", {
             min: min,
             max: max
         });
@@ -42,73 +42,73 @@ export const Messages = {
 
     Min: (min, name) => {
         if (name)
-            return counterpart.translate(`validation.messages.minNamed`, {
+            return counterpart.translate("validation.messages.minNamed", {
                 name: name,
                 min: min
             });
-        return counterpart.translate(`validation.messages.min`, {min: min});
+        return counterpart.translate("validation.messages.min", {min: min});
     },
 
     Max: (max, name) => {
         if (name)
-            return counterpart.translate(`validation.messages.maxNamed`, {
+            return counterpart.translate("validation.messages.maxNamed", {
                 name: name,
                 max: max
             });
-        return counterpart.translate(`validation.messages.max`, {max: max});
+        return counterpart.translate("validation.messages.max", {max: max});
     },
 
     Number: name => {
         if (name)
-            return counterpart.translate(`validation.messages.numberNamed`, {
+            return counterpart.translate("validation.messages.numberNamed", {
                 name: name
             });
-        return counterpart.translate(`validation.messages.number`);
+        return counterpart.translate("validation.messages.number");
     },
 
     Integer: name => {
         if (name)
-            return counterpart.translate(`validation.messages.integerNamed`, {
+            return counterpart.translate("validation.messages.integerNamed", {
                 name: name
             });
-        return counterpart.translate(`validation.messages.integer`);
+        return counterpart.translate("validation.messages.integer");
     },
 
     Float: name => {
         if (name)
-            return counterpart.translate(`validation.messages.floatNamed`, {
+            return counterpart.translate("validation.messages.floatNamed", {
                 name: name
             });
-        return counterpart.translate(`validation.messages.float`);
+        return counterpart.translate("validation.messages.float");
     },
 
     Email: name => {
         if (name)
-            return counterpart.translate(`validation.messages.emailNamed`, {
+            return counterpart.translate("validation.messages.emailNamed", {
                 name: name
             });
-        return counterpart.translate(`validation.messages.email`);
+        return counterpart.translate("validation.messages.email");
     },
 
     Url: name => {
         if (name)
-            return counterpart.translate(`validation.messages.urlNamed`, {
+            return counterpart.translate("validation.messages.urlNamed", {
                 name: name
             });
-        return counterpart.translate(`validation.messages.url`);
+        return counterpart.translate("validation.messages.url");
     },
 
     OneOf: (name, list) => {
         if (name)
-            return counterpart.translate(`validation.messages.oneOfNamed`, {
+            return counterpart.translate("validation.messages.oneOfNamed", {
                 name: name,
                 list: list
             });
-        return counterpart.translate(`validation.messages.oneOf`, {list: list});
+        return counterpart.translate("validation.messages.oneOf", {list: list});
     },
 
     Balance: (balance, symbol) => {
-        return counterpart.translate(`validation.messages.balance`, {
+        return counterpart.translate("validation.messages.balance", {
             balance: balance,
             symbol: symbol
         });
@@ -405,7 +405,7 @@ export const Rules = {
 
         if (!Array.isArray(props && props.list)) {
             throw new Error(
-                `[Validation] Rules.oneOf the property list is missed or incorrect`
+                "[Validation] Rules.oneOf the property list is missed or incorrect"
             );
         }
 

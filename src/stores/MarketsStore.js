@@ -1,5 +1,5 @@
 import Immutable from "immutable";
-import { createStore } from 'solid-js/store';
+import { createStore } from "solid-js/store";
 import {ChainStore} from "bitsharesjs";
 
 import MarketsActions from "actions/MarketsActions";
@@ -135,7 +135,7 @@ const [marketsStore, setMarketsStore] = createStore({
                 totalDebt: payload.totalDebt,
                 totalCollateral: payload.totalCollateral
             }
-        )
+        );
     },
     onChangeBase(market) {
         setMarketsStore({marketBase: market});
@@ -217,7 +217,7 @@ const [marketsStore, setMarketsStore] = createStore({
             invertedCalls: result.invertedCalls,
             quoteAsset: ChainStore.getAsset(result.quote.get("id")),
             baseAsset: ChainStore.getAsset(result.base.get("id"))
-        })
+        });
 
         // Get updated assets every time for updated feed data
         const assets = {
@@ -317,14 +317,14 @@ const [marketsStore, setMarketsStore] = createStore({
             setMarketsStore({
                 allCallOrders: result.calls,
                 marketCallOrders: marketsStore.marketCallOrders.clear()
-            })
+            });
 
             result.calls.forEach(call => {
                 // ChainStore._updateObject(call, false, false);
                 try {
                     let mcrTarget = marketsStore.invertedCalls
-                                    ? marketsStore.baseAsset
-                                    : marketsStore.quoteAsset;
+                        ? marketsStore.baseAsset
+                        : marketsStore.quoteAsset;
 
                     let mcr = mcrTarget.getIn([
                         "bitasset",
@@ -344,7 +344,7 @@ const [marketsStore, setMarketsStore] = createStore({
                         setMarketsStore(
                             "marketCallOrders",
                             marketsStore.marketCallOrders.set(call.id, callOrder, mcr)
-                        )
+                        );
                     }
                 } catch (err) {
                     console.error(
@@ -377,7 +377,7 @@ const [marketsStore, setMarketsStore] = createStore({
                         marketsStore.activeMarketHistory.add(
                             new FillOrder(order.op, assets, marketsStore.quoteAsset.get("id"))
                         )
-                    )
+                    );
                 }
             });
         }
@@ -527,8 +527,8 @@ const [marketsStore, setMarketsStore] = createStore({
                 };
                 try {
                     let mcrTarget = marketsStore.invertedCalls
-                                    ? marketsStore.baseAsset
-                                    : marketsStore.quoteAsset;
+                        ? marketsStore.baseAsset
+                        : marketsStore.quoteAsset;
 
                     let mcr = mcrTarget.getIn([
                         "bitasset",
@@ -650,7 +650,7 @@ const [marketsStore, setMarketsStore] = createStore({
                                     mcr
                                 )
                             )
-                        )
+                        );
                     }
                 } catch (err) {
                     console.error(
@@ -680,9 +680,9 @@ const [marketsStore, setMarketsStore] = createStore({
                             !marketsStore.lowestCallPrice
                                 ? order.getPrice(false)
                                 : Math.max(
-                                        marketsStore.lowestCallPrice,
-                                        order.getPrice(false)
-                                    )
+                                    marketsStore.lowestCallPrice,
+                                    order.getPrice(false)
+                                )
                         );
                     } else {
                         setMarketsStore(
@@ -690,9 +690,9 @@ const [marketsStore, setMarketsStore] = createStore({
                             !marketsStore.lowestCallPrice
                                 ? order.getPrice(false)
                                 : Math.min(
-                                        marketsStore.lowestCallPrice,
-                                        order.getPrice(false)
-                                    )
+                                    marketsStore.lowestCallPrice,
+                                    order.getPrice(false)
+                                )
                         );
                     }
 
@@ -774,7 +774,7 @@ const [marketsStore, setMarketsStore] = createStore({
                             marketsStore.bitasset_options
                         )
                     )
-                )
+                );
             });
         }
     },
@@ -803,7 +803,7 @@ function _getBucketSize() {
 /**
  * @param {Number} size
  */
- function _setBucketSize(size) {
+function _setBucketSize(size) {
     setMarketsStore("bucketSize", size);
     marketStorage.set("bucketSize", size);
 }
@@ -843,8 +843,8 @@ function _getFeed() {
     };
 
     let relevantMarketStore = marketsStore.invertedCalls
-                ? marketStore["baseAsset"]
-                : marketStore["quoteAsset"]
+        ? marketStore["baseAsset"]
+        : marketStore["quoteAsset"];
 
     let feedPriceRaw = asset_utils.extractRawFeedPrice(relevantMarketStore);
 
@@ -1510,7 +1510,7 @@ function _depthChart() {
                 calls: totalCalls
             }
         }
-    )
+    );
     // console.log(marketsStore.totals);
 }
 
@@ -1534,11 +1534,11 @@ function _calcMarketStats(base, quote, market, ticker) {
             real: parseFloat(ticker.latest)
         });
     } catch (err) {}
-    let close = !!price
+    let close = price
         ? {
-              base: price.base.toObject(),
-              quote: price.quote.toObject()
-          }
+            base: price.base.toObject(),
+            quote: price.quote.toObject()
+        }
         : null;
 
     if (!!price && isNaN(price.toReal())) {
@@ -1568,9 +1568,9 @@ function _invertMarketStats(stats, market) {
             volumeQuote: stats.volumeBase,
             close: stats.close
                 ? {
-                      base: stats.close.quote,
-                      quote: stats.close.base
-                  }
+                    base: stats.close.quote,
+                    quote: stats.close.base
+                }
                 : stats.close
         },
         invertedMarketName

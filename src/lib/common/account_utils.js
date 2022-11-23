@@ -18,12 +18,16 @@ export default class AccountUtils {
      */
     static checkFeePool(asset, fee) {
         asset = asset.toJS ? asset : ChainStore.getAsset(asset);
-        if (!asset) return undefined;
+        if (!asset) {
+            return undefined;
+        }
 
         const dynamicObject = ChainStore.getObject(
             asset.get("dynamic_asset_data_id")
         );
-        if (!dynamicObject) return undefined;
+        if (!dynamicObject) {
+            return undefined;
+        }
 
         let feePool = parseInt(dynamicObject.get("fee_pool"), 10);
 

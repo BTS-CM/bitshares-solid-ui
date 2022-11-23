@@ -1,4 +1,4 @@
-import { createStore } from 'solid-js/store'
+import { createStore } from "solid-js/store";
 import Immutable from "immutable";
 
 const [assetStore, setAssetStore] = createStore({
@@ -12,7 +12,7 @@ const [assetStore, setAssetStore] = createStore({
         if (!payload) {
             return false;
         }
-        setAssetStore('assetsLoading', payload.loading);
+        setAssetStore("assetsLoading", payload.loading);
 
         if (payload.assets) {
             payload.assets.forEach(asset => {
@@ -50,7 +50,7 @@ const [assetStore, setAssetStore] = createStore({
         if (!payload) {
             return false;
         }
-        setAssetStore('assetsLoading', payload.loading);
+        setAssetStore("assetsLoading", payload.loading);
 
         if (payload.assets) {
             payload.assets.forEach(asset => {

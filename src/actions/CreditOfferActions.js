@@ -15,7 +15,9 @@ const FEE_RATE_DENOM = 1000000; // Denominator for SameT Fund fee calculation
 const listRepayPeriod = [43200, 86400, 259200, 604800, 2592000, 7776000, 31536000, 63072000, 157680000];
 
 const parsingTime = (time, locale) => {
-    if (locale === "zh") locale = "zh_CN";
+    if (locale === "zh") {
+        locale = "zh_CN"
+    };
     return humanizeDuration(parseInt(time) * 1000, {
         language: locale,
         delimiter: " ",
@@ -276,13 +278,13 @@ function getCreditOffersByOwner({
                             : true,
                     flag,
                     pars: {name_or_id, limit, start_id}
-                })
+                });
             } else {
                 creditOfferStore.onGetCreditOffersByOwner({
                     list: result,
                     end: true,
                     flag
-                })
+                });
             }
         })
         .catch(err => {
@@ -291,7 +293,7 @@ function getCreditOffersByOwner({
                 list: [],
                 end: true,
                 flag
-            })
+            });
         });
 }
 

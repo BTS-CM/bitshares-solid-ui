@@ -50,19 +50,23 @@ export function requestDepositAddress({
                             memo: json.inputMemo,
                             error: json.error || null
                         };
-                        if (stateCallback) stateCallback(address);
+                        if (stateCallback) {
+                            stateCallback(address);
+                        }
                     },
                     error => {
                         // console.log( "error: ",error  );
-                        if (stateCallback)
+                        if (stateCallback) {
                             stateCallback({address: "unknown", memo: null});
+                        }
                     }
                 );
             },
             error => {
                 // console.log( "error: ",error  );
-                if (stateCallback)
+                if (stateCallback) {
                     stateCallback({address: "unknown", memo: null});
+                }
             }
         )
         .catch(err => {
@@ -75,7 +79,9 @@ export function validateAddress({
     walletType,
     newAddress
 }) {
-    if (!newAddress) return new Promise(res => res());
+    if (!newAddress) {
+        return new Promise(res => res());
+    }
     return fetch(url + "/wallets/" + walletType + "/check-address", {
         method: "post",
         headers: new Headers({

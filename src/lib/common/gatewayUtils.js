@@ -40,7 +40,9 @@ export function getGatewayStatusByAsset(
     for (let g in gatewayStatus) {
         gatewayStatus[g].options.enabled = false;
 
-        if (!gatewayStatus[g].enabled) continue;
+        if (!gatewayStatus[g].enabled) {
+            continue;
+        }
         this.props.backedCoins.get(g.toUpperCase(), []).find(coin => {
             let backingCoin = coin.backingCoinType || coin.backingCoin;
             let isAvailable =
@@ -66,9 +68,11 @@ export function getGatewayStatusByAsset(
 }
 
 export function getIntermediateAccount(symbol, backedCoins) {
-    let {selectedGateway} = getAssetAndGateway(symbol);
+    //let {selectedGateway} = getAssetAndGateway(symbol);
     let coin = getBackedCoin(symbol, backedCoins);
-    if (!coin) return undefined;
+    if (!coin) {
+        return undefined;
+    }
     else return coin.intermediateAccount || coin.issuer;
 }
 
@@ -94,7 +98,9 @@ export function getAssetAndGateway(symbol) {
 
 export async function updateGatewayBackers(chain = "4018d784") {
     // Only fetch this when on desired chain, default to main chain
-    if (!Apis.instance().chain_id) return;
+    if (!Apis.instance().chain_id) {
+        return;
+    }
     if (Apis.instance().chain_id.substr(0, 8) === chain) {
         // Only one bridge so far, BlockTrades
         if (Object.values(availableBridges).length !== 1) {
@@ -113,7 +119,7 @@ export async function updateGatewayBackers(chain = "4018d784") {
             let gatewayConfig = availableGateways[gateway];
             gatewayConfig.enabled = await gatewayConfig.isEnabled();
             if (gatewayConfig.enabled) {
-                if (!!gatewayConfig.isSimple) {
+                if (gatewayConfig.isSimple) {
                     GatewayActions.fetchCoinsSimple.defer({
                         backer: gatewayConfig.id,
                         url:

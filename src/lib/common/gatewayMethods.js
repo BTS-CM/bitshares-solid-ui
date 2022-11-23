@@ -18,7 +18,9 @@ function setCacheClearTimer(key) {
 }
 
 export function fetchCoins(url) {
-    if (!url) throw new Error("url is required");
+    if (!url) {
+        throw new Error("url is required");
+    }
 
     const key = "fetchCoins_" + url;
     let currentPromise = fetchInProgess[key];
@@ -43,14 +45,18 @@ export function fetchCoins(url) {
                 fetchCache[key] = result;
                 res(result);
                 delete fetchInProgess[key];
-                if (!clearIntervals[key]) setCacheClearTimer(key);
+                if (!clearIntervals[key]) {
+                    setCacheClearTimer(key);
+                }
             })
             .catch(rej);
     });
 }
 
 export function fetchCoinsSimple(url) {
-    if (!url) throw new Error("fetchCoinsSimple requires a url");
+    if (!url) {
+        throw new Error("fetchCoinsSimple requires a url");
+    }
     
     return fetch(url)
         .then(reply =>
@@ -92,7 +98,9 @@ export function fetchTradingPairs(
                 fetchCache[key] = result;
                 res(result);
                 delete fetchInProgess[key];
-                if (!clearIntervals[key]) setCacheClearTimer(key);
+                if (!clearIntervals[key]) {
+                    setCacheClearTimer(key);
+                }
             })
             .catch(rej);
     });
@@ -192,7 +200,9 @@ export function estimateInput(
 }
 
 export function getActiveWallets(url) {
-    if (!url) throw new Error("url required");
+    if (!url) {
+        throw new Error("url required");
+    }
 
     const key = "getActiveWallets_" + url;
     let currentPromise = fetchInProgess[key];
@@ -220,7 +230,9 @@ export function getActiveWallets(url) {
             fetchCache[key] = result;
             res(result);
             delete fetchInProgess[key];
-            if (!clearIntervals[key]) setCacheClearTimer(key);
+            if (!clearIntervals[key]) {
+                setCacheClearTimer(key);
+            }
         });
     });
 }
@@ -234,7 +246,9 @@ export function requestDepositAddress({
     stateCallback,
     selectedGateway
 }) {
-    if (!url) throw new Error("url required");
+    if (!url) {
+        throw new Error("url required");
+    }
 
     let gatewayStatus = availableGateways[selectedGateway];
     inputCoinType =
@@ -250,7 +264,9 @@ export function requestDepositAddress({
     };
 
     let body_string = JSON.stringify(body);
-    if (depositRequests[body_string]) return;
+    if (depositRequests[body_string]) {
+        return;
+    }
     depositRequests[body_string] = true;
     fetch(url + "/simple-api/initiate-trade", {
         method: "post",
@@ -271,19 +287,25 @@ export function requestDepositAddress({
                             memo: json.inputMemo,
                             error: json.error || null
                         };
-                        if (stateCallback) stateCallback(address);
+                        if (stateCallback) {
+                            stateCallback(address);
+                        }
                     },
                     error => {
                         console.log("error: ", error);
                         delete depositRequests[body_string];
-                        if (stateCallback) stateCallback(null);
+                        if (stateCallback) {
+                            stateCallback(null);
+                        }
                     }
                 );
             },
             error => {
                 console.log("error: ", error);
                 delete depositRequests[body_string];
-                if (stateCallback) stateCallback(null);
+                if (stateCallback) {
+                    stateCallback(null);
+                }
             }
         )
         .catch(err => {
@@ -343,7 +365,7 @@ export function getBackedCoins({allCoins, tradingPairs, backer}) {
     let coins_by_type = {};
 
     // Backer has no coinType == backingCoinType but uses single wallet style
-    if (!!gatewayStatus.singleWallet) {
+    if (gatewayStatus.singleWallet) {
         allCoins.forEach(
             coin_type => (coins_by_type[coin_type.backingCoinType] = coin_type)
         );
@@ -355,8 +377,9 @@ export function getBackedCoins({allCoins, tradingPairs, backer}) {
 
     let allowed_outputs_by_input = {};
     tradingPairs.forEach(pair => {
-        if (!allowed_outputs_by_input[pair.inputCoinType])
+        if (!allowed_outputs_by_input[pair.inputCoinType]) {
             allowed_outputs_by_input[pair.inputCoinType] = {};
+        }
         allowed_outputs_by_input[pair.inputCoinType][
             pair.outputCoinType
         ] = true;
@@ -383,12 +406,12 @@ export function getBackedCoins({allCoins, tradingPairs, backer}) {
 
             backedCoins.push({
                 name: outputCoin.name,
-                intermediateAccount: !!gatewayStatus.intermediateAccount
+                intermediateAccount: gatewayStatus.intermediateAccount
                     ? gatewayStatus.intermediateAccount
                     : outputCoin.intermediateAccount,
                 gateFee: outputCoin.gateFee || outputCoin.transactionFee,
                 walletType: outputCoin.walletType,
-                backingCoinType: !!gatewayStatus.singleWallet
+                backingCoinType: gatewayStatus.singleWallet
                     ? inputCoin.backingCoinType.toUpperCase()
                     : outputCoin.walletSymbol,
                 minAmount: outputCoin.minAmount || 0,
@@ -410,7 +433,9 @@ export function validateAddress({
     output_coin_type = null,
     method = null
 }) {
-    if (!newAddress) return new Promise(res => res());
+    if (!newAddress) {
+        return new Promise(res => res());
+    }
 
     if (!method || method == "GET") {
         url +=
@@ -451,7 +476,9 @@ export function validateAddress({
 let _conversionCache = {};
 export function getConversionJson(inputs, userAccessToken = null) {
     const {input_coin_type, output_coin_type, url, account_name} = inputs;
-    if (!input_coin_type || !output_coin_type) return Promise.reject();
+    if (!input_coin_type || !output_coin_type) {
+        return Promise.reject();
+    }
     const body = JSON.stringify({
         inputCoinType: input_coin_type,
         outputCoinType: output_coin_type,
@@ -466,8 +493,9 @@ export function getConversionJson(inputs, userAccessToken = null) {
     const _cacheString =
         url + input_coin_type + output_coin_type + account_name;
     return new Promise((resolve, reject) => {
-        if (_conversionCache[_cacheString])
+        if (_conversionCache[_cacheString]) {
             return resolve(_conversionCache[_cacheString]);
+        }
         let headers = {
             Accept: "application/json",
             "Content-Type": "application/json"

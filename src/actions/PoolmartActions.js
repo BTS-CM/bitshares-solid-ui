@@ -39,7 +39,7 @@ function getLiquidityPools(assetA, assetB, limit, start) {
         poolmartStore.onGetLiquidityPools({
             loading: false,
             liquidityPools: Immutable.Map()
-        })
+        });
     }
     const id = `${assetA}_${assetB}_${start}_${limit}`;
     if (!inProgress[id]) {
@@ -142,7 +142,9 @@ function getLiquidityPoolsByShareAsset(shareAsset) {
             .then(liquidityPools => {
                 const tmpAssetIds = [];
                 liquidityPools.forEach(pool => {
-                    if (pool === null) return;
+                    if (pool === null) {
+                        return;
+                    }
                     if (tmpAssetIds.indexOf(pool.asset_a) === -1) {
                         tmpAssetIds.push(pool.asset_a);
                     }
@@ -237,7 +239,9 @@ function getLiquidityPoolsAccount(account_name) {
             .then(liquidityPools => {
                 const tmpAssetIds = [];
                 liquidityPools.forEach(pool => {
-                    if (pool === null) return;
+                    if (pool === null) {
+                        return;
+                    }
                     if (tmpAssetIds.indexOf(pool.asset_a) === -1) {
                         tmpAssetIds.push(pool.asset_a);
                     }
@@ -248,49 +252,49 @@ function getLiquidityPoolsAccount(account_name) {
                         tmpAssetIds.push(pool.share_asset);
                     }
                 });
-                    Apis.instance()
-                        .db_api()
-                        .exec("lookup_asset_symbols", [tmpAssetIds])
-                        .then(assetObjects => {
-                            let tmpAssets = Immutable.Map();
-                            if (assetObjects.length) {
-                                assetObjects.forEach(asset => {
-                                    tmpAssets = tmpAssets.set(
-                                        asset.id,
-                                        Immutable.fromJS(asset)
-                                    );
-                                });
+                Apis.instance()
+                    .db_api()
+                    .exec("lookup_asset_symbols", [tmpAssetIds])
+                    .then(assetObjects => {
+                        let tmpAssets = Immutable.Map();
+                        if (assetObjects.length) {
+                            assetObjects.forEach(asset => {
+                                tmpAssets = tmpAssets.set(
+                                    asset.id,
+                                    Immutable.fromJS(asset)
+                                );
+                            });
+                        }
+                        liquidityPools.map(pool => {
+                            if (tmpAssets.has(pool.asset_a)) {
+                                pool.asset_a_obj = tmpAssets.get(
+                                    pool.asset_a
+                                );
+                            } else {
+                                pool.asset_a_obj = undefined;
                             }
-                            liquidityPools.map(pool => {
-                                if (tmpAssets.has(pool.asset_a)) {
-                                    pool.asset_a_obj = tmpAssets.get(
-                                        pool.asset_a
-                                    );
-                                } else {
-                                    pool.asset_a_obj = undefined;
-                                }
-                                if (tmpAssets.has(pool.asset_b)) {
-                                    pool.asset_b_obj = tmpAssets.get(
-                                        pool.asset_b
-                                    );
-                                } else {
-                                    pool.asset_b_obj = undefined;
-                                }
-                                if (tmpAssets.has(pool.share_asset)) {
-                                    pool.share_asset_obj = tmpAssets.get(
-                                        pool.share_asset
-                                    );
-                                } else {
-                                    pool.share_asset_obj = undefined;
-                                }
-                                return pool;
-                            });
-                            delete inProgress[id];
-                            poolmartStore.onGetLiquidityPoolsAccount({
-                                loading: false,
-                                liquidityPools
-                            });
+                            if (tmpAssets.has(pool.asset_b)) {
+                                pool.asset_b_obj = tmpAssets.get(
+                                    pool.asset_b
+                                );
+                            } else {
+                                pool.asset_b_obj = undefined;
+                            }
+                            if (tmpAssets.has(pool.share_asset)) {
+                                pool.share_asset_obj = tmpAssets.get(
+                                    pool.share_asset
+                                );
+                            } else {
+                                pool.share_asset_obj = undefined;
+                            }
+                            return pool;
                         });
+                        delete inProgress[id];
+                        poolmartStore.onGetLiquidityPoolsAccount({
+                            loading: false,
+                            liquidityPools
+                        });
+                    });
             })
             .catch(error => {
                 console.log(

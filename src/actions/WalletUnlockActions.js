@@ -10,15 +10,15 @@ function unlock() {
     return new Promise((resolve, reject) => {
         walletUnlockStore.onUnlock({resolve, reject});
     })
-    .then(was_unlocked => {
+        .then(was_unlocked => {
         //DEBUG  console.log('... WalletUnlockStore\tmodal unlock')
-        if (was_unlocked) {
-            WrappedWalletUnlockActions.change()
-        };
-    })
-    .catch(params => {
-        throw params;
-    });
+            if (was_unlocked) {
+                WrappedWalletUnlockActions.change();
+            }
+        })
+        .catch(params => {
+            throw params;
+        });
 }
 
 function lock() {
@@ -26,8 +26,8 @@ function lock() {
         walletUnlockStore.onLock({resolve});
     }).then(was_unlocked => {
         if (was_unlocked) {
-            WrappedWalletUnlockActions.change()
-        };
+            WrappedWalletUnlockActions.change();
+        }
     });
 }
 

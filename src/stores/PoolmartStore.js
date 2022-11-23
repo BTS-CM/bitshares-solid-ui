@@ -1,5 +1,5 @@
 import Immutable from "immutable";
-import { createStore } from 'solid-js/store';
+import { createStore } from "solid-js/store";
 
 const [poolmartStore, setPoolmartStore] = createStore({
     liquidityPools: Immutable.Map(),
@@ -63,8 +63,8 @@ const [poolmartStore, setPoolmartStore] = createStore({
                 tmp = tmp.set(pool.id, pool);
             });
             if (tmp.size === 0) {
-                return
-            };
+                return;
+            }
             setPoolmartStore({
                 lastPoolId: tmp.last().id,
                 // liquidityPools: this.liquidityPools.merge(tmp),
@@ -76,7 +76,7 @@ const [poolmartStore, setPoolmartStore] = createStore({
             setPoolmartStore("lastPoolId", null);
         }
     },
-    onResetLiquidityPools(payload) {
+    onResetLiquidityPools() {
         setPoolmartStore("liquidityPools", Immutable.Map());
     }
 });

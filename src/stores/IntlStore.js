@@ -1,4 +1,4 @@
-import { createStore } from 'solid-js/store'
+import { createStore } from "solid-js/store";
 import IntlActions from "actions/IntlActions";
 import SettingsActions from "actions/SettingsActions";
 import counterpart from "counterpart";
