@@ -5,7 +5,8 @@
     "build": "solid-start build",
     "start": "solid-start start",
     "test": "vitest run",
-    "lint": "eslint ./src --fix --ext .js,.jsx --ignore-pattern node_modules/ --ignore-pattern dist/"
+    "lint": "eslint ./src --ext .js,.jsx --ignore-pattern node_modules/ --ignore-pattern dist/",
+    "lintFix": "eslint ./src --fix --ext .js,.jsx --ignore-pattern node_modules/ --ignore-pattern dist/"
   },
   "type": "module",
   "devDependencies": {

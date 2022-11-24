@@ -13,7 +13,7 @@ function unlock() {
         .then(was_unlocked => {
         //DEBUG  console.log('... WalletUnlockStore\tmodal unlock')
             if (was_unlocked) {
-                WrappedWalletUnlockActions.change();
+                change();
             }
         })
         .catch(params => {
@@ -26,7 +26,7 @@ function lock() {
         walletUnlockStore.onLock({resolve});
     }).then(was_unlocked => {
         if (was_unlocked) {
-            WrappedWalletUnlockActions.change();
+            change();
         }
     });
 }

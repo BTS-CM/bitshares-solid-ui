@@ -57,15 +57,13 @@ const [settingsStore, setSettingsStore] = createStore({
                     ss.set("testnet_faucet", payload.value);
                 }
                 break;
-
             case "walletLockTimeout":
                 ss.set("lockTimeout", payload.value);
                 break;
-
             case "activeNode":
                 // doesnt need to be saved in local storage
                 save = true;
-
+                break;
             default:
                 break;
         }
@@ -183,11 +181,17 @@ const [settingsStore, setSettingsStore] = createStore({
         if (typeof ws === "string") {
             ws = {url: ws, location: null};
         }
-        setSettingsStore("defaults", {...settingsStore.defaults, apiServer: apiServer.push(ws)});
+        setSettingsStore(
+            "defaults",
+            {...settingsStore.defaults, apiServer: settingsStore.apiServer.push(ws)}
+        );
         ss.set("defaults_v1", settingsStore.defaults);
     },
     onRemoveWS(index) {
-        setSettingsStore("defaults", {...settingsStore.defaults, apiServer: apiServer.splice(index, 1)});
+        setSettingsStore(
+            "defaults",
+            {...settingsStore.defaults, apiServer: settingsStore.apiServer.splice(index, 1)}
+        );
         ss.set("defaults_v1", settingsStore.defaults);
     },
     onHideWS(url) {

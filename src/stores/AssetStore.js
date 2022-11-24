@@ -16,7 +16,7 @@ const [assetStore, setAssetStore] = createStore({
 
         if (payload.assets) {
             payload.assets.forEach(asset => {
-                for (var i = 0; i < payload.dynamic.length; i++) {
+                for (let i = 0; i < payload.dynamic.length; i++) {
                     if (payload.dynamic[i].id === asset.dynamic_asset_data_id) {
                         asset.dynamic = payload.dynamic[i];
                         break;
@@ -26,7 +26,7 @@ const [assetStore, setAssetStore] = createStore({
                 if (asset.bitasset_data_id) {
                     asset.market_asset = true;
 
-                    for (var i = 0; i < payload.bitasset_data.length; i++) {
+                    for (let i = 0; i < payload.bitasset_data.length; i++) {
                         if (
                             payload.bitasset_data[i].id ===
                             asset.bitasset_data_id

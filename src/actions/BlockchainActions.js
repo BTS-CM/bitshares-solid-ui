@@ -14,8 +14,8 @@ let headerQueue = {};
 function getHeader(height) {
     return new Promise ((resolve, reject) => {
         if (headerQueue[height]) {
-            return {}
-        };
+            return {};
+        }
 
         headerQueue[height] = true;
 
@@ -41,8 +41,7 @@ function getHeader(height) {
             .catch(error => {
                 console.log(error);
                 reject(error);
-            }
-                    
+            });     
     });
 }
 
@@ -65,7 +64,7 @@ function getLatest(height, maxBlock) {
                     }
                     result.id = height; // The returned object for some reason does not include the block height..
                     blockchainStore.onGetLatest({block: result, maxBlock: maxBlock});
-                    return resolve({block: result, maxBlock: maxBlock})
+                    return resolve({block: result, maxBlock: maxBlock});
                 })
                 .catch(error => {
                     console.log(

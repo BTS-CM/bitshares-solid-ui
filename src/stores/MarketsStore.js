@@ -167,12 +167,12 @@ const [marketsStore, setMarketsStore] = createStore({
         setMarketsStore({
             activeMarket: null,
             is_prediction_market: false,
-            marketLimitOrders: marketStore.marketLimitOrders.clear(),
-            marketCallOrders: marketStore.marketCallOrders.clear(),
+            marketLimitOrders: marketsStore.marketLimitOrders.clear(),
+            marketCallOrders: marketsStore.marketCallOrders.clear(),
             allCallOrders: [],
             feedPrice: null,
-            marketSettleOrders: marketStore.marketSettleOrders.clear(),
-            activeMarketHistory: marketStore.activeMarketHistory.clear(),
+            marketSettleOrders: marketsStore.marketSettleOrders.clear(),
+            activeMarketHistory: marketsStore.activeMarketHistory.clear(),
             marketData: {
                 bids: [],
                 asks: [],
@@ -362,7 +362,7 @@ const [marketsStore, setMarketsStore] = createStore({
         marketsStore.updateSettleOrders(result);
 
         if (result.history) {
-            setMarketsStore("activeMarketHistory", marketStore.activeMarketHistory.clear());
+            setMarketsStore("activeMarketHistory", marketsStore.activeMarketHistory.clear());
             result.history.forEach(order => {
                 /* Only include history objects that aren't 'something for nothing' to avoid confusion */
                 if (
@@ -415,9 +415,9 @@ const [marketsStore, setMarketsStore] = createStore({
             setMarketsStore("allMarketStats", marketsStore.allMarketStats.set(invertedMarketName, invertedStats));
             _saveMarketStats();
 
-            setMarketsStore("marketStats", marketStore.marketStats.set("change", stats.change));
-            setMarketsStore("marketStats", marketStore.marketStats.set("volumeBase", stats.volumeBase));
-            setMarketsStore("marketStats", marketStore.marketStats.set("volumeQuote", stats.volumeQuote));
+            setMarketsStore("marketStats", marketsStore.marketStats.set("change", stats.change));
+            setMarketsStore("marketStats", marketsStore.marketStats.set("volumeBase", stats.volumeBase));
+            setMarketsStore("marketStats", marketsStore.marketStats.set("volumeQuote", stats.volumeQuote));
         }
 
         if (callsChanged || limitsChanged) {
@@ -809,7 +809,8 @@ function _setBucketSize(size) {
 }
 
 function _marketHasCalls() {
-    const {quoteAsset, baseAsset} = marketStore;
+    const quoteAsset = marketsStore.quoteAsset;
+    const baseAsset = marketsStore.baseAsset;
     if (
         quoteAsset.has("bitasset") &&
         quoteAsset.getIn(["bitasset", "options", "short_backing_asset"]) ===
@@ -843,8 +844,8 @@ function _getFeed() {
     };
 
     let relevantMarketStore = marketsStore.invertedCalls
-        ? marketStore["baseAsset"]
-        : marketStore["quoteAsset"];
+        ? marketsStore["baseAsset"]
+        : marketsStore["quoteAsset"];
 
     let feedPriceRaw = asset_utils.extractRawFeedPrice(relevantMarketStore);
 
@@ -862,11 +863,14 @@ function _getFeed() {
             "margin_call_fee_ratio"
         ]);
 
-        marketsStore.is_prediction_market = relevantMarketStore.getIn(
-            ["bitasset", "is_prediction_market"],
-            false
-        );
-        marketsStore.bitasset_options = relevantMarketStore.getIn(["bitasset", "options"]).toJS();
+        setMarketsStore({
+            is_prediction_market: relevantMarketStore.getIn(
+                ["bitasset", "is_prediction_market"],
+                false
+            ),
+            bitasset_options: relevantMarketStore.getIn(["bitasset", "options"]).toJS()
+        });
+
         /* Prediction markets don't need feeds for shorting, so the settlement price can be set to 1:1 */
         if (
             marketsStore.is_prediction_market &&
@@ -981,32 +985,12 @@ function _priceChart() {
             );
         }
 
-        function findMax(a, b) {
-            if (a !== Infinity && b !== Infinity) {
-                return Math.max(a, b);
-            } else if (a === Infinity) {
-                return b;
-            } else {
-                return a;
-            }
-        }
-
-        function findMin(a, b) {
-            if (a !== 0 && b !== 0) {
-                return Math.min(a, b);
-            } else if (a === 0) {
-                return b;
-            } else {
-                return a;
-            }
-        }
-
         if (low === 0) {
-            low = findMin(open, close);
+            low = _findMin(open, close);
         }
 
         if (isNaN(high) || high === Infinity) {
-            high = findMax(open, close);
+            high = _findMax(open, close);
         }
 
         if (close === Infinity || close === 0) {
@@ -1018,11 +1002,11 @@ function _priceChart() {
         }
 
         if (high > 1.3 * ((open + close) / 2)) {
-            high = findMax(open, close);
+            high = _findMax(open, close);
         }
 
         if (low < 0.7 * ((open + close) / 2)) {
-            low = findMin(open, close);
+            low = _findMin(open, close);
         }
 
         prices.push({time: date.getTime(), open, high, low, close, volume});
@@ -1030,6 +1014,26 @@ function _priceChart() {
 
     setMarketsStore("priceData", prices);
     _notifySubscriber("subscribeBars");
+}
+
+function _findMax(a, b) {
+    if (a !== Infinity && b !== Infinity) {
+        return Math.max(a, b);
+    } else if (a === Infinity) {
+        return b;
+    } else {
+        return a;
+    }
+}
+
+function _findMin(a, b) {
+    if (a !== 0 && b !== 0) {
+        return Math.min(a, b);
+    } else if (a === 0) {
+        return b;
+    } else {
+        return a;
+    }
 }
 
 function _orderBook(limitsChanged = true, callsChanged = false) {
@@ -1201,10 +1205,12 @@ function _saveMarketStats() {
      * allMarketStats JS conversions
      */
     if (!marketsStore.saveStatsTimeout) {
-        marketsStore.saveStatsTimeout = setTimeout(() => {
-            marketStorage.set("allMarketStats", marketsStore.allMarketStats.toJS());
-            setMarketsStore("saveStatsTimeout", null);
-        }, 1000 * 30);
+        setMarketsStore({
+            saveStatsTimeout: setTimeout(() => {
+                marketStorage.set("allMarketStats", marketsStore.allMarketStats.toJS());
+                setMarketsStore("saveStatsTimeout", null);
+            }, 1000 * 30)
+        });
     }
 }
 
@@ -1533,7 +1539,9 @@ function _calcMarketStats(base, quote, market, ticker) {
             quote: volumeQuoteAsset,
             real: parseFloat(ticker.latest)
         });
-    } catch (err) {}
+    } catch (err) {
+        console.log(err);
+    }
     let close = price
         ? {
             base: price.base.toObject(),

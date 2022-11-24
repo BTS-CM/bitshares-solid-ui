@@ -262,12 +262,12 @@ var Utils = {
         }
 
         if (a && a.toJS && b && b.toJS) return a === b;
-        for (var key in a) {
+        for (let key in a) {
             if ((a.hasOwnProperty(key) && !(key in b)) || a[key] !== b[key]) {
                 return false;
             }
         }
-        for (var key in b) {
+        for (let key in b) {
             if ((b.hasOwnProperty(key) && !(key in a)) || a[key] !== b[key]) {
                 return false;
             }

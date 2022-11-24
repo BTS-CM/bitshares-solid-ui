@@ -5,6 +5,9 @@ import {
 } from "bitsharesjs";
 import ApplicationApi from "./ApplicationApi";
 
+import { useWalletDb } from "~/stores/WalletDb";
+const [walletDb, setWalletDb] = useWalletDb();
+
 const WalletApi = {
     new_transaction() {
         return new TransactionBuilder();
@@ -12,7 +15,7 @@ const WalletApi = {
 
     sign_and_broadcast(tr, broadcast = true) {
         SerializerValidation.required(tr, "transaction");
-        return WalletDb.process_transaction(
+        return walletDb.process_transaction(
             tr,
             null, //signer_private_key,
             broadcast

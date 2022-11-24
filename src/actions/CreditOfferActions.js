@@ -16,8 +16,8 @@ const listRepayPeriod = [43200, 86400, 259200, 604800, 2592000, 7776000, 3153600
 
 const parsingTime = (time, locale) => {
     if (locale === "zh") {
-        locale = "zh_CN"
-    };
+        locale = "zh_CN";
+    }
     return humanizeDuration(parseInt(time) * 1000, {
         language: locale,
         delimiter: " ",

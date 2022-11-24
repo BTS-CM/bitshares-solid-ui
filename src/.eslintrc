@@ -3,6 +3,7 @@
     "extends": ["eslint:recommended", "plugin:solid/recommended"],
     "rules": {
         "comma-dangle": 0,
+        "no-unused-vars": "off",
         "indent": ["error", 4, {"SwitchCase": 1}],
         "quotes": [2, "double", "avoid-escape"],
         "semi": [2, "always"],

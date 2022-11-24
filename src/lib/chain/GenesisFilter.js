@@ -65,7 +65,7 @@ export default class GenesisFilter {
             };
             reader.readAsBinaryString(xhr.response);
         };
-        xhr.onerror = () => {
+        xhr.onerror = (e) => {
             console.error("xhr.onerror", e);
         };
         xhr.open("GET", bts_genesiskeys_bloom_url);
@@ -121,9 +121,9 @@ export default class GenesisFilter {
                         total
                     });
                     for (
-                        var k = keys.encrypted_private_keys.length - 1;
-                        k >= 0;
-                        k--
+                        var x = keys.encrypted_private_keys.length - 1;
+                        x >= 0;
+                        x--
                     ) {
                         count++;
                         if (count % running_count_progress === 0) {
@@ -140,13 +140,13 @@ export default class GenesisFilter {
                             status({error: "missing_public_keys"});
                             return;
                         }
-                        var currentKey = keys.public_keys[k];
+                        var currentKey = keys.public_keys[x];
                         if (/^GPH/.test(currentKey)) {
                             currentKey = "BTS" + currentKey.substring(3);
                         }
                         if (this.inGenesis(currentKey)) {
-                            continue
-                        };
+                            continue;
+                        }
                         var addresses = key.addresses(currentKey, "BTS");
                         var addy_found = false;
                         for (var i = 0; i < addresses.length; i++) {
@@ -158,8 +158,8 @@ export default class GenesisFilter {
                         if (addy_found) {
                             continue;
                         }
-                        delete keys.encrypted_private_keys[k];
-                        delete keys.public_keys[k];
+                        delete keys.encrypted_private_keys[x];
+                        delete keys.public_keys[x];
                         removed_count++;
                     }
                     var encrypted_private_keys = [],

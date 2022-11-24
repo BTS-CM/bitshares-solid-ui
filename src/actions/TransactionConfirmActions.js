@@ -28,7 +28,7 @@ function broadcast(transaction, resolve, reject) {
         });
         if (reject) {
             reject();
-        };
+        }
     }, ChainConfig.expire_in_secs * 2000);
 
     transaction

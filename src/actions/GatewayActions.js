@@ -19,7 +19,7 @@ const onGatewayTimeout = (gateway) => {
     gatewayStore.onFetchCoins({down: gateway});
 };
 
-function fetchCoins({
+function fetchGatewayCoins({
     backer = "GDEX",
     url = undefined,
     urlBridge = undefined,
@@ -69,7 +69,7 @@ function fetchCoins({
     }
 }
 
-function fetchCoinsSimple({backer = "GDEX", url = undefined} = {}) {
+function fetchGatewayCoinsSimple({backer = "GDEX", url = undefined} = {}) {
     if (!inProgress["fetchCoinsSimple_" + backer]) {
         inProgress["fetchCoinsSimple_" + backer] = true;
         let fetchCoinsTimeout = setTimeout(
@@ -153,8 +153,8 @@ function loadOnChainGatewayConfig() {
 
 
 export {
-    fetchCoins,
-    fetchCoinsSimple,
+    fetchGatewayCoins,
+    fetchGatewayCoinsSimple,
     fetchPairs,
     temporarilyDisable,
     loadOnChainGatewayConfig

@@ -106,11 +106,15 @@ const [privateKeyStore, setPrivateKeyStore] = createStore({
         privateKeyStore.pendingOperation();
         //console.log("... onAddKey private_key_object.pubkey", private_key_object.pubkey)
 
-        privateKeyStore.keys = privateKeyStore.keys.set(
-            private_key_object.pubkey,
-            PrivateKeyTcomb(private_key_object)
+        setPrivateKeyStore(
+            "keys",
+            privateKeyStore.keys.set(
+                private_key_object.pubkey,
+                PrivateKeyTcomb(private_key_object)
+            )
         );
-        setPrivateKeyStore("keys", privateKeyStore.keys);
+
+        //setPrivateKeyStore("keys", privateKeyStore.keys);
         addressIndex.add(private_key_object.pubkey);
         let p = new Promise((resolve, reject) => {
             PrivateKeyTcomb(private_key_object);

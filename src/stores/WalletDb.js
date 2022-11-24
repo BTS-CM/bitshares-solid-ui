@@ -397,22 +397,6 @@ const [walletDb, setWalletDb] = createStore({
     ) {
         if (account) {
             let id = 0;
-            function setKey(role, priv, pub) {
-                if (!_passwordKey) {
-                    _passwordKey = {}
-                };
-                _passwordKey[pub] = priv;
-
-                id++;
-                privateKeyStore.setPasswordLoginKey({
-                    pubkey: pub,
-                    import_account_names: [account],
-                    encrypted_key: null,
-                    id,
-                    brainkey_sequence: null
-                });
-            }
-
             /* Check if the user tried to login with a private key */
             let fromWif;
             try {
@@ -438,13 +422,27 @@ const [walletDb, setWalletDb] = createStore({
                 if (acc) {
                     if (role === "memo") {
                         if (acc.getIn(["options", "memo_key"]) === key.pubKey) {
-                            setKey(role, key.privKey, key.pubKey);
+                            id++;
+                            _setKey(
+                                role,
+                                key.privKey,
+                                key.pubKey,
+                                account,
+                                id
+                            );
                             foundRole = true;
                         }
                     } else {
                         acc.getIn([role, "key_auths"]).forEach(auth => {
                             if (auth.get(0) === key.pubKey) {
-                                setKey(role, key.privKey, key.pubKey);
+                                id++;
+                                _setKey(
+                                    role,
+                                    key.privKey,
+                                    key.pubKey,
+                                    account,
+                                    id
+                                );
                                 foundRole = true;
                                 return false;
                             }
@@ -456,10 +454,13 @@ const [walletDb, setWalletDb] = createStore({
                             acc.getIn([alsoCheckRole, "key_auths"]).forEach(
                                 auth => {
                                     if (auth.get(0) === key.pubKey) {
-                                        setKey(
+                                        id++;
+                                        _setKey(
                                             alsoCheckRole,
                                             key.privKey,
-                                            key.pubKey
+                                            key.pubKey,
+                                            account,
+                                            id
                                         );
                                         foundRole = true;
                                         return false;
@@ -562,9 +563,12 @@ const [walletDb, setWalletDb] = createStore({
         let used_sequence = null;
         // Skip ahead in the sequence if any keys are found in use
         // Slowly look ahead (1 new key per block) to keep the wallet fast after unlocking
-        walletDb.brainkey_look_ahead = Math.min(
-            10,
-            (walletDb.brainkey_look_ahead || 0) + 1
+        setWalletDb(
+            "brainkey_look_ahead",
+            Math.min(
+                10,
+                (walletDb.brainkey_look_ahead || 0) + 1
+            )
         );
         /* If sequence is 0 this is the first lookup, so check at least the first 10 positions */
         const loopMax = !sequence
@@ -609,7 +613,7 @@ const [walletDb, setWalletDb] = createStore({
             //TODO  .error( error => ErrorStore.onAdd( "wallet", "saveKey", error ))
             walletDb.incrementBrainKeySequence();
         }
-        walletDb.generatingKey = false;
+        setWalletDb("generatingKey", false);
         return {private_key, sequence};
     },
     incrementBrainKeySequence(transaction) {
@@ -823,6 +827,20 @@ const [walletDb, setWalletDb] = createStore({
 });
 
 export const useWalletDb = () => [walletDb, setWalletDb];
+
+function _setKey(role, priv, pub, account, id) {
+    if (!_passwordKey) {
+        _passwordKey = {};
+    }
+    _passwordKey[pub] = priv;
+    privateKeyStore.setPasswordLoginKey({
+        pubkey: pub,
+        import_account_names: [account],
+        encrypted_key: null,
+        id,
+        brainkey_sequence: null
+    });
+}
 
 /** Saves wallet object to disk.  Always updates the last_modified date. */
 function _updateWallet(transaction = walletDb.transaction_update()) {

@@ -1,4 +1,4 @@
-setBrainkey(brnkey) {
+function setBrainkey(brnkey) {
     return brnkey;
 }
 

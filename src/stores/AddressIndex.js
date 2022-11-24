@@ -14,7 +14,7 @@ const [addressIndex, setAddressIndex] = createStore({
     addresses: Immutable.Map(),
     saving: false,
     pubkeys: new Set(),
-    saving() {
+    save() {
         if (addressIndex.saving) {
             return;
         }
@@ -31,7 +31,7 @@ const [addressIndex, setAddressIndex] = createStore({
                     return;
                 }
                 setAddressIndex("pubkeys", addressIndex.pubkeys.add(pubkey));
-                addressIndex.saving();
+                addressIndex.save();
                 // Gather all 5 legacy address formats (see key.addresses)
                 var address_strings = key.addresses(pubkey);
                 for (let address of address_strings) {
@@ -58,7 +58,7 @@ const [addressIndex, setAddressIndex] = createStore({
     /** Worker thread implementation (for more than 10K keys) */
     addAll(pubkeys) {
         return new Promise((resolve, reject) => {
-            addressIndex.saving();
+            addressIndex.save();
             addressIndex.loadAddyMap()
                 .then(() => {
                     if (!__ELECTRON__) {

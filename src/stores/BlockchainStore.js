@@ -41,20 +41,20 @@ const [blockchainStore, setBlockchainStore] = createStore({
             }
         }
         block.timestamp = new Date(block.timestamp);
-        setblockchainStore("blocks", blockchainStore.blocks.set(block.id, block));
+        setBlockchainStore("blocks", blockchainStore.blocks.set(block.id, block));
         if (block.id > maxBlock - this.maxBlocks) {
-            setblockchainStore(
+            setBlockchainStore(
                 "latestBlocks",
                 blockchainStore.latestBlocks.unshift(block.id)
             );
             if (blockchainStore.latestBlocks.size > blockchainStore.maxBlocks) {
-                setblockchainStore("latestBlocks", blockchainStore.latestBlocks.pop());
+                setBlockchainStore("latestBlocks", blockchainStore.latestBlocks.pop());
             }
 
             if (block.transactions.length > 0) {
                 block.transactions.forEach(trx => {
                     trx.block_num = block.id;
-                    setblockchainStore(
+                    setBlockchainStore(
                         "latestTransactions",
                         blockchainStore.latestTransactions.unshift(trx)
                     );
@@ -62,7 +62,7 @@ const [blockchainStore, setBlockchainStore] = createStore({
             }
 
             if (blockchainStore.latestTransactions.size > blockchainStore.maxBlocks) {
-                setblockchainStore("latestTransactions", blockchainStore.latestTransactions.pop());
+                setBlockchainStore("latestTransactions", blockchainStore.latestTransactions.pop());
             }
         }
     },
@@ -71,15 +71,15 @@ const [blockchainStore, setBlockchainStore] = createStore({
         if (status === "reconnect") {
             ChainStore.resetCache(false);
         } else {
-            setblockchainStore("rpc_connection_status", status);
+            setBlockchainStore("rpc_connection_status", status);
         } 
 
         if (prev_status === null && status === "error" || status === "closed") {
-            setblockchainStore("no_ws_connection", true);
+            setBlockchainStore("no_ws_connection", true);
         }
 
         if (blockchainStore.no_ws_connection && status === "open") {
-            setblockchainStore("no_ws_connection", false);
+            setBlockchainStore("no_ws_connection", false);
         }
     }
 });

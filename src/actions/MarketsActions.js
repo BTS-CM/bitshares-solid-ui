@@ -437,7 +437,7 @@ function subscribeMarket(base, quote, bucketSize, groupedOrderLimit) {
         endDate.setDate(endDate.getDate() + 1);
         if (__DEV__) {
             console.time("Fetch market data");
-        };
+        }
 
         return new Promise((resolve, reject) => {
             Promise.all([
@@ -855,14 +855,14 @@ function getMarketStatsInterval(
     getMarketStats(base, quote, refresh);
     const {marketName} = marketUtils.getMarketName(base, quote);
     if (marketStatsIntervals[marketName]) {
-        return actions.clearMarketStatsInInterval.bind(this, marketName);
+        return clearMarketStatsInInterval.bind(this, marketName);
     }
     marketStatsIntervals[marketName] = setInterval(() => {
-        actions.getMarketStats(base, quote, refresh, () => {
-            actions.clearMarketStatsInInterval(base, quote);
+        getMarketStats(base, quote, refresh, () => {
+            clearMarketStatsInInterval(base, quote);
         });
     }, intervalTime);
-    return actions.clearMarketStatsInInterval.bind(this, marketName);
+    return clearMarketStatsInInterval.bind(this, marketName);
 }
 
 export {

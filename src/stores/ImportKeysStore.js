@@ -2,7 +2,7 @@ import { createStore } from "solid-js/store";
 
 const [importKeysStore, setImportKeysStore] = createStore({
     importing: false,
-    importing(importing) {
+    import(importing) {
         setImportKeysStore("importing", importing);
     }
 });

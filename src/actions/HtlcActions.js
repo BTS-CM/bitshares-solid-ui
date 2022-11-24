@@ -36,7 +36,6 @@ const getCipherInt = cipher => {
             throw new Error(
                 "sha1 is not considered a secure hashing algorithm, plaase use sha256"
             );
-            break;
         default:
             throw new Error("Wrong cipher name provided when creating htlc op");
     }
