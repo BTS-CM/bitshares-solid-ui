@@ -1,3 +1,7 @@
+# Note
+
+This project is no longer active.
+
 # See also: 
 
 * "[What would be your ideal reference Bitshares wallet implementation?](https://hive.blog/bitshares/@nftea.gallery/what-would-be-your-ideal-reference-bitshares-wallet-implementation)"
